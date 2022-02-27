@@ -22,6 +22,7 @@ class SignalVisualizer(tk.Frame):
         tk.Frame.__init__(self, master)
         self.master = master
         master.geometry('700x500') # size of the window
+        self.master.title("Signal Visualizer")
 
         self.createMenuBar()
 
