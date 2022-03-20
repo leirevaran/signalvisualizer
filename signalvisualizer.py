@@ -14,15 +14,16 @@ class Start(tk.Tk):
         if self._frame is not None:
             self._frame.destroy()
         self._frame = new_frame
-        self._frame.pack()
+        self._frame.grid()
 
 
 class SignalVisualizer(tk.Frame):
     def __init__(self, master):
         tk.Frame.__init__(self, master)
         self.master = master
-        master.geometry('700x500') # size of the window
+        self.master.geometry('700x500') # size of the window
         self.master.title("Signal Visualizer")
+        #self.maste.icontbitmap("images/icon.ico")
 
         self.createMenuBar()
 
@@ -31,15 +32,19 @@ class SignalVisualizer(tk.Frame):
         menubar = tk.Menu(self.master)
         
         # creation of the options in the menu bar
-        signalmenu = tk.Menu(menubar, tearoff=0)
+        signalmenu = tk.Menu(menubar, tearoff=0) # tearoff=0 to avoid useless lines
         signalmenu.add_command(label="Info")
         signalmenu.add_command(label="Exit", command=self.master.quit)
 
         generatemenu = tk.Menu(menubar, tearoff=0)
         generatemenu.add_command(label="Pure tone")
         generatemenu.add_command(label="Free addition of pure tones")
-        generatemenu.add_command(label="Known periodic signals")
         generatemenu.add_command(label="Noise")
+
+        knownmenu = tk.Menu(generatemenu, tearoff=0)
+        knownmenu.add_command(label="Square wave")
+        knownmenu.add_command(label="Sawtooth wave")
+        knownmenu.add_command(label="Rusenberg pulse")
 
         inputmenu = tk.Menu(menubar, tearoff=0)
         inputmenu.add_command(label="Load", command=lambda: self.master.switch_frame(LoadApp))
@@ -53,6 +58,7 @@ class SignalVisualizer(tk.Frame):
         # adding the options created to the menu bar
         menubar.add_cascade(label="Signal Visualizer", menu=signalmenu)
         menubar.add_cascade(label="Generate", menu=generatemenu)
+        generatemenu.add_cascade(label="Known periodic signals", menu=knownmenu)
         menubar.add_cascade(label="Input", menu=inputmenu)
         menubar.add_cascade(label="Options", menu=optionsmenu)
 
