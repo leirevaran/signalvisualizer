@@ -1,6 +1,10 @@
 import tkinter as tk
 from loadApp import LoadApp
 
+# To avoid blurry fonts
+from ctypes import windll
+windll.shcore.SetProcessDpiAwareness(1)
+
 class Start(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
