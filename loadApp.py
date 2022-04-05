@@ -1,3 +1,4 @@
+from asyncio.windows_events import NULL
 import tkinter as tk
 import wave
 import numpy as np
@@ -43,25 +44,45 @@ class LoadApp(tk.Frame):
         
         axstop = plt.axes([0.8, 0.01, 0.09, 0.05])
         stopButton = Button(axstop, 'Stop')
-        stopButton.on_clicked(self.stopSound)  
+        stopButton.on_clicked(self.stopSound)
+
+        axload = plt.axes([0.6, 0.01, 0.09, 0.05])
+        loadButton = Button(axload, 'Load')
+        loadButton.on_clicked(self.loadFragment)
 
         # Selection of a fragment with the cursor
+        self.ini = NULL
+        self.end = NULL
         cursor = Cursor(self.ax, horizOn=False, useblit=True, color='black', linewidth=1)
-        self.cid = plt.connect('button_press_event', self.onclick)
+        if cursor:
+            self.cid = plt.connect('button_press_event', self.onclick)
 
         plt.show() # show the figure
 
     def onclick(self, event):
         if event.inaxes:
             self.ax.axvline(x=event.xdata, color='red')
-            plt.disconnect(self.cid)
-            self.plotFragment(30000, 50000)
+            #plt.disconnect(self.cid)
+            self.ini = round(event.xdata * self.audiofs) # redondear al entero más proximo
+            #self.ax.axvline(x=event.xdata, color='green')
+            #self.end = round(event.xdata * self.audiofs) # redondear al entero más proximo
 
     def playSound(self, event):
         sd.play(self.audio, self.audiofs)
 
     def stopSound(self, event):
         sd.stop()
+
+    def loadFragment(self, event):
+        if self.ini != NULL and self.end != NULL:
+            if self.ini < self.end:
+                self.plotFragment(self.ini, self.end)
+            elif self.ini > self.end:
+                self.plotFragment(self.end, self.ini)
+            else: # self.ini = self.end
+                tk.messagebox.showwarning(title="Load a fragment", message="The initial and the end points have to be different.")
+        else:
+            tk.messagebox.showwarning(title="Load a fragment", message="To load a fragment of the waveform, first select the initial and the end points.")
 
     def plotFragment(self, ini, end):
         # Variables of the segment of the waveform
