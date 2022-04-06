@@ -30,6 +30,7 @@ class SignalVisualizer(tk.Frame):
         #self.maste.icontbitmap("images/icon.ico")
 
         self.createMenuBar()
+        self.createWindowButtons()
 
     def createMenuBar(self):
         # the menu bar will be at the top of the window
@@ -67,6 +68,16 @@ class SignalVisualizer(tk.Frame):
         menubar.add_cascade(label="Options", menu=optionsmenu)
 
         self.master.config(menu=menubar)
+
+    def createWindowButtons(self):
+        w1Button = tk.Button(self, text="Window1", command=self.loadWindow)
+        w1Button.configure(state="disabled")
+        w1Button.grid()
+    
+    def loadWindow(self, frame_class):
+        new_frame = frame_class(self)
+        self._frame = new_frame
+        self._frame.grid()
 
 if __name__ == "__main__":
     app = Start()

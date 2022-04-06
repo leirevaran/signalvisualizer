@@ -1,11 +1,10 @@
-from asyncio.windows_events import NULL
 import tkinter as tk
 import wave
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Button, Cursor
+from matplotlib.widgets import Button, Cursor, SpanSelector
 
 class LoadApp(tk.Frame):
     def __init__(self, master):
@@ -22,7 +21,7 @@ class LoadApp(tk.Frame):
         wav = wave.open(filename, 'r')
         self.audio = wav.readframes(-1)
         self.audio, self.audiofs = sf.read(filename, dtype='float32')
-        audiotime = np.arange(0, len(self.audio)/self.audiofs, 1/self.audiofs) # Time axe
+        self.audiotime = np.arange(0, len(self.audio)/self.audiofs, 1/self.audiofs) # Time axe
         
         # Convert from stereo to mono
         if wav.getnchannels() > 1:
@@ -33,9 +32,9 @@ class LoadApp(tk.Frame):
 
         # Plot the audio file
         fig, self.ax = plt.subplots(figsize=(12,5))
-        self.ax.plot(audiotime, self.audio)
+        self.ax.plot(self.audiotime, self.audio)
         self.ax.axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
-        self.ax.set(xlim=[0, max(audiotime)], xlabel='Time (s)', ylabel='Waveform', title='Load an audio file')
+        self.ax.set(xlim=[0, max(self.audiotime)], xlabel='Time (s)', ylabel='Waveform', title='Load an audio file')
 
         # Add widgets to the figure
         axplay = plt.axes([0.7, 0.01, 0.09, 0.05]) # [eje x, eje y, anchura del boton, altura del boton]
@@ -46,43 +45,25 @@ class LoadApp(tk.Frame):
         stopButton = Button(axstop, 'Stop')
         stopButton.on_clicked(self.stopSound)
 
-        axload = plt.axes([0.6, 0.01, 0.09, 0.05])
-        loadButton = Button(axload, 'Load')
-        loadButton.on_clicked(self.loadFragment)
+        # axload = plt.axes([0.6, 0.01, 0.09, 0.05])
+        # loadButton = Button(axload, 'Load')
+        # loadButton.on_clicked(self.loadFragment)
 
-        # Selection of a fragment with the cursor
-        self.ini = NULL
-        self.end = NULL
         cursor = Cursor(self.ax, horizOn=False, useblit=True, color='black', linewidth=1)
-        if cursor:
-            self.cid = plt.connect('button_press_event', self.onclick)
+        span = SpanSelector(self.ax, self.onclick, 'horizontal', useblit=True,
+                    rectprops=dict(alpha=0.5, facecolor='red'))
 
         plt.show() # show the figure
 
-    def onclick(self, event):
-        if event.inaxes:
-            self.ax.axvline(x=event.xdata, color='red')
-            #plt.disconnect(self.cid)
-            self.ini = round(event.xdata * self.audiofs) # redondear al entero más proximo
-            #self.ax.axvline(x=event.xdata, color='green')
-            #self.end = round(event.xdata * self.audiofs) # redondear al entero más proximo
+    def onclick(self, xmin, xmax):
+        ini, end = np.searchsorted(self.audiotime, (xmin, xmax))
+        self.plotFragment(ini, end)
 
     def playSound(self, event):
         sd.play(self.audio, self.audiofs)
 
     def stopSound(self, event):
         sd.stop()
-
-    def loadFragment(self, event):
-        if self.ini != NULL and self.end != NULL:
-            if self.ini < self.end:
-                self.plotFragment(self.ini, self.end)
-            elif self.ini > self.end:
-                self.plotFragment(self.end, self.ini)
-            else: # self.ini = self.end
-                tk.messagebox.showwarning(title="Load a fragment", message="The initial and the end points have to be different.")
-        else:
-            tk.messagebox.showwarning(title="Load a fragment", message="To load a fragment of the waveform, first select the initial and the end points.")
 
     def plotFragment(self, ini, end):
         # Variables of the segment of the waveform
