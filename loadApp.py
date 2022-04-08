@@ -37,7 +37,7 @@ class LoadApp(tk.Frame):
         self.ax.set(xlim=[0, max(self.audiotime)], xlabel='Time (s)', ylabel='Waveform', title='Load an audio file')
 
         # Add widgets to the figure
-        axplay = plt.axes([0.7, 0.01, 0.09, 0.05]) # [eje x, eje y, anchura del boton, altura del boton]
+        axplay = plt.axes([0.7, 0.01, 0.09, 0.05]) # [x axis, y axis, width, height]
         playButton = Button(axplay, 'Play')
         playButton.on_clicked(self.playSound)
         
@@ -45,13 +45,9 @@ class LoadApp(tk.Frame):
         stopButton = Button(axstop, 'Stop')
         stopButton.on_clicked(self.stopSound)
 
-        # axload = plt.axes([0.6, 0.01, 0.09, 0.05])
-        # loadButton = Button(axload, 'Load')
-        # loadButton.on_clicked(self.loadFragment)
-
+        # Select a fragment with the cursor
         cursor = Cursor(self.ax, horizOn=False, useblit=True, color='black', linewidth=1)
-        span = SpanSelector(self.ax, self.onclick, 'horizontal', useblit=True,
-                    rectprops=dict(alpha=0.5, facecolor='red'))
+        span = SpanSelector(self.ax, self.onclick, 'horizontal', useblit=True, rectprops=dict(alpha=0.5, facecolor='red'))
 
         plt.show() # show the figure
 
@@ -83,5 +79,7 @@ class LoadApp(tk.Frame):
         axFrag[0].set(xlim=[0, max(audiotimeFrag)], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
         axFrag[1].magnitude_spectrum(audioFrag, Fs=self.audiofs, scale='dB', color='C2')
         axFrag[1].set(xlim=[0, max(audiotimeFrag)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum')
+
+        # connect figFrag with w1Button in signalVisualizer
 
         plt.show() # show the figure
