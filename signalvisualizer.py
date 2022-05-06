@@ -15,8 +15,8 @@ class Start(tk.Tk):
     def switch_frame(self, frame_class):
         """Destroys current frame and replaces it with a new one."""
         new_frame = frame_class(self)
-        #if self._frame is not None:
-        #    self._frame.destroy()
+        if self._frame is not None:
+            self._frame.destroy()
         self._frame = new_frame
         self._frame.grid()
 
@@ -25,7 +25,7 @@ class SignalVisualizer(tk.Frame):
     def __init__(self, master):
         tk.Frame.__init__(self, master)
         self.master = master
-        self.master.geometry('700x500') # size of the window
+        self.master.geometry('710x350') # size of the window
         self.master.title("Signal Visualizer")
         #self.maste.icontbitmap("images/icon.ico")
 
@@ -70,9 +70,14 @@ class SignalVisualizer(tk.Frame):
         self.master.config(menu=menubar)
 
     def createWindowButtons(self):
-        w1Button = tk.Button(self, text="Window1", command=lambda: self.master.switch_frame(LoadApp)) # with lambda, the action is only made when the button is pressed
+        w1Button = tk.Button(self, text="Window1", command=self.loadWindow)
         w1Button.configure(state="disabled")
         w1Button.grid()
+    
+    def loadWindow(self, frame_class):
+        new_frame = frame_class(self)
+        self._frame = new_frame
+        self._frame.grid()
 
 if __name__ == "__main__":
     app = Start()
