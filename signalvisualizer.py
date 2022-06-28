@@ -161,8 +161,8 @@ class SignalVisualizer(tk.Frame):
         self.audioFragDuration = max(self.audiotimeFrag)
         self.audioFragLen = len(self.audioFrag)
 
-        self.createControlMenu() # Open the control menu window
         self.plotFT() # Plot the Fast Fourier Transform (FFT) of the fragment
+        self.createControlMenu() # Open the control menu window
 
     # Plots the waveform and the spectrum of the Fast Fourier Transform (FFT) of the fragment
     def plotFT(self):
@@ -193,7 +193,7 @@ class SignalVisualizer(tk.Frame):
         cm.iconbitmap('images/icon.ico')
 
         # METHODS
-        # Updates the OptionMenu passed as a parameter
+        # Updates the OptionMenu 'om' with the option list 'opt' and variable 'var' passed as a parameter
         def updateOptionMenu(om, var, opt):
             menu = om["menu"]
             menu.delete(0, "end")
@@ -201,7 +201,7 @@ class SignalVisualizer(tk.Frame):
                 menu.add_command(label=o, command=lambda value=o: var.set(value))
             var.set(opt[0])
 
-        # Called when changing the main option (FT, STFT, etc.)
+        # Called when changing the main option (FT, STFT, etc.) for disabling or activating widgets
         def displayOpts(choice):
             choice = cm.var_opts.get()
             # Reset widgets
@@ -209,154 +209,89 @@ class SignalVisualizer(tk.Frame):
             opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
             updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
 
-            if choice == 'FT':
+            if choice == 'FT' or choice == 'Filtering' or choice == 'STFT':
+                ent_over.config(state='disabled')
+            else:
+                ent_over.config(state='normal')
+
+            if choice == 'FT' or choice == 'Filtering':
                 ent_size.config(state='disabled')
-                ent_over.config(state='disabled')
-                ent_fund.config(state='disabled')
-                ent_cent.config(state='disabled')
-                ent_cut1.config(state='disabled')
-                ent_cut2.config(state='disabled')
-                dd_wind.config(state='disabled')
-                dd_nfft.config(state='disabled')
-                dd_meth.config(state='disabled')
-                dd_data.config(state='disabled')
-                dd_filt.config(state='disabled')
-                chk_form.config(state='disabled')
-                but_freq.configure(state='disabled')
-                but_rese.configure(state='disabled')
-                but_fisi.configure(state='disabled')
-            elif choice == 'STFT':
+            else:
                 ent_size.config(state='normal')
-                ent_over.config(state='disabled')
-                ent_fund.config(state='disabled')
-                ent_cent.config(state='disabled')
-                ent_cut1.config(state='disabled')
-                ent_cut2.config(state='disabled')
-                dd_wind.config(state='active')
-                dd_nfft.config(state='active')
-                dd_meth.config(state='disabled')
-                dd_data.config(state='disabled')
-                dd_filt.config(state='disabled')
-                chk_form.config(state='disabled')
-                but_freq.configure(state='disabled')
-                but_rese.configure(state='disabled')
-                but_fisi.configure(state='disabled')
-            elif choice == 'Spectrogram':
-                ent_size.config(state='normal')
-                ent_over.config(state='normal')
-                ent_fund.config(state='disabled')
-                ent_cent.config(state='disabled')
-                ent_cut1.config(state='disabled')
-                ent_cut2.config(state='disabled')
-                dd_wind.config(state='active')
-                dd_nfft.config(state='active')
-                dd_meth.config(state='disabled')
-                dd_data.config(state='disabled')
-                dd_filt.config(state='disabled')
-                chk_form.config(state='active')
-                but_freq.configure(state='disabled')
-                but_rese.configure(state='disabled')
-                but_fisi.configure(state='disabled')
-            elif choice == 'STFT + Spect':
-                ent_size.config(state='normal')
-                ent_over.config(state='normal')
-                ent_fund.config(state='disabled')
-                ent_cent.config(state='disabled')
-                ent_cut1.config(state='disabled')
-                ent_cut2.config(state='disabled')
-                dd_wind.config(state='active')
-                dd_nfft.config(state='active')
-                dd_meth.config(state='disabled')
-                dd_data.config(state='disabled')
-                dd_filt.config(state='disabled')
-                chk_form.config(state='disabled')
-                but_freq.configure(state='disabled')
-                but_rese.configure(state='disabled')
-                but_fisi.configure(state='disabled')
-            elif choice == 'Short-Time-Energy' or choice == 'Spectral Centroid':
-                ent_size.config(state='normal')
-                ent_over.config(state='normal')
-                ent_fund.config(state='disabled')
-                ent_cent.config(state='disabled')
-                ent_cut1.config(state='disabled')
-                ent_cut2.config(state='disabled')
-                dd_wind.config(state='active')
-                dd_nfft.config(state='disabled')
-                dd_meth.config(state='disabled')
-                dd_data.config(state='disabled')
-                dd_filt.config(state='disabled')
-                chk_form.config(state='disabled')
-                but_freq.configure(state='disabled')
-                but_rese.configure(state='disabled')
-                but_fisi.configure(state='disabled')
-            elif choice == 'Pitch':
-                ent_size.config(state='normal')
-                ent_over.config(state='normal')
-                ent_fund.config(state='disabled')
-                ent_cent.config(state='disabled')
-                ent_cut1.config(state='disabled')
-                ent_cut2.config(state='disabled')
-                dd_wind.config(state='disabled')
-                dd_nfft.config(state='disabled')
-                dd_meth.config(state='active')
-                dd_data.config(state='active')
-                dd_filt.config(state='disabled')
-                chk_form.config(state='disabled')
-                but_freq.configure(state='disabled')
-                but_rese.configure(state='disabled')
-                but_fisi.configure(state='disabled')
-            elif choice == 'Filtering':
-                ent_size.config(state='disabled')
-                ent_over.config(state='disabled')
+
+            if choice == 'Filtering':
                 ent_fund.config(state='normal')
                 ent_cent.config(state='normal')
                 ent_cut1.config(state='normal')
                 ent_cut2.config(state='normal')
-                dd_wind.config(state='disabled')
-                dd_nfft.config(state='disabled')
-                dd_meth.config(state='disabled')
-                dd_data.config(state='disabled')
                 dd_filt.config(state='active')
-                chk_form.config(state='disabled')
                 but_freq.configure(state='active')
                 but_rese.configure(state='active')
                 but_fisi.configure(state='active')
+            else:
+                ent_fund.config(state='disabled')
+                ent_cent.config(state='disabled')
+                ent_cut1.config(state='disabled')
+                ent_cut2.config(state='disabled')
+                dd_filt.config(state='disabled')
+                but_freq.configure(state='disabled')
+                but_rese.configure(state='disabled')
+                but_fisi.configure(state='disabled')
+
+            if choice == 'Pitch':
+                dd_meth.config(state='active')
+                dd_data.config(state='active')
+            else:
+                dd_meth.config(state='disabled')
+                dd_data.config(state='disabled')
+
+            if choice == 'Spectrogram':
+                chk_form.config(state='active')
+            else:
+                chk_form.config(state='disabled')
+
+            if choice == 'STFT' or choice == 'Spectrogram' or choice == 'STFT + Spect' or choice == 'Spectral Centroid':
+                dd_wind.config(state='active')
+            else:
+                dd_wind.config(state='disabled')
+
+            if choice == 'STFT' or choice == 'Spectrogram' or choice == 'STFT + Spect':
+                dd_nfft.config(state='active')
+            else:
+                dd_nfft.config(state='disabled')
 
         # Called when inserting a value in the entry of the window size and pressing enter
         def windSizeFunction(windSize):
-            # Show an error and stop if the window size is greater than the duration of the signal
+            # Show an error and stop if the inserted window size is incorrect
             windSize = float(ent_size.get())
-            if windSize > self.audioFragDuration:
+            if windSize > self.audioFragDuration: # The window size can't be greater than the duration of the signal
                 text = "The chosen value for the window size can't be greater than the duration of the signal (" + str(self.audioFragDuration) + "s)."
                 tk.messagebox.showerror(title="Window size too long", message=text) # show error
-
-            elif windSize <= 0:
+            elif windSize <= 0: # The window size must be a positive number
                 tk.messagebox.showerror(title="Wrong window size value", message="The chosen value for the window size must be a positive number.") # show error
             
-            else:
-                # Change the values of nfft to be always greater than the window size
+            else: # Change the values of nfft to be always greater than the window size
                 windSizeSample = windSize * self.audiofs # window size in samples
                 nfft = cm.var_nfft.get()
                 
-                if nfft < int(windSizeSample): # deletes first values and adds news at the end
+                if nfft < windSizeSample: # Deletes smallest values of the nfft list and adds greater ones
                     last = int(math.log2(opt_nfft[len(opt_nfft)-1])) + 1
                     first = int(math.log2(opt_nfft[0]))
-                    while 2**first < int(windSizeSample):
+                    while 2**first < windSizeSample:
                         for a in range(len(opt_nfft)-1):
                             opt_nfft[a] = opt_nfft[a+1]
                         opt_nfft[len(opt_nfft)-1] = 2**last
                         last += 1
                         first += 1
                     updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
-                else:                           # deletes last values and adds news at the beginning or does nothing
+                else: # Adds smaller values to the nfft list if possible
                     first = int(math.log2(opt_nfft[0])) - 1
-                    if 2**first > int(windSizeSample): # if we can use smaller nfft values
-                        while 2**first > windSizeSample:
-                            for a in range(len(opt_nfft)-1, 0, -1):
-                                opt_nfft[a] = opt_nfft[a-1]
-                            opt_nfft[0] = 2**first
-                            first -= 1
-                        updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
+                    while 2**first > windSizeSample:
+                        for a in range(len(opt_nfft)-1, 0, -1):
+                            opt_nfft[a] = opt_nfft[a-1]
+                        opt_nfft[0] = 2**first
+                        first -= 1
+                    updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
         
         # Called when clicking the 'Formants' checkbox
         def showFormants():
