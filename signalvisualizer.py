@@ -1,10 +1,13 @@
+from statistics import mode
 import tkinter as tk
 import tkinter.filedialog
 import wave
+import librosa
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
 import matplotlib.pyplot as plt
+import math
 from matplotlib import backend_bases
 from matplotlib.widgets import Button, Cursor, SpanSelector
 from matplotlib.backend_bases import MouseButton
@@ -17,9 +20,8 @@ class Start(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
 
-        # the container is where we'll stack a bunch of frames
-        # on top of each other, then the one we want visible
-        # will be raised above the others
+        # the container is where we'll stack a bunch of frames on top of each other, 
+        # then the one we want visible will be raised above the others
         self.container = tk.Frame(self)
         self.container.pack(side="top", fill="both", expand=True)
         self.container.grid_rowconfigure(0, weight=1)
@@ -110,7 +112,7 @@ class SignalVisualizer(tk.Frame):
         # Variables of the wav file
         wav = wave.open(filename, 'r')
         self.audio, self.audiofs = sf.read(filename, dtype='float32')
-        self.audiotime = np.arange(0, len(self.audio)/self.audiofs, 1/self.audiofs) # Time axe
+        self.audiotime = np.arange(0, len(self.audio)/self.audiofs, 1/self.audiofs) # Time axis
 
         # Convert from stereo to mono
         if wav.getnchannels() > 1:
@@ -127,13 +129,19 @@ class SignalVisualizer(tk.Frame):
         self.axFile.set(xlim=[0, max(self.audiotime)], xlabel='Time (s)', ylabel='Waveform', title='Load an audio file')
 
         # Add widgets to the figure
+        def playSound(event):
+            sd.play(self.audio, self.audiofs)
+
+        def stopSound(event):
+            sd.stop()
+            
         axplay = plt.axes([0.7, 0.01, 0.09, 0.05]) # [x axis, y axis, width, height]
         playButton = Button(axplay, 'Play')
-        playButton.on_clicked(self.playSound)
+        playButton.on_clicked(playSound)
         
         axstop = plt.axes([0.8, 0.01, 0.09, 0.05])
         stopButton = Button(axstop, 'Stop')
-        stopButton.on_clicked(self.stopSound)
+        stopButton.on_clicked(stopSound)
 
         # Select a fragment with the cursor
         cursor = Cursor(self.axFile, horizOn=False, useblit=True, color='black', linewidth=1)
@@ -146,12 +154,6 @@ class SignalVisualizer(tk.Frame):
         self.plotFragment(ini, end)
         plt.close(self.figFile) # close the figure of the waveform
 
-    def playSound(self, event):
-        sd.play(self.audio, self.audiofs)
-
-    def stopSound(self, event):
-        sd.stop()
-
     def plotFragment(self, ini, end):
         # Variables of the segment of the waveform
         self.audioFrag = self.audio[ini:end+1]
@@ -160,29 +162,28 @@ class SignalVisualizer(tk.Frame):
         self.audioFragLen = len(self.audioFrag)
 
         self.createControlMenu() # Open the control menu window
-        self.plotFft() # Plot the Fast Fourier Transform (FFT) of the fragment
+        self.plotFT() # Plot the Fast Fourier Transform (FFT) of the fragment
 
-    # Plots the Fast Fourier Transform (FFT) of the fragment in the 'ax' axis
-    def plotFft(self):
-        # Plot the waveform and the spectrum of the audio segment
-        self.figFragFft, self.axFragFft = plt.subplots(2, figsize=(12,6))
+    # Plots the waveform and the spectrum of the Fast Fourier Transform (FFT) of the fragment
+    def plotFT(self):
+        self.figFragFT, self.axFragFT = plt.subplots(2, figsize=(12,6))
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-        self.figFragFft.canvas.manager.set_window_title('FT')
+        self.figFragFT.canvas.manager.set_window_title('FT')
 
         fft = np.fft.fft(self.audioFrag) / self.audioFragLen # Normalize amplitude
         fft2 = fft[range(int(self.audioFragLen/2))] # Exclude sampling frequency
         values = np.arange(int(self.audioFragLen/2))
         frequencies = values / (self.audioFragLen/self.audiofs) # values / time period
 
-        self.axFragFft[0].plot(self.audiotimeFrag, self.audioFrag)
-        self.axFragFft[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
-        self.axFragFft[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-        self.axFragFft[1].plot(frequencies, 20*np.log10(abs(fft2)))
-        self.axFragFft[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Fourier Transform')
+        self.axFragFT[0].plot(self.audiotimeFrag, self.audioFrag)
+        self.axFragFT[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
+        self.axFragFT[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
+        self.axFragFT[1].plot(frequencies, 20*np.log10(abs(fft2)))
+        self.axFragFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Fourier Transform')
 
         # TO-DO: connect figFrag with w1Button in signalVisualizer
 
-        self.figFragFft.show() # show the figure
+        self.figFragFT.show() # show the figure
 
     def createControlMenu(self):
         cm = tk.Toplevel()
@@ -192,9 +193,22 @@ class SignalVisualizer(tk.Frame):
         cm.iconbitmap('images/icon.ico')
 
         # METHODS
+        # Updates the OptionMenu passed as a parameter
+        def updateOptionMenu(om, var, opt):
+            menu = om["menu"]
+            menu.delete(0, "end")
+            for o in opt:
+                menu.add_command(label=o, command=lambda value=o: var.set(value))
+            var.set(opt[0])
+
         # Called when changing the main option (FT, STFT, etc.)
         def displayOpts(choice):
             choice = cm.var_opts.get()
+            # Reset widgets
+            cm.var_size.set('0.09')
+            opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
+            updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
+
             if choice == 'FT':
                 ent_size.config(state='disabled')
                 ent_over.config(state='disabled')
@@ -309,23 +323,40 @@ class SignalVisualizer(tk.Frame):
                 but_fisi.configure(state='active')
 
         # Called when inserting a value in the entry of the window size and pressing enter
-        def windSizeFunction(wind_size):
+        def windSizeFunction(windSize):
             # Show an error and stop if the window size is greater than the duration of the signal
-            wind_size = float(ent_size.get())
-            if wind_size > self.audioFragDuration:
+            windSize = float(ent_size.get())
+            if windSize > self.audioFragDuration:
                 text = "The chosen value for the window size can't be greater than the duration of the signal (" + str(self.audioFragDuration) + "s)."
                 tk.messagebox.showerror(title="Window size too long", message=text) # show error
 
-            # Change the values of nfft to be always greater than the window size
-            wind_size_sample = wind_size * self.audiofs # window size in samples
-            nfft = cm.var_nfft.get()
-            if int(wind_size_sample) > nfft:
-                for i in range(len(opt_nfft)):
-                    if int(wind_size_sample) < opt_nfft[i]:
-                        cm.var_nfft.set(opt_nfft[i])
-                        break
-                    else:
-                        dd_nfft['menu'].delete(0) # delete that opt_nfft[i] option
+            elif windSize <= 0:
+                tk.messagebox.showerror(title="Wrong window size value", message="The chosen value for the window size must be a positive number.") # show error
+            
+            else:
+                # Change the values of nfft to be always greater than the window size
+                windSizeSample = windSize * self.audiofs # window size in samples
+                nfft = cm.var_nfft.get()
+                
+                if nfft < int(windSizeSample): # deletes first values and adds news at the end
+                    last = int(math.log2(opt_nfft[len(opt_nfft)-1])) + 1
+                    first = int(math.log2(opt_nfft[0]))
+                    while 2**first < int(windSizeSample):
+                        for a in range(len(opt_nfft)-1):
+                            opt_nfft[a] = opt_nfft[a+1]
+                        opt_nfft[len(opt_nfft)-1] = 2**last
+                        last += 1
+                        first += 1
+                    updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
+                else:                           # deletes last values and adds news at the beginning or does nothing
+                    first = int(math.log2(opt_nfft[0])) - 1
+                    if 2**first > int(windSizeSample): # if we can use smaller nfft values
+                        while 2**first > windSizeSample:
+                            for a in range(len(opt_nfft)-1, 0, -1):
+                                opt_nfft[a] = opt_nfft[a-1]
+                            opt_nfft[0] = 2**first
+                            first -= 1
+                        updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
         
         # Called when clicking the 'Formants' checkbox
         def showFormants():
@@ -335,104 +366,147 @@ class SignalVisualizer(tk.Frame):
         def plotFigure():
             choice = cm.var_opts.get()
             
-            # if choice == 'FT': # Fast Fourier Transform (FFT) using numpy
-            #     if plt.fignum_exists(self.figFragFft.number): #TO-DO: si esta minimizada no funciona!!!
-            #         self.figFragFft.show() # the figure showing the FFt already exists: show it
-            #     else:
-            #         self.plotFft() # the figure showing the FFt doesn't exist: create it again
-
             if choice == 'FT':
-                if plt.fignum_exists(self.figFragFft.number):
-                    plt.close(self.figFragFft.number) # close the figure of the FT
-                self.plotFft() # create the figure of the FT (again)
+                if plt.fignum_exists(self.figFragFT.number):
+                    plt.close(self.figFragFT.number) # close the figure of the FT
+                self.plotFT() # create the figure of the FT (again)
 
             elif choice == 'STFT': # Short Time Fourier Transform (STFT) using numpy
-                figFragStft, axFragStft = plt.subplots(2, figsize=(12,6))
+                figFragSTE, axFragSTE = plt.subplots(2, figsize=(12,6))
                 plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-                figFragStft.canvas.manager.set_window_title('STFT') # set title to the figure window
+                figFragSTE.canvas.manager.set_window_title('STFT') # set title to the figure window
 
                 # Values given by the user
                 nfft = cm.var_nfft.get()
-                wind_type = cm.var_wind.get()
-                wind_size = float(ent_size.get()) # window size in seconds
-                wind_size_sample = wind_size * self.audiofs # window size in samples
-                wind_size_sample_int = int(wind_size_sample)
+                windType = cm.var_wind.get()
+                windSize = float(ent_size.get()) # window size in seconds
+                windSizeSamp = windSize * self.audiofs # window size in samples
+                windSizeSampInt = int(windSizeSamp)
 
                 # Apply the window type to the window
-                if wind_type == 'Bartlett':
-                    window = np.bartlett(wind_size_sample_int)
-                elif wind_type == 'Blackman':
-                    window = np.blackman(wind_size_sample_int)
-                elif wind_type == 'Hamming':
-                    window = np.hamming(wind_size_sample_int)
-                elif wind_type == 'Hanning':
-                    window = np.hanning(wind_size_sample_int)
-                elif wind_type == 'Kaiser':
-                    window = np.kaiser(wind_size_sample_int) # TO-DO: np.kaiser(wind_size_sample_int, float:shape parameter for window)
+                if windType == 'Bartlett':
+                    window = np.bartlett(windSizeSampInt)
+                elif windType == 'Blackman':
+                    window = np.blackman(windSizeSampInt)
+                elif windType == 'Hamming':
+                    window = np.hamming(windSizeSampInt)
+                elif windType == 'Hanning':
+                    window = np.hanning(windSizeSampInt)
+                elif windType == 'Kaiser':
+                    window = np.kaiser(windSizeSampInt) # np.kaiser(wind_size_sample_int, float:shape parameter for window)
 
+                # The window is in the middle of the waveform by default
+                midPoint = int(self.audioFragLen/2) # middle point in the waveform
+                midLine = axFragSTE[0].axvline(x=self.audiotimeFrag[midPoint], color='red', linewidth='1') # line in the middle
+
+                # Define initial and end points of the window
+                ini = midPoint - int(windSizeSamp/2)
+                end = midPoint + int(windSizeSamp/2)
+                if ini < 1: ini = 0
+                if end > self.audioFragLen: end = self.audioFragLen-1
+                axFragSTE[0].axvline(x=self.audiotimeFrag[ini], color='red', linewidth='1', linestyle='--')
+                axFragSTE[0].axvline(x=self.audiotimeFrag[end], color='red', linewidth='1', linestyle='--')
+
+                # LET THE USER CHANGE THE POSITION OF THE WINDOW WITH THE CURSOR
+                cursor = Cursor(axFragSTE[0], horizOn=False, useblit=True, color='black', linewidth=1)
                 def on_click(event):
                     if event.button is MouseButton.LEFT:
-                        x, y = event.x, event.y
-                        if event.inaxes == axFragStft[0]:
-                            plt.axvline(x, ymin=1, ymax=1, color='red')
-                            print('data coords %f %f' % (event.xdata, event.ydata))
-                
-                # TO-DO: mirar donde esta el cursor y crear un audioFrag mas pequeño para el analisis de la longitud de la ventana (wind_size)
-                cursor = Cursor(axFragStft[0], horizOn=False, useblit=True, color='black', linewidth=1)
-                # binding_id = plt.connect('motion_notify_event', on_click)
-                plt.connect('button_press_event', on_click)
-                
-                # TO-DO: cursor en la mitad por defecto
-                middleFrag = int(self.audioFragLen/2)
+                        if event.inaxes == axFragSTE[0]:
+                            axFragSTE[0].lines.remove(midLine) # delete current line
+                            axFragSTE[0].axvline(x=event.xdata, color='red', linewidth='1') # draw a new vertical line
+                            midPoint = self.audiotimeFrag[event.xdata]
+                            plt.disconnect(buttonPressId)
+                    
+                buttonPressId = plt.connect('button_press_event', on_click)
 
-                ini = middleFrag - int(wind_size_sample/2)
-                end = middleFrag + int(wind_size_sample/2)
-                if ini < 1:
-                    ini = 0
-                if end > self.audioFragLen:
-                    end = self.audioFragLen-1
-
-                audioFragWind = self.audioFrag[ini:end] # si queremos incluir el punto 'end'-> [ini:end+1]
-                # TO-DO: pintar el segmento de audioFragWind en gris
+                audioFragWind = self.audioFrag[ini:end]
                 audioFragWind2 = audioFragWind * window
                 stft = np.fft.fft(audioFragWind2, nfft)
-
-                values = np.arange(nfft) # np.arange(int(nfft/2))
+                stft2 = stft[range(int(nfft/2))]
+                values = np.arange(int(nfft/2))
                 frequencies = values * self.audiofs / nfft
 
-                axFragStft[0].plot(self.audiotimeFrag, self.audioFrag)
-                axFragStft[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
-                axFragStft[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-                axFragStft[1].plot(frequencies, 20*np.log10(abs(stft)))
-                axFragStft[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Short Time Fourier Transform')
+                axFragSTE[0].plot(self.audiotimeFrag, self.audioFrag)
+                axFragSTE[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
+                axFragSTE[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
+                axFragSTE[1].plot(frequencies, 20*np.log10(abs(stft2)))
+                axFragSTE[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Short Time Fourier Transform')
 
                 plt.show() # show the figure
 
             elif choice == 'Spectrogram':
                 figFragSpect, axFragSpect = plt.subplots(2, figsize=(12,6))
                 plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-                figFragSpect.canvas.manager.set_window_title('STFT') # set title to the figure window
+                figFragSpect.canvas.manager.set_window_title('Spectrogram') # set title to the figure window
 
                 # Values given by the user
-                nfft = cm.var_nfft.get()
-                wind_type = cm.var_wind.get()
-                wind_size = float(ent_size.get()) # window size in seconds
-                wind_size_sample = wind_size * self.audiofs # window size in samples
-                wind_size_sample_int = int(wind_size_sample)
-                overlap = int(ent_over.get()) # int or float?
+                nfftUser = cm.var_nfft.get()
+                windType = cm.var_wind.get()
+                windSize = float(ent_size.get()) # window size in seconds
+                windSizeSamp = windSize * self.audiofs # window size in samples (float)
+                windSizeSampInt = int(windSizeSamp)
+                overlap = float(ent_over.get()) # overlap in seconds
+                overlapSamp = overlap * self.audiofs # overlap in samples (float)
                 formants = cm.var_form.get() # returns 1 if activated, 0 if not
 
                 # Apply the window type to the window
-                if wind_type == 'Bartlett':
-                    window = np.bartlett(wind_size_sample_int)
-                elif wind_type == 'Blackman':
-                    window = np.blackman(wind_size_sample_int)
-                elif wind_type == 'Hamming':
-                    window = np.hamming(wind_size_sample_int)
-                elif wind_type == 'Hanning':
-                    window = np.hanning(wind_size_sample_int)
-                elif wind_type == 'Kaiser':
-                    window = np.kaiser(wind_size_sample_int) # TO-DO: np.kaiser(wind_size_sample_int, float:shape parameter for window)
+                if windType == 'Bartlett':
+                    window = np.bartlett(windSizeSampInt)
+                elif windType == 'Blackman':
+                    window = np.blackman(windSizeSampInt)
+                elif windType == 'Hamming':
+                    window = np.hamming(windSizeSampInt)
+                elif windType == 'Hanning':
+                    window = np.hanning(windSizeSampInt)
+                elif windType == 'Kaiser':
+                    window = np.kaiser(windSizeSampInt) # np.kaiser(wind_size_sample_int, float:shape parameter for window)
+
+                cursor1 = Cursor(axFragSpect[0], horizOn=False, useblit=True, color='black', linewidth=1)
+                cursor2 = Cursor(axFragSpect[1], horizOn=False, useblit=True, color='black', linewidth=1)
+
+                axFragSpect[0].plot(self.audiotimeFrag, self.audioFrag)
+                axFragSpect[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
+                axFragSpect[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
+                axFragSpect[1].specgram(x=self.audioFrag, Fs=self.audiofs, window=window, pad_to=nfftUser, NFFT=windSizeSampInt, mode='magnitude', noverlap=overlapSamp, scale='dB')
+                axFragSpect[1].set(xlim=[0, max(self.audiotimeFrag)], ylim=[2000, 4000], xlabel='Time (s)', ylabel='Amplitude (dB)', title='Spectrogram')
+
+                plt.show() # show the figure
+
+            elif choice == 'Short-Time-Energy': # Short Time Fourier Transform (STFT) using numpy
+                figFragSTE, axFragSTE = plt.subplots(2, figsize=(12,6))
+                plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
+                figFragSTE.canvas.manager.set_window_title('Short-Time-Energy') # set title to the figure window
+
+                # Values given by the user
+                windType = cm.var_wind.get()
+                windSize = float(ent_size.get()) # window size in seconds
+                windSizeSamp = windSize * self.audiofs # window size in samples
+                windSizeSampInt = int(windSizeSamp)
+                overlap = float(ent_over.get()) # overlap in seconds
+                overlapSamp = overlap * self.audiofs # overlap in samples (float)
+
+                # Apply the window type to the window
+                if windType == 'Bartlett':
+                    window = np.bartlett(windSizeSampInt)
+                elif windType == 'Blackman':
+                    window = np.blackman(windSizeSampInt)
+                elif windType == 'Hamming':
+                    window = np.hamming(windSizeSampInt)
+                elif windType == 'Hanning':
+                    window = np.hanning(windSizeSampInt)
+                elif windType == 'Kaiser':
+                    window = np.kaiser(windSizeSampInt) # np.kaiser(wind_size_sample_int, float:shape parameter for window)
+
+                rms = librosa.feature.rms(y=self.audioFrag, frame_length=windSizeSampInt, hop_length=int(windSizeSamp-overlapSamp), center=True)
+                times = librosa.times_like(rms, sr=self.audiofs, hop_length=windSizeSamp-overlapSamp+1, n_fft=None)
+
+                axFragSTE[0].plot(self.audiotimeFrag, self.audioFrag)
+                axFragSTE[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
+                axFragSTE[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
+                axFragSTE[1].plot(times, 20*np.log10(rms[0]))
+                axFragSTE[1].set(xlim=[0, max(times)], xlabel='Time (s)', ylabel='Amplitude (dB)', title='Short Time Energy')
+
+                plt.show() # show the figure
 
         # LABELS
         # Labels of OptionMenus
@@ -474,7 +548,7 @@ class SignalVisualizer(tk.Frame):
 
         # ENTRYS
         cm.var_size = tk.DoubleVar(value=0.09)
-        cm.var_over = tk.IntVar(value=0)
+        cm.var_over = tk.DoubleVar(value=0)
         cm.var_fund = tk.IntVar()
         cm.lab_cent = tk.IntVar()
         cm.lab_cut1 = tk.IntVar()
@@ -527,7 +601,7 @@ class SignalVisualizer(tk.Frame):
         # OPTION MENUS
         options = ['FT','STFT', 'Spectrogram','STFT + Spect', 'Short-Time-Energy', 'Pitch', 'Spectral Centroid', 'Filtering']
         opt_wind = ['Bartlett','Blackman', 'Hamming','Hanning', 'Kaiser']
-        opt_nfft = [2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608]
+        opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
         opt_meth = ['Cepstrum','Autocorrelation']
         opt_data = ['None','Median Filtering', 'Low Energy Suppresion']
         opt_filt = ['Butterworth','Elliptic', 'Chebyshev', 'FIR least-squares']
