@@ -1,16 +1,19 @@
-from statistics import mode
+from cgitb import grey
 import tkinter as tk
 import tkinter.filedialog
+from turtle import width
 import wave
+import math
 import librosa
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
 import matplotlib.pyplot as plt
-import math
 from matplotlib import backend_bases
-from matplotlib.widgets import Button, Cursor, SpanSelector
+from matplotlib.widgets import Button, Cursor, SpanSelector, MultiCursor
 from matplotlib.backend_bases import MouseButton
+from matplotlib.patches import Ellipse
+from statistics import mode
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -187,7 +190,7 @@ class SignalVisualizer(tk.Frame):
 
     def createControlMenu(self):
         cm = tk.Toplevel()
-        cm.geometry('720x420')
+        cm.geometry('720x440')
         cm.resizable(False, False)
         cm.title('Control menu')
         cm.iconbitmap('images/icon.ico')
@@ -202,22 +205,20 @@ class SignalVisualizer(tk.Frame):
             var.set(opt[0])
 
         # Called when changing the main option (FT, STFT, etc.) for disabling or activating widgets
-        def displayOpts(choice):
+        def displayOptions(choice):
             choice = cm.var_opts.get()
             # Reset widgets
             cm.var_size.set('0.09')
             opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
             updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
 
-            if choice == 'FT' or choice == 'Filtering' or choice == 'STFT':
+            if choice == 'FT' or choice == 'Filtering' or choice == 'STFT': 
                 ent_over.config(state='disabled')
-            else:
-                ent_over.config(state='normal')
+            else: ent_over.config(state='normal')
 
-            if choice == 'FT' or choice == 'Filtering':
+            if choice == 'FT' or choice == 'Filtering': 
                 ent_size.config(state='disabled')
-            else:
-                ent_size.config(state='normal')
+            else: ent_size.config(state='normal')
 
             if choice == 'Filtering':
                 ent_fund.config(state='normal')
@@ -245,54 +246,128 @@ class SignalVisualizer(tk.Frame):
                 dd_meth.config(state='disabled')
                 dd_data.config(state='disabled')
 
-            if choice == 'Spectrogram':
+            if choice == 'Spectrogram': 
                 chk_form.config(state='active')
-            else:
+                ent_minf.config(state='normal')
+                ent_maxf.config(state='normal')
+            else: 
                 chk_form.config(state='disabled')
+                ent_minf.config(state='disabled')
+                ent_maxf.config(state='disabled')
 
             if choice == 'STFT' or choice == 'Spectrogram' or choice == 'STFT + Spect' or choice == 'Spectral Centroid':
                 dd_wind.config(state='active')
-            else:
-                dd_wind.config(state='disabled')
+            else: dd_wind.config(state='disabled')
 
             if choice == 'STFT' or choice == 'Spectrogram' or choice == 'STFT + Spect':
                 dd_nfft.config(state='active')
-            else:
-                dd_nfft.config(state='disabled')
+            else: dd_nfft.config(state='disabled')
 
-        # Called when inserting a value in the entry of the window size and pressing enter
-        def windSizeFunction(windSize):
+        # Called when inserting a value in the entry of the window length and pressing enter
+        def windowLengthEntry(windSize_event):
+            # TO-DO: comprobar que el valor insertado es un numero real
+            # tk.messagebox.showerror(title="Incorrect value", message="Insert numbers please, not characters.") # show error
+            # cm.var_size.set('0.09')
+            # opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
+            # updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
+
             # Show an error and stop if the inserted window size is incorrect
             windSize = float(ent_size.get())
-            if windSize > self.audioFragDuration: # The window size can't be greater than the duration of the signal
-                text = "The chosen value for the window size can't be greater than the duration of the signal (" + str(self.audioFragDuration) + "s)."
-                tk.messagebox.showerror(title="Window size too long", message=text) # show error
-            elif windSize <= 0: # The window size must be a positive number
-                tk.messagebox.showerror(title="Wrong window size value", message="The chosen value for the window size must be a positive number.") # show error
-            
-            else: # Change the values of nfft to be always greater than the window size
-                windSizeSample = windSize * self.audiofs # window size in samples
-                nfft = cm.var_nfft.get()
-                
-                if nfft < windSizeSample: # Deletes smallest values of the nfft list and adds greater ones
-                    last = int(math.log2(opt_nfft[len(opt_nfft)-1])) + 1
-                    first = int(math.log2(opt_nfft[0]))
-                    while 2**first < windSizeSample:
-                        for a in range(len(opt_nfft)-1):
-                            opt_nfft[a] = opt_nfft[a+1]
-                        opt_nfft[len(opt_nfft)-1] = 2**last
+            overlap = float(ent_over.get())
+            if windSize > self.audioFragDuration or windSize == 0:
+                # Reset widgets
+                cm.var_size.set('0.09')
+                cm.opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
+                updateOptionMenu(dd_nfft, cm.var_nfft, cm.opt_nfft)
+                if windSize > self.audioFragDuration: # The window size can't be greater than the duration of the signal
+                    text = "The window size can't be greater than the duration of the signal (" + str(self.audioFragDuration) + "s)."
+                    tk.messagebox.showerror(title="Window size too long", message=text) # show error
+                elif windSize == 0: # The window size must be a positive number
+                    tk.messagebox.showerror(title="Wrong window size value", message="The chosen value for the window size must be a positive number.") # show error
+            elif overlap >= windSize: # The window size must always be greater than the overlap
+                text2 = "The window size must always be greater than the overlap (" + str(overlap) + "s)."
+                tk.messagebox.showerror(title="Wrong overlap value", message=text2) # show error
+                cm.var_over.set('0')
+            # Change the values of nfft to be always greater than the window size
+            else: 
+                windSizeSamp = windSize * self.audiofs # window size in samples
+                nfft = cm.opt_nfft[0] # the smallest value of the nfft list
+                if nfft < windSizeSamp: # Deletes smallest values of the nfft list and adds greater ones
+                    last = int(math.log2(cm.opt_nfft[len(cm.opt_nfft)-1])) + 1
+                    first = int(math.log2(nfft))
+                    while 2**first < windSizeSamp:
+                        for a in range(len(cm.opt_nfft)-1):
+                            cm.opt_nfft[a] = cm.opt_nfft[a+1]
+                        cm.opt_nfft[len(cm.opt_nfft)-1] = 2**last
                         last += 1
                         first += 1
-                    updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
+                    updateOptionMenu(dd_nfft, cm.var_nfft, cm.opt_nfft)
                 else: # Adds smaller values to the nfft list if possible
-                    first = int(math.log2(opt_nfft[0])) - 1
-                    while 2**first > windSizeSample:
-                        for a in range(len(opt_nfft)-1, 0, -1):
-                            opt_nfft[a] = opt_nfft[a-1]
-                        opt_nfft[0] = 2**first
+                    first = int(math.log2(nfft)) - 1
+                    while 2**first > windSizeSamp:
+                        for a in range(len(cm.opt_nfft)-1, 0, -1):
+                            cm.opt_nfft[a] = cm.opt_nfft[a-1]
+                        cm.opt_nfft[0] = 2**first
                         first -= 1
-                    updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
-        
+                    updateOptionMenu(dd_nfft, cm.var_nfft, cm.opt_nfft)
+            
+        def overlapEntry(overlap_event):
+            # TO-DO: comprobar que los valores insertados por el usuario son numeros reales
+            # tk.messagebox.showerror(title="Incorrect value", message="Insert numbers please, not characters.") # show error
+            # if ent_size.isdigit(): # Overlap value is not a number
+            #     cm.var_over.set('0')
+            # elif ent_over.isdigit(): # Window size value is not a number
+            #     cm.var_size.set('0.09')
+            #     opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
+            #     updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
+            # else: # Both window size and overlap values are not numbers
+            #     cm.var_over.set('0')
+            #     cm.var_size.set('0.09')
+            #     opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
+            #     updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
+
+            # Show an error and stop if the inserted overlap is incorrect
+            overlap = float(ent_over.get())
+            windSize = float(ent_size.get())
+            if overlap > self.audioFragDuration or overlap >= windSize:
+                cm.var_over.set('0') # Reset widget
+                if overlap > self.audioFragDuration: # The overlap can't be greater than the duration of the signal
+                    text = "The overlap can't be greater than the duration of the signal (" + str(self.audioFragDuration) + "s)."
+                    tk.messagebox.showerror(title="Overlap too long", message=text) # show error
+                elif overlap >= windSize: # The overlap must always be smaller than the window size
+                    text2 = "The overlap must always be smaller than the window size (" + str(windSize) + "s)."
+                    tk.messagebox.showerror(title="Wrong overlap value", message=text2) # show error
+
+        def minfreqEntry(minfreq_event):
+            # The minimum frequency must be >= 0 and smaller than the maximum frequency
+            minfreq = float(ent_minf.get())
+            maxfreq = float(ent_maxf.get())
+            if minfreq >= maxfreq:
+                cm.var_minf.set('0') # Reset widget
+                text = "The minimum frequency must be smaller than the maximum frequency (" + str(maxfreq) + "s)."
+                tk.messagebox.showerror(title="Minimum frequency too big", message=text) # show error
+
+        def maxfreqEntry(maxfreq_event):
+            # The maximum frequency must be <= self.audiofs/2 and greater than the minimum frequency
+            minfreq = float(ent_minf.get())
+            maxfreq = float(ent_maxf.get())
+            if maxfreq > self.audiofs/2 or maxfreq <= minfreq:
+                cm.var_maxf.set(self.audiofs/2) # Reset widget
+                if maxfreq > self.audiofs/2:
+                    text = "The maximum frequency can't be greater than the half of the sample frequency (" + str(self.audiofs/2) + "s)."
+                    tk.messagebox.showerror(title="Maximum frequency too big", message=text) # show error
+                elif maxfreq <= minfreq:
+                    text = "The maximum frequency must be greater than the minimum frequency (" + str(minfreq) + "s)."
+                    tk.messagebox.showerror(title="Maximum frequency too small", message=text) # show error
+
+            
+        # Called when inserting something in an entry. Only lets the user enter numbers or '.'
+        def onValidate(s, S):
+            if S.isdigit() or (S == '.' and s.isdigit()): # Before '.' always a number
+                return True
+            else:
+                return False
+
         # Called when clicking the 'Formants' checkbox
         def showFormants():
             pass
@@ -307,9 +382,9 @@ class SignalVisualizer(tk.Frame):
                 self.plotFT() # create the figure of the FT (again)
 
             elif choice == 'STFT': # Short Time Fourier Transform (STFT) using numpy
-                figFragSTE, axFragSTE = plt.subplots(2, figsize=(12,6))
+                figFragSTFT, axFragSTFT = plt.subplots(2, figsize=(12,6))
                 plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-                figFragSTE.canvas.manager.set_window_title('STFT') # set title to the figure window
+                figFragSTFT.canvas.manager.set_window_title('STFT') # set title to the figure window
 
                 # Values given by the user
                 nfft = cm.var_nfft.get()
@@ -331,41 +406,64 @@ class SignalVisualizer(tk.Frame):
                     window = np.kaiser(windSizeSampInt) # np.kaiser(wind_size_sample_int, float:shape parameter for window)
 
                 # The window is in the middle of the waveform by default
-                midPoint = int(self.audioFragLen/2) # middle point in the waveform
-                midLine = axFragSTE[0].axvline(x=self.audiotimeFrag[midPoint], color='red', linewidth='1') # line in the middle
+                midPoint_idx = int(self.audioFragLen/2) # index of the middle point in the waveform
+                midPoint = self.audiotimeFrag[midPoint_idx] # value of the middle point
+                midLine = axFragSTFT[0].axvline(x=midPoint, color='orange', linewidth='1', fillstyle='full') # line in the middle
 
                 # Define initial and end points of the window
-                ini = midPoint - int(windSizeSamp/2)
-                end = midPoint + int(windSizeSamp/2)
-                if ini < 1: ini = 0
-                if end > self.audioFragLen: end = self.audioFragLen-1
-                axFragSTE[0].axvline(x=self.audiotimeFrag[ini], color='red', linewidth='1', linestyle='--')
-                axFragSTE[0].axvline(x=self.audiotimeFrag[end], color='red', linewidth='1', linestyle='--')
+                ini_idx = midPoint_idx - int(windSizeSamp/2) # index of the initial point
+                end_idx = midPoint_idx + int(windSizeSamp/2) # index of the initial point
+                if ini_idx < 1: ini_idx = 0
+                if end_idx > self.audioFragLen: end_idx = self.audioFragLen-1
 
-                # LET THE USER CHANGE THE POSITION OF THE WINDOW WITH THE CURSOR
-                cursor = Cursor(axFragSTE[0], horizOn=False, useblit=True, color='black', linewidth=1)
-                def on_click(event):
-                    if event.button is MouseButton.LEFT:
-                        if event.inaxes == axFragSTE[0]:
-                            axFragSTE[0].lines.remove(midLine) # delete current line
-                            axFragSTE[0].axvline(x=event.xdata, color='red', linewidth='1') # draw a new vertical line
-                            midPoint = self.audiotimeFrag[event.xdata]
-                            plt.disconnect(buttonPressId)
-                    
-                buttonPressId = plt.connect('button_press_event', on_click)
+                # Draw the window in the waveform as an ellipse
+                ini = self.audiotimeFrag[ini_idx] # value of the initial point
+                end = self.audiotimeFrag[end_idx] # value of the end point
+                ellipse = Ellipse(xy=(midPoint,0), width=end-ini, height=0.1, color='orange')
+                axFragSTFT[0].add_artist(ellipse)
 
-                audioFragWind = self.audioFrag[ini:end]
+                audioFragWind = self.audioFrag[ini_idx:end_idx]
                 audioFragWind2 = audioFragWind * window
                 stft = np.fft.fft(audioFragWind2, nfft)
                 stft2 = stft[range(int(nfft/2))]
                 values = np.arange(int(nfft/2))
                 frequencies = values * self.audiofs / nfft
 
-                axFragSTE[0].plot(self.audiotimeFrag, self.audioFrag)
-                axFragSTE[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
-                axFragSTE[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-                axFragSTE[1].plot(frequencies, 20*np.log10(abs(stft2)))
-                axFragSTE[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Short Time Fourier Transform')
+                axFragSTFT[0].plot(self.audiotimeFrag, self.audioFrag)
+                axFragSTFT[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
+                axFragSTFT[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
+                line1, = axFragSTFT[1].plot(frequencies, 20*np.log10(abs(stft2)))
+                axFragSTFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Short Time Fourier Transform')
+
+                # Let the user change the position of the window with the cursor
+                cursorSTFT = Cursor(axFragSTFT[0], horizOn=False, useblit=True, color='black', linewidth=1)
+                
+                def on_click(event):
+                    if event.button is MouseButton.LEFT:
+                        if event.inaxes == axFragSTFT[0]: # if the user clicks in the waveform
+                            new_midPoint = event.xdata
+                            midLine.set_xdata(new_midPoint) # move the vertical line where the user clicked
+                            ellipse.set_center((new_midPoint, 0)) # move the ellipse where the user clicked
+                            
+                            # Define the new initial and end points of the window
+                            new_midPoint_idx = midPoint_idx
+                            for i in range(len(self.audiotimeFrag)-1):
+                                if self.audiotimeFrag[i] == new_midPoint:
+                                    new_midPoint_idx = i
+                                    break
+                            new_ini_idx = new_midPoint_idx - int(windSizeSamp/2)
+                            new_end_idx = new_midPoint_idx + int(windSizeSamp/2)
+
+                            new_audioFragWind = self.audioFrag[new_ini_idx:new_end_idx]
+                            new_audioFragWind2 = new_audioFragWind * window
+                            new_stft = np.fft.fft(new_audioFragWind2, nfft)
+                            new_stft2 = new_stft[range(int(nfft/2))]
+                            line1.set_ydata(20*np.log10(abs(new_stft2)))
+                            # axFragSTFT[1].plot(frequencies, 20*np.log10(abs(new_stft2)))
+
+                            plt.show()
+                    
+                plt.connect('button_press_event', on_click) # when the mouse button is pressed, call on_click function
 
                 plt.show() # show the figure
 
@@ -396,8 +494,7 @@ class SignalVisualizer(tk.Frame):
                 elif windType == 'Kaiser':
                     window = np.kaiser(windSizeSampInt) # np.kaiser(wind_size_sample_int, float:shape parameter for window)
 
-                cursor1 = Cursor(axFragSpect[0], horizOn=False, useblit=True, color='black', linewidth=1)
-                cursor2 = Cursor(axFragSpect[1], horizOn=False, useblit=True, color='black', linewidth=1)
+                multi = MultiCursor(figFragSpect.canvas, (axFragSpect[0], axFragSpect[1]), color='black', lw=1)
 
                 axFragSpect[0].plot(self.audiotimeFrag, self.audioFrag)
                 axFragSpect[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
@@ -459,6 +556,8 @@ class SignalVisualizer(tk.Frame):
         lab_cut1 = tk.Label(cm, text='Fcut1')
         lab_cut2 = tk.Label(cm, text='Fcut2')
         lab_fshz = tk.Label(cm, text='fs (Hz)')
+        lab_minf = tk.Label(cm, text='Min frequency')
+        lab_maxf = tk.Label(cm, text='Max frequency')
 
         lab_ptch = tk.Label(cm, text='Pitch', bd=6, font=('TkDefaultFont', 10))
         lab_filt = tk.Label(cm, text='Filtering', bd=6, font=('TkDefaultFont', 10))
@@ -467,8 +566,8 @@ class SignalVisualizer(tk.Frame):
         lab_opts.grid(column=0, row=0, sticky=tk.E, columnspan=2)
         lab_wind.grid(column=0, row=1, sticky=tk.E)
         lab_nfft.grid(column=0, row=3, sticky=tk.E)
-        lab_meth.grid(column=0, row=7, sticky=tk.E)
-        lab_data.grid(column=0, row=8, sticky=tk.E)
+        lab_meth.grid(column=0, row=9, sticky=tk.E)
+        lab_data.grid(column=0, row=10, sticky=tk.E)
 
         lab_size.grid(column=0, row=2, sticky=tk.E)
         lab_over.grid(column=0, row=4, sticky=tk.E)
@@ -476,28 +575,39 @@ class SignalVisualizer(tk.Frame):
         lab_cent.grid(column=2, row=3, sticky=tk.E)
         lab_cut1.grid(column=2, row=4, sticky=tk.E)
         lab_cut2.grid(column=2, row=5, sticky=tk.E)
-        lab_fshz.grid(column=0, row=10, sticky=tk.E)
+        lab_fshz.grid(column=0, row=11, sticky=tk.E)
+        lab_minf.grid(column=0, row=5, sticky=tk.E)
+        lab_maxf.grid(column=0, row=6, sticky=tk.E)
 
-        lab_ptch.grid(column=1, row=6)
+        lab_ptch.grid(column=1, row=8)
         lab_filt.grid(column=3, row=1)
 
         # ENTRYS
         cm.var_size = tk.DoubleVar(value=0.09)
         cm.var_over = tk.DoubleVar(value=0)
         cm.var_fund = tk.IntVar()
-        cm.lab_cent = tk.IntVar()
-        cm.lab_cut1 = tk.IntVar()
-        cm.lab_cut2 = tk.IntVar()
+        cm.var_cent = tk.IntVar()
+        cm.var_cut1 = tk.IntVar()
+        cm.var_cut2 = tk.IntVar()
+        cm.var_minf = tk.IntVar(value=0)
+        cm.var_maxf = tk.IntVar(value=self.audiofs/2)
 
-        ent_size = tk.Entry(cm, textvariable=cm.var_size, state='disabled')
-        ent_over = tk.Entry(cm, textvariable=cm.var_over, state='disabled')
-        ent_fund = tk.Entry(cm, textvariable=cm.var_fund, state='disabled')
-        ent_cent = tk.Entry(cm, textvariable=cm.lab_cent, state='disabled')
-        ent_cut1 = tk.Entry(cm, textvariable=cm.lab_cut1, state='disabled')
-        ent_cut2 = tk.Entry(cm, textvariable=cm.lab_cut2, state='disabled')
+        vcmd = (cm.register(onValidate), '%s', '%S') # TO-DO
+        
+        ent_size = tk.Entry(cm, textvariable=cm.var_size, state='disabled', validate='key', validatecommand=vcmd)
+        ent_over = tk.Entry(cm, textvariable=cm.var_over, state='disabled', validate='key', validatecommand=vcmd)
+        ent_fund = tk.Entry(cm, textvariable=cm.var_fund, state='disabled', validate='key', validatecommand=vcmd)
+        ent_cent = tk.Entry(cm, textvariable=cm.var_cent, state='disabled', validate='key', validatecommand=vcmd)
+        ent_cut1 = tk.Entry(cm, textvariable=cm.var_cut1, state='disabled', validate='key', validatecommand=vcmd)
+        ent_cut2 = tk.Entry(cm, textvariable=cm.var_cut2, state='disabled', validate='key', validatecommand=vcmd)
+        ent_minf = tk.Entry(cm, textvariable=cm.var_minf, state='disabled', validate='key', validatecommand=vcmd)
+        ent_maxf = tk.Entry(cm, textvariable=cm.var_maxf, state='disabled', validate='key', validatecommand=vcmd)
 
         # calling functions after entering a value and pressing enter
-        ent_size.bind('<Return>', windSizeFunction)
+        ent_size.bind('<Return>', windowLengthEntry)
+        ent_over.bind('<Return>', overlapEntry)
+        ent_minf.bind('<Return>', minfreqEntry)
+        ent_maxf.bind('<Return>', maxfreqEntry)
 
         # positioning Entrys
         ent_size.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5, columnspan=1)
@@ -506,17 +616,19 @@ class SignalVisualizer(tk.Frame):
         ent_cent.grid(column=3, row=3, sticky=tk.EW, padx=5, pady=5)
         ent_cut1.grid(column=3, row=4, sticky=tk.EW, padx=5, pady=5)
         ent_cut2.grid(column=3, row=5, sticky=tk.EW, padx=5, pady=5)
+        ent_minf.grid(column=1, row=5, sticky=tk.EW, padx=5, pady=5)
+        ent_maxf.grid(column=1, row=6, sticky=tk.EW, padx=5, pady=5)
 
         # CHECKBOX
         cm.var_form = tk.StringVar(value=0)
         chk_form = tk.Checkbutton(cm, text='Formants', command=showFormants, variable=cm.var_form, state='disabled')
-        chk_form.grid(column=1, row=5, sticky=tk.W)
+        chk_form.grid(column=1, row=7, sticky=tk.W)
 
         # TEXT
         txt_fs = tk.Text(cm, height=1, width=10)
         txt_fs.insert('0.0', self.audiofs)
         txt_fs.config(state='disabled')
-        txt_fs.grid(column=1, row=10, sticky=tk.W)
+        txt_fs.grid(column=1, row=11, sticky=tk.W)
 
         # BUTTONS
         but_freq = tk.Button(cm, text='Filter Frequency Response')
@@ -531,15 +643,15 @@ class SignalVisualizer(tk.Frame):
         but_freq.grid(column=3, row=7, sticky=tk.EW, padx=5)
         but_rese.grid(column=3, row=8, sticky=tk.EW, padx=5)
         but_fisi.grid(column=3, row=9, sticky=tk.EW, padx=5)
-        but_plot.grid(column=2, row=10, padx=5, pady=5, ipadx=10)
+        but_plot.grid(column=2, row=11, padx=5, pady=5, ipadx=10)
 
         # OPTION MENUS
-        options = ['FT','STFT', 'Spectrogram','STFT + Spect', 'Short-Time-Energy', 'Pitch', 'Spectral Centroid', 'Filtering']
-        opt_wind = ['Bartlett','Blackman', 'Hamming','Hanning', 'Kaiser']
-        opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
-        opt_meth = ['Cepstrum','Autocorrelation']
-        opt_data = ['None','Median Filtering', 'Low Energy Suppresion']
-        opt_filt = ['Butterworth','Elliptic', 'Chebyshev', 'FIR least-squares']
+        cm.options = ['FT','STFT', 'Spectrogram','STFT + Spect', 'Short-Time-Energy', 'Pitch', 'Spectral Centroid', 'Filtering']
+        cm.opt_wind = ['Bartlett','Blackman', 'Hamming','Hanning', 'Kaiser']
+        cm.opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
+        cm.opt_meth = ['Cepstrum','Autocorrelation']
+        cm.opt_data = ['None','Median Filtering', 'Low Energy Suppresion']
+        cm.opt_filt = ['Butterworth','Elliptic', 'Chebyshev', 'FIR least-squares']
 
         cm.var_opts = tk.StringVar()
         cm.var_wind = tk.StringVar()
@@ -548,20 +660,20 @@ class SignalVisualizer(tk.Frame):
         cm.var_data = tk.StringVar()
         cm.var_filt = tk.StringVar()
 
-        cm.var_opts.set(options[0])
-        cm.var_wind.set(opt_wind[0])
-        cm.var_nfft.set(opt_nfft[0])
-        cm.var_meth.set(opt_meth[0])
-        cm.var_data.set(opt_data[0])
-        cm.var_filt.set(opt_filt[0])
+        cm.var_opts.set(cm.options[0])
+        cm.var_wind.set(cm.opt_wind[0])
+        cm.var_nfft.set(cm.opt_nfft[0])
+        cm.var_meth.set(cm.opt_meth[0])
+        cm.var_data.set(cm.opt_data[0])
+        cm.var_filt.set(cm.opt_filt[0])
 
         # creating OptionMenus
-        dd_opts = tk.OptionMenu(cm, cm.var_opts, *options, command=displayOpts)
-        dd_wind = tk.OptionMenu(cm, cm.var_wind, *opt_wind)
-        dd_nfft = tk.OptionMenu(cm, cm.var_nfft, *opt_nfft)
-        dd_meth = tk.OptionMenu(cm, cm.var_meth, *opt_meth)
-        dd_data = tk.OptionMenu(cm, cm.var_data, *opt_data)
-        dd_filt = tk.OptionMenu(cm, cm.var_filt, *opt_filt)
+        dd_opts = tk.OptionMenu(cm, cm.var_opts, *cm.options, command=displayOptions)
+        dd_wind = tk.OptionMenu(cm, cm.var_wind, *cm.opt_wind)
+        dd_nfft = tk.OptionMenu(cm, cm.var_nfft, *cm.opt_nfft)
+        dd_meth = tk.OptionMenu(cm, cm.var_meth, *cm.opt_meth)
+        dd_data = tk.OptionMenu(cm, cm.var_data, *cm.opt_data)
+        dd_filt = tk.OptionMenu(cm, cm.var_filt, *cm.opt_filt)
 
         # size of the OptionMenus
         dd_opts.config(width=15)
@@ -575,8 +687,8 @@ class SignalVisualizer(tk.Frame):
         dd_opts.grid(column=2, row=0, sticky=tk.W, padx=5, columnspan=2)
         dd_wind.grid(column=1, row=1, sticky=tk.W, padx=5)
         dd_nfft.grid(column=1, row=3, sticky=tk.W, padx=5)
-        dd_meth.grid(column=1, row=7, sticky=tk.W, padx=5)
-        dd_data.grid(column=1, row=8, sticky=tk.W, padx=5)
+        dd_meth.grid(column=1, row=9, sticky=tk.W, padx=5)
+        dd_data.grid(column=1, row=10, sticky=tk.W, padx=5)
         dd_filt.grid(column=3, row=6, sticky=tk.W, padx=5)
 
 if __name__ == "__main__":
