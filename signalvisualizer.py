@@ -205,9 +205,9 @@ class SignalVisualizer(tk.Frame):
         def displayOptions(choice):
             choice = cm.var_opts.get()
             # Reset widgets
-            cm.var_size.set('0.09')
             opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
             updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
+            cm.var_size.set('0.09')
             cm.var_over.set('0')
             cm.var_minf.set('0')
             cm.var_maxf.set(self.audiofs/2)
@@ -270,7 +270,7 @@ class SignalVisualizer(tk.Frame):
             else: dd_nfft.config(state='disabled')
 
         # Called when inserting a value in the entry of the window length and pressing enter
-        def windowLengthEntry(windSize_event):
+        def windowLengthEntry(event):
             # Show an error and stop if the inserted window size is incorrect
             windSize = float(ent_size.get())
             overlap = float(ent_over.get())
@@ -311,7 +311,7 @@ class SignalVisualizer(tk.Frame):
                         first -= 1
                     updateOptionMenu(dd_nfft, cm.var_nfft, cm.opt_nfft)
             
-        def overlapEntry(overlap_event):
+        def overlapEntry(event):
             # Show an error and stop if the inserted overlap is incorrect
             overlap = float(ent_over.get())
             windSize = float(ent_size.get())
@@ -324,7 +324,7 @@ class SignalVisualizer(tk.Frame):
                     text2 = "The overlap must always be smaller than the window size (" + str(windSize) + "s)."
                     tk.messagebox.showerror(parent=cm, title="Wrong overlap value", message=text2) # show error
 
-        def minfreqEntry(minfreq_event):
+        def minfreqEntry(event):
             # The minimum frequency must be >= 0 and smaller than the maximum frequency
             minfreq = float(ent_minf.get())
             maxfreq = float(ent_maxf.get())
@@ -333,7 +333,7 @@ class SignalVisualizer(tk.Frame):
                 text = "The minimum frequency must be smaller than the maximum frequency (" + str(maxfreq) + "Hz)."
                 tk.messagebox.showerror(parent=cm, title="Minimum frequency too big", message=text) # show error
 
-        def maxfreqEntry(maxfreq_event):
+        def maxfreqEntry(event):
             # The maximum frequency must be <= self.audiofs/2 and greater than the minimum frequency
             minfreq = float(ent_minf.get())
             maxfreq = float(ent_maxf.get())
@@ -481,36 +481,40 @@ class SignalVisualizer(tk.Frame):
 
                 # If the user changes the position of the window, recalculate the STFT
                 def on_click(event):
-                    if event.button is MouseButton.LEFT:
-                        if (choice == 'STFT' and event.inaxes == axFragSTFT[0]) or (choice == 'STFT + Spect' and event.inaxes == axFragSTFTSpect[0]) or (choice == 'Spectral Centroid' and event.inaxes == axFragSC[0]): # if the user clicks in the waveform
-                            new_midPoint = event.xdata
-                            if choice == 'STFT':
-                                midLine.set_xdata(new_midPoint) # move the vertical line where the user clicked
-                            elif choice == 'STFT + Spect':
-                                midLineWavef.set_xdata(new_midPoint)
-                                midLineSpect.set_xdata(new_midPoint)
-                            else: # choice == 'Spectral Centroid'
-                                midLineWavefSC.set_xdata(new_midPoint)
-                                midLineSpectSC.set_xdata(new_midPoint)
-                            ellipse.set_center((new_midPoint, 0)) # move the ellipse where the user clicked
-                            
-                            # Define the new initial and end points of the window
-                            new_midPoint_idx = midPoint_idx
-                            for i in range(len(self.audiotimeFrag)-1):
-                                if self.audiotimeFrag[i] == new_midPoint:
-                                    new_midPoint_idx = i
-                                    break
-                            new_ini_idx = new_midPoint_idx - int(windSizeSamp/2)
-                            new_end_idx = new_midPoint_idx + int(windSizeSamp/2)
+                    # if the user does left click in the waveform
+                    if event.button is MouseButton.LEFT and (choice == 'STFT' and event.inaxes == axFragSTFT[0]) or (choice == 'STFT + Spect' and event.inaxes == axFragSTFTSpect[0]) or (choice == 'Spectral Centroid' and event.inaxes == axFragSC[0]):
+                        # Define the new initial and end points of the window
+                        new_midPoint = event.xdata
+                        new_midPoint_idx = midPoint_idx
+                        for i in range(self.audioFragLen-1):
+                            if self.audiotimeFrag[i] == new_midPoint or (self.audiotimeFrag[i] < new_midPoint and self.audiotimeFrag[i+1] > new_midPoint):
+                                new_midPoint_idx = i
+                                break
+                        new_ini_idx = new_midPoint_idx - int(windSizeSamp/2)
+                        new_end_idx = new_midPoint_idx + int(windSizeSamp/2)
+                        if new_ini_idx < 1 or new_end_idx > self.audioFragLen: 
+                            text = "In that point the window gets out of index."
+                            tk.messagebox.showerror(parent=cm, title="Window out of index", message=text) # show error
+                            return
 
-                            new_audioFragWind = self.audioFrag[new_ini_idx:new_end_idx]
-                            new_audioFragWind2 = new_audioFragWind * window
-                            new_stft = np.fft.fft(new_audioFragWind2, nfftUser)
-                            new_stft2 = new_stft[range(int(nfftUser/2))]
-                            line1.set_ydata(20*np.log10(abs(new_stft2)))
-                            # axFragSTFT[1].plot(frequencies, 20*np.log10(abs(new_stft2)))
+                        # Move the window
+                        if choice == 'STFT':
+                            midLine.set_xdata(new_midPoint)
+                        elif choice == 'STFT + Spect':
+                            midLineWavef.set_xdata(new_midPoint)
+                            midLineSpect.set_xdata(new_midPoint)
+                        else: # choice == 'Spectral Centroid'
+                            midLineWavefSC.set_xdata(new_midPoint)
+                            midLineSpectSC.set_xdata(new_midPoint)
+                        ellipse.set_center((new_midPoint, 0)) # move the ellipse
 
-                            plt.show()
+                        new_audioFragWind = self.audioFrag[new_ini_idx:new_end_idx]
+                        new_audioFragWind2 = new_audioFragWind * window
+                        new_stft = np.fft.fft(new_audioFragWind2, nfftUser)
+                        new_stft2 = new_stft[range(int(nfftUser/2))]
+                        line1.set_ydata(20*np.log10(abs(new_stft2)))
+
+                        plt.show()
                     
                 plt.connect('button_press_event', on_click) # when the mouse button is pressed, call on_click function
                 plt.show() # show the figure
