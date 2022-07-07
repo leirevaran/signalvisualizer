@@ -128,21 +128,21 @@ class SignalVisualizer(tk.Frame):
         self.axFile.axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
         self.axFile.set(xlim=[0, max(self.audiotime)], xlabel='Time (s)', ylabel='Waveform', title='Load an audio file')
 
-        # Add widgets to the figure
+        # Add play and stop buttons to the figure
         def playSound(event):
             sd.play(self.audio, self.audiofs)
 
         def stopSound(event):
             sd.stop()
-            
-        axplay = plt.axes([0.7, 0.01, 0.09, 0.05]) # [x axis, y axis, width, height]
-        playButton = Button(axplay, 'Play')
-        playButton.on_clicked(playSound)
-        
-        axstop = plt.axes([0.8, 0.01, 0.09, 0.05])
-        stopButton = Button(axstop, 'Stop')
-        stopButton.on_clicked(stopSound)
 
+        axPlay = plt.axes([0.8, 0.01, 0.09, 0.05]) # [x axis, y axis, width, height]
+        playBtn = Button(axPlay, '', image=plt.imread('images/play.png'))
+        playBtn.on_clicked(playSound)
+
+        axStop = plt.axes([0.84, 0.01, 0.09, 0.05])
+        stopBtn = Button(axStop, '', image=plt.imread('images/stop.png'))
+        stopBtn.on_clicked(stopSound)
+        
         # Select a fragment with the cursor
         cursor = Cursor(self.axFile, horizOn=False, useblit=True, color='black', linewidth=1)
         span = SpanSelector(self.axFile, self.selectFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='red'))
@@ -208,6 +208,13 @@ class SignalVisualizer(tk.Frame):
             cm.var_size.set('0.09')
             opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
             updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
+            cm.var_over.set('0')
+            cm.var_minf.set('0')
+            cm.var_maxf.set(self.audiofs/2)
+            cm.var_fund.set('0')
+            cm.var_cent.set('0')
+            cm.var_cut1.set('0')
+            cm.var_cut2.set('0')
 
             if choice == 'FT' or choice == 'Filtering' or choice == 'STFT': 
                 ent_over.config(state='disabled')
@@ -274,12 +281,12 @@ class SignalVisualizer(tk.Frame):
                 updateOptionMenu(dd_nfft, cm.var_nfft, cm.opt_nfft)
                 if windSize > self.audioFragDuration: # The window size can't be greater than the duration of the signal
                     text = "The window size can't be greater than the duration of the signal (" + str(self.audioFragDuration) + "s)."
-                    tk.messagebox.showerror(title="Window size too long", message=text) # show error
+                    tk.messagebox.showerror(parent=cm, title="Window size too long", message=text) # show error
                 elif windSize == 0: # The window size must be a positive number
-                    tk.messagebox.showerror(title="Wrong window size value", message="The chosen value for the window size must be a positive number.") # show error
+                    tk.messagebox.showerror(parent=cm, title="Wrong window size value", message="The chosen value for the window size must be a positive number.") # show error
             elif overlap >= windSize: # The window size must always be greater than the overlap
                 text2 = "The window size must always be greater than the overlap (" + str(overlap) + "s)."
-                tk.messagebox.showerror(title="Wrong overlap value", message=text2) # show error
+                tk.messagebox.showerror(parent=cm, title="Wrong overlap value", message=text2) # show error
                 cm.var_over.set('0')
             # Change the values of nfft to be always greater than the window size
             else: 
@@ -312,10 +319,10 @@ class SignalVisualizer(tk.Frame):
                 cm.var_over.set('0') # Reset widget
                 if overlap > self.audioFragDuration: # The overlap can't be greater than the duration of the signal
                     text = "The overlap can't be greater than the duration of the signal (" + str(self.audioFragDuration) + "s)."
-                    tk.messagebox.showerror(title="Overlap too long", message=text) # show error
+                    tk.messagebox.showerror(parent=cm, title="Overlap too long", message=text) # show error
                 elif overlap >= windSize: # The overlap must always be smaller than the window size
                     text2 = "The overlap must always be smaller than the window size (" + str(windSize) + "s)."
-                    tk.messagebox.showerror(title="Wrong overlap value", message=text2) # show error
+                    tk.messagebox.showerror(parent=cm, title="Wrong overlap value", message=text2) # show error
 
         def minfreqEntry(minfreq_event):
             # The minimum frequency must be >= 0 and smaller than the maximum frequency
@@ -324,7 +331,7 @@ class SignalVisualizer(tk.Frame):
             if minfreq >= maxfreq:
                 cm.var_minf.set('0') # Reset widget
                 text = "The minimum frequency must be smaller than the maximum frequency (" + str(maxfreq) + "Hz)."
-                tk.messagebox.showerror(title="Minimum frequency too big", message=text) # show error
+                tk.messagebox.showerror(parent=cm, title="Minimum frequency too big", message=text) # show error
 
         def maxfreqEntry(maxfreq_event):
             # The maximum frequency must be <= self.audiofs/2 and greater than the minimum frequency
@@ -334,10 +341,10 @@ class SignalVisualizer(tk.Frame):
                 cm.var_maxf.set(self.audiofs/2) # Reset widget
                 if maxfreq > self.audiofs/2:
                     text = "The maximum frequency can't be greater than the half of the sample frequency (" + str(self.audiofs/2) + "Hz)."
-                    tk.messagebox.showerror(title="Maximum frequency too big", message=text) # show error
+                    tk.messagebox.showerror(parent=cm, title="Maximum frequency too big", message=text) # show error
                 elif maxfreq <= minfreq:
                     text = "The maximum frequency must be greater than the minimum frequency (" + str(minfreq) + "Hz)."
-                    tk.messagebox.showerror(title="Maximum frequency too small", message=text) # show error
+                    tk.messagebox.showerror(parent=cm, title="Maximum frequency too small", message=text) # show error
 
             
         # Called when inserting something in an entry. Only lets the user enter numbers or '.'
@@ -357,11 +364,8 @@ class SignalVisualizer(tk.Frame):
             choice = cm.var_opts.get()
             windType = cm.var_wind.get()
             windSize = float(ent_size.get()) # window size in seconds
-            windSizeSamp = windSize * self.audiofs # window size in samples
-            windSizeSampInt = int(windSizeSamp)
             nfftUser = cm.var_nfft.get()
             overlap = float(ent_over.get()) # overlap in seconds
-            overlapSamp = overlap * self.audiofs # overlap in samples (float)
             # Spectrogram
             minfreq = cm.var_minf.get()
             maxfreq = cm.var_maxf.get()
@@ -374,6 +378,10 @@ class SignalVisualizer(tk.Frame):
             centfreq = cm.var_cent.get()
             fcut1 = cm.var_cut1.get()
             fcut2 = cm.var_cut2.get()
+
+            windSizeSamp = windSize * self.audiofs # window size in samples
+            windSizeSampInt = int(windSizeSamp)
+            overlapSamp = overlap * self.audiofs # overlap in samples (float)
 
             # Apply the window type to the window
             if windType == 'Bartlett':
@@ -467,7 +475,7 @@ class SignalVisualizer(tk.Frame):
                     line1, = axFragSC[1].plot() # TO-DO
                     axFragSC[1].set(xlim=[0, max()], xlabel='Frequency (Hz)', ylabel='Power/Frequency (dB/Hz)', title='Power spectral density using fft')
                     axFragSC[2].specgram(x=self.audioFrag, Fs=self.audiofs, window=window, pad_to=nfftUser, NFFT=windSizeSampInt, mode='magnitude', noverlap=overlapSamp, scale='dB')
-                    axFragSC[2].set(xlim=[0, max(self.audiotimeFrag)], ylim=[2000, 4000], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
+                    axFragSC[2].set(xlim=[0, max(self.audiotimeFrag)], ylim=[minfreq, maxfreq], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
 
                     cursorSC = MultiCursor(figFragSC.canvas, (axFragSC[0], axFragSC[2]), color='black', lw=1)
 
@@ -525,7 +533,7 @@ class SignalVisualizer(tk.Frame):
 
                 plt.show() # show the figure
 
-            elif choice == 'Short-Time-Energy': # Short Time Fourier Transform (STFT) using numpy
+            elif choice == 'Short-Time-Energy':
                 figFragSTE, axFragSTE = plt.subplots(2, figsize=(12,6))
                 plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
                 figFragSTE.canvas.manager.set_window_title('Short-Time-Energy') # set title to the figure window
