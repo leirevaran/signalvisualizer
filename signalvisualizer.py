@@ -3,6 +3,7 @@ import tkinter.filedialog
 import wave
 import math
 import librosa
+import parselmouth
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
@@ -10,7 +11,8 @@ import matplotlib.pyplot as plt
 from matplotlib import backend_bases
 from matplotlib.widgets import Button, Cursor, SpanSelector, MultiCursor
 from matplotlib.backend_bases import MouseButton
-from matplotlib.patches import Ellipse
+from matplotlib.patches import Rectangle
+from scipy.io.wavfile import write
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -245,10 +247,10 @@ class SignalVisualizer(tk.Frame):
 
             if choice == 'Pitch':
                 dd_meth.config(state='active')
-                dd_data.config(state='active')
+                but_adse.config(state='active')
             else:
                 dd_meth.config(state='disabled')
-                dd_data.config(state='disabled')
+                but_adse.config(state='disabled')
 
             if choice == 'Spectrogram': 
                 chk_form.config(state='active')
@@ -393,7 +395,7 @@ class SignalVisualizer(tk.Frame):
             elif windType == 'Hanning':
                 window = np.hanning(windSizeSampInt)
             elif windType == 'Kaiser':
-                window = np.kaiser(windSizeSampInt) # np.kaiser(wind_size_sample_int, float:shape parameter for window)
+                window = np.kaiser(windSizeSampInt) # np.kaiser(windSizeSampInt, float:shape parameter for window)
             
             if choice == 'FT':
                 if plt.fignum_exists(self.figFragFT.number):
@@ -407,14 +409,14 @@ class SignalVisualizer(tk.Frame):
 
                 # Define initial and end points of the window
                 ini_idx = midPoint_idx - int(windSizeSamp/2) # index of the initial point
-                end_idx = midPoint_idx + int(windSizeSamp/2) # index of the initial point
+                end_idx = midPoint_idx + int(windSizeSamp/2) # index of the end point
                 if ini_idx < 1: ini_idx = 0
                 if end_idx > self.audioFragLen: end_idx = self.audioFragLen-1
 
-                # Draw the window in the waveform as an ellipse
+                # Draw the window in the waveform as a rectangle
                 ini = self.audiotimeFrag[ini_idx] # value of the initial point
                 end = self.audiotimeFrag[end_idx] # value of the end point
-                ellipse = Ellipse(xy=(midPoint,0), width=end-ini, height=0.1, color='darkred')
+                rectangle = Rectangle(xy=(ini,min(self.audioFrag)), width=end-ini, height=max(self.audioFrag), color='silver')
 
                 audioFragWind = self.audioFrag[ini_idx:end_idx]
                 audioFragWind2 = audioFragWind * window
@@ -428,8 +430,8 @@ class SignalVisualizer(tk.Frame):
                     plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
                     figFragSTFT.canvas.manager.set_window_title('STFT') # set title to the figure window
 
-                    midLine = axFragSTFT[0].axvline(x=midPoint, color='darkred', linewidth='1', fillstyle='full') # line in the middle
-                    axFragSTFT[0].add_artist(ellipse) # draw the ellipse
+                    midLine = axFragSTFT[0].axvline(x=midPoint, color='black', linewidth='1', fillstyle='full') # line in the middle
+                    axFragSTFT[0].add_artist(rectangle) # draw the rectangle
 
                     axFragSTFT[0].plot(self.audiotimeFrag, self.audioFrag)
                     axFragSTFT[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
@@ -444,9 +446,9 @@ class SignalVisualizer(tk.Frame):
                     plt.subplots_adjust(hspace=.6) # to avoid overlapping between xlabel and title
                     figFragSTFTSpect.canvas.manager.set_window_title('STFT + Spectrogram') # set title to the figure window
 
-                    midLineWavef = axFragSTFTSpect[0].axvline(x=midPoint, color='darkred', linewidth='1', fillstyle='full') # line in the middle (waveform)
-                    midLineSpect = axFragSTFTSpect[2].axvline(x=midPoint, color='darkred', linewidth='1', fillstyle='full') # line in the middle (spectrogram)
-                    axFragSTFTSpect[0].add_artist(ellipse) # draw the ellipse
+                    midLineWavef = axFragSTFTSpect[0].axvline(x=midPoint, color='black', linewidth='1', fillstyle='full') # line in the middle (waveform)
+                    midLineSpect = axFragSTFTSpect[2].axvline(x=midPoint, color='black', linewidth='1', fillstyle='full') # line in the middle (spectrogram)
+                    axFragSTFTSpect[0].add_artist(rectangle) # draw the rectangle
 
                     axFragSTFTSpect[0].plot(self.audiotimeFrag, self.audioFrag)
                     axFragSTFTSpect[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
@@ -454,7 +456,7 @@ class SignalVisualizer(tk.Frame):
                     line1, = axFragSTFTSpect[1].plot(frequencies, 20*np.log10(abs(stft2)))
                     axFragSTFTSpect[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Short Time Fourier Transform')
                     axFragSTFTSpect[2].specgram(x=self.audioFrag, Fs=self.audiofs, window=window, pad_to=nfftUser, NFFT=windSizeSampInt, mode='magnitude', noverlap=overlapSamp, scale='dB')
-                    axFragSTFTSpect[2].set(xlim=[0, max(self.audiotimeFrag)], ylim=[minfreq, maxfreq], xlabel='Time (s)', ylabel='Amplitude (dB)', title='Spectrogram')
+                    axFragSTFTSpect[2].set(xlim=[0, self.audioFragDuration], ylim=[minfreq, maxfreq], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
 
                     cursorSTFTSpect = MultiCursor(figFragSTFTSpect.canvas, (axFragSTFTSpect[0], axFragSTFTSpect[2]), color='black', lw=1)
 
@@ -463,9 +465,9 @@ class SignalVisualizer(tk.Frame):
                     plt.subplots_adjust(hspace=.6) # to avoid overlapping between xlabel and title
                     figFragSC.canvas.manager.set_window_title('Spectral Centroid') # set title to the figure window
 
-                    midLineWavefSC = axFragSC[0].axvline(x=midPoint, color='darkred', linewidth='1', fillstyle='full') # line in the middle (waveform)
-                    midLineSpectSC = axFragSC[2].axvline(x=midPoint, color='darkred', linewidth='1', fillstyle='full') # line in the middle (spectrogram)
-                    axFragSC[0].add_artist(ellipse) # draw the ellipse
+                    midLineWavefSC = axFragSC[0].axvline(x=midPoint, color='black', linewidth='1', fillstyle='full') # line in the middle (waveform)
+                    midLineSpectSC = axFragSC[2].axvline(x=midPoint, color='black', linewidth='1', fillstyle='full') # line in the middle (spectrogram)
+                    axFragSC[0].add_artist(rectangle) # draw the rectangle
 
                     # TO-DO
 
@@ -475,7 +477,7 @@ class SignalVisualizer(tk.Frame):
                     line1, = axFragSC[1].plot() # TO-DO
                     axFragSC[1].set(xlim=[0, max()], xlabel='Frequency (Hz)', ylabel='Power/Frequency (dB/Hz)', title='Power spectral density using fft')
                     axFragSC[2].specgram(x=self.audioFrag, Fs=self.audiofs, window=window, pad_to=nfftUser, NFFT=windSizeSampInt, mode='magnitude', noverlap=overlapSamp, scale='dB')
-                    axFragSC[2].set(xlim=[0, max(self.audiotimeFrag)], ylim=[minfreq, maxfreq], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
+                    axFragSC[2].set(xlim=[0, self.audioFragDuration], ylim=[minfreq, maxfreq], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
 
                     cursorSC = MultiCursor(figFragSC.canvas, (axFragSC[0], axFragSC[2]), color='black', lw=1)
 
@@ -493,20 +495,9 @@ class SignalVisualizer(tk.Frame):
                         new_ini_idx = new_midPoint_idx - int(windSizeSamp/2)
                         new_end_idx = new_midPoint_idx + int(windSizeSamp/2)
                         if new_ini_idx < 1 or new_end_idx > self.audioFragLen: 
-                            text = "In that point the window gets out of index."
+                            text = "At that point the window gets out of index."
                             tk.messagebox.showerror(parent=cm, title="Window out of index", message=text) # show error
                             return
-
-                        # Move the window
-                        if choice == 'STFT':
-                            midLine.set_xdata(new_midPoint)
-                        elif choice == 'STFT + Spect':
-                            midLineWavef.set_xdata(new_midPoint)
-                            midLineSpect.set_xdata(new_midPoint)
-                        else: # choice == 'Spectral Centroid'
-                            midLineWavefSC.set_xdata(new_midPoint)
-                            midLineSpectSC.set_xdata(new_midPoint)
-                        ellipse.set_center((new_midPoint, 0)) # move the ellipse
 
                         new_audioFragWind = self.audioFrag[new_ini_idx:new_end_idx]
                         new_audioFragWind2 = new_audioFragWind * window
@@ -514,7 +505,24 @@ class SignalVisualizer(tk.Frame):
                         new_stft2 = new_stft[range(int(nfftUser/2))]
                         line1.set_ydata(20*np.log10(abs(new_stft2)))
 
-                        plt.show()
+                        # Move the window and rescale 'y' axis
+                        if choice == 'STFT':
+                            midLine.set_xdata(new_midPoint)
+                            axFragSTFT[1].relim()
+                            axFragSTFT[1].autoscale_view()
+                        elif choice == 'STFT + Spect':
+                            midLineWavef.set_xdata(new_midPoint)
+                            midLineSpect.set_xdata(new_midPoint)
+                            axFragSTFTSpect[1].relim()
+                            axFragSTFTSpect[1].autoscale_view()
+                        else: # choice == 'Spectral Centroid'
+                            midLineWavefSC.set_xdata(new_midPoint)
+                            midLineSpectSC.set_xdata(new_midPoint)
+                            axFragSC[1].relim()
+                            axFragSC[1].autoscale_view()
+                        rectangle.set_x(self.audiotimeFrag[new_ini_idx])
+
+                        plt.show() # update the figure
                     
                 plt.connect('button_press_event', on_click) # when the mouse button is pressed, call on_click function
                 plt.show() # show the figure
@@ -533,7 +541,7 @@ class SignalVisualizer(tk.Frame):
                 axFragSpect[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
                 axFragSpect[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
                 axFragSpect[1].specgram(x=self.audioFrag, Fs=self.audiofs, window=window, pad_to=nfftUser, NFFT=windSizeSampInt, mode='magnitude', noverlap=overlapSamp, scale='dB')
-                axFragSpect[1].set(xlim=[0, max(self.audiotimeFrag)], ylim=[minfreq, maxfreq], xlabel='Time (s)', ylabel='Amplitude (dB)', title='Spectrogram')
+                axFragSpect[1].set(xlim=[0, self.audioFragDuration], ylim=[minfreq, maxfreq], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
 
                 plt.show() # show the figure
 
@@ -549,7 +557,7 @@ class SignalVisualizer(tk.Frame):
                 axFragSTE[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
                 axFragSTE[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
                 axFragSTE[1].plot(times, 20*np.log10(rms[0]))
-                axFragSTE[1].set(xlim=[0, max(times)], xlabel='Time (s)', ylabel='Amplitude (dB)', title='Short Time Energy')
+                axFragSTE[1].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude (dB)', title='Short Time Energy')
 
                 plt.show() # show the figure
 
@@ -558,13 +566,24 @@ class SignalVisualizer(tk.Frame):
                 plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
                 figFragPitch.canvas.manager.set_window_title('Pitch') # set title to the figure window
 
-                # TO-DO
+                # Convert the numpy array containing the audio fragment into a wav file
+                scaled = np.int16(self.audioFrag/np.max(np.abs(self.audioFrag)) * 32767) 
+                write('test.wav', self.audiofs, scaled) # generates the test.wav file in the current folder
+                
+                # Calculate the pitch of the generated wav file using parselmouth
+                snd = parselmouth.Sound('test.wav')
+                pitch = snd.to_pitch(pitch_floor=75.0, pitch_ceiling=2500.0)
+                print(pitch)
+                pitch_values = pitch.selected_array['frequency'] # extract selected pitch contour
+                pitch_values[pitch_values==0] = np.nan # replace unvoiced samples by NaN to not plot
+
+                cursorPitch = MultiCursor(figFragPitch.canvas, (axFragPitch[0], axFragPitch[1]), color='black', lw=1)
 
                 axFragPitch[0].plot(self.audiotimeFrag, self.audioFrag)
                 axFragPitch[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
                 axFragPitch[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-                axFragPitch[1].plot() # TO-DO
-                axFragPitch[1].set(xlim=[0, max(self.audiotimeFrag)], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Pitch measurement overtime')
+                axFragPitch[1].plot(pitch.xs(), pitch_values)
+                axFragPitch[1].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Pitch measurement overtime')
 
                 plt.show() # show the figure
 
@@ -579,7 +598,7 @@ class SignalVisualizer(tk.Frame):
                 axFragFilt[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
                 axFragFilt[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
                 axFragFilt[1].specgram(x=self.audioFrag, Fs=self.audiofs, window=window, pad_to=nfftUser, NFFT=windSizeSampInt, mode='magnitude', noverlap=overlapSamp, scale='dB')
-                axFragFilt[1].set(xlim=[0, max(self.audiotimeFrag)], ylim=[minfreq, maxfreq], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
+                axFragFilt[1].set(xlim=[0, self.audioFragDuration], ylim=[minfreq, maxfreq], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
 
                 plt.show() # show the figure
 
@@ -589,7 +608,6 @@ class SignalVisualizer(tk.Frame):
         lab_wind = tk.Label(cm, text='Window')
         lab_nfft = tk.Label(cm, text='nfft')
         lab_meth = tk.Label(cm, text='Method')
-        lab_data = tk.Label(cm, text='Data operations')
 
         # Labels of entrys
         lab_size = tk.Label(cm, text='Window length (s)')
@@ -611,7 +629,6 @@ class SignalVisualizer(tk.Frame):
         lab_wind.grid(column=0, row=1, sticky=tk.E)
         lab_nfft.grid(column=0, row=3, sticky=tk.E)
         lab_meth.grid(column=0, row=10, sticky=tk.E)
-        lab_data.grid(column=0, row=11, sticky=tk.E)
 
         lab_size.grid(column=0, row=2, sticky=tk.E)
         lab_over.grid(column=0, row=4, sticky=tk.E)
@@ -670,15 +687,18 @@ class SignalVisualizer(tk.Frame):
         chk_form.grid(column=1, row=8, sticky=tk.W)
 
         # BUTTONS
+        but_adse = tk.Button(cm, text='Advanced settings')
         but_freq = tk.Button(cm, text='Filter Frequency Response')
         but_rese = tk.Button(cm, text='Reset Signal')
         but_fisi = tk.Button(cm, text='Filter Signal')
         but_plot = tk.Button(cm, text='Plot', command=plotFigure, font=('TkDefaultFont', 10, 'bold'))
 
+        but_adse.configure(state='disabled')
         but_freq.configure(state='disabled')
         but_rese.configure(state='disabled')
         but_fisi.configure(state='disabled')
 
+        but_adse.grid(column=1, row=11, sticky=tk.EW, padx=5)
         but_freq.grid(column=3, row=7, sticky=tk.EW, padx=5)
         but_rese.grid(column=3, row=8, sticky=tk.EW, padx=5)
         but_fisi.grid(column=3, row=9, sticky=tk.EW, padx=5)
@@ -688,8 +708,7 @@ class SignalVisualizer(tk.Frame):
         cm.options = ['FT','STFT', 'Spectrogram','STFT + Spect', 'Short-Time-Energy', 'Pitch', 'Spectral Centroid', 'Filtering']
         cm.opt_wind = ['Bartlett','Blackman', 'Hamming','Hanning', 'Kaiser']
         cm.opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
-        cm.opt_meth = ['Cepstrum','Autocorrelation']
-        cm.opt_data = ['None','Median Filtering', 'Low Energy Suppresion']
+        cm.opt_meth = ['Autocorrelation', 'Cross-correlation', 'Subharmonics', 'Spinet']
         cm.opt_filt = ['Butterworth','Elliptic', 'Chebyshev', 'FIR least-squares']
 
         cm.var_opts = tk.StringVar()
@@ -703,7 +722,6 @@ class SignalVisualizer(tk.Frame):
         cm.var_wind.set(cm.opt_wind[0])
         cm.var_nfft.set(cm.opt_nfft[0])
         cm.var_meth.set(cm.opt_meth[0])
-        cm.var_data.set(cm.opt_data[0])
         cm.var_filt.set(cm.opt_filt[0])
 
         # creating OptionMenus
@@ -711,7 +729,6 @@ class SignalVisualizer(tk.Frame):
         dd_wind = tk.OptionMenu(cm, cm.var_wind, *cm.opt_wind)
         dd_nfft = tk.OptionMenu(cm, cm.var_nfft, *cm.opt_nfft)
         dd_meth = tk.OptionMenu(cm, cm.var_meth, *cm.opt_meth)
-        dd_data = tk.OptionMenu(cm, cm.var_data, *cm.opt_data)
         dd_filt = tk.OptionMenu(cm, cm.var_filt, *cm.opt_filt)
 
         # size of the OptionMenus
@@ -719,7 +736,6 @@ class SignalVisualizer(tk.Frame):
         dd_wind.config(width=18, state='disabled')
         dd_nfft.config(width=18, state='disabled')
         dd_meth.config(width=18, state='disabled')
-        dd_data.config(width=18, state='disabled')
         dd_filt.config(width=18, state='disabled')
 
         # positioning OptionMenus
@@ -727,7 +743,6 @@ class SignalVisualizer(tk.Frame):
         dd_wind.grid(column=1, row=1, sticky=tk.W, padx=5)
         dd_nfft.grid(column=1, row=3, sticky=tk.W, padx=5)
         dd_meth.grid(column=1, row=10, sticky=tk.W, padx=5)
-        dd_data.grid(column=1, row=11, sticky=tk.W, padx=5)
         dd_filt.grid(column=3, row=6, sticky=tk.W, padx=5)
 
 if __name__ == "__main__":
