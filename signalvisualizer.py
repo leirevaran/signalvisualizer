@@ -177,6 +177,11 @@ class SignalVisualizer(tk.Frame):
         values = np.arange(int(self.audioFragLen/2))
         frequencies = values / (self.audioFragLen/self.audiofs) # values / time period
 
+        # To avoid plotting problems with the SpanSelector
+        if len(self.audiotimeFrag) != len(self.audioFrag):
+            print('error with SpanSelector')
+            return 
+        
         self.axFragFT[0].plot(self.audiotimeFrag, self.audioFrag)
         self.axFragFT[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
         self.axFragFT[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
@@ -189,7 +194,7 @@ class SignalVisualizer(tk.Frame):
 
     def createControlMenu(self):
         cm = tk.Toplevel()
-        cm.geometry('726x472')
+        cm.geometry('726x505')
         cm.resizable(False, False)
         cm.title('Control menu')
         cm.iconbitmap('images/icon.ico')
@@ -213,6 +218,8 @@ class SignalVisualizer(tk.Frame):
             cm.var_over.set('0')
             cm.var_minf.set('0')
             cm.var_maxf.set(self.audiofs/2)
+            cm.var_minp.set('75.0')
+            cm.var_maxp.set('600.0')
             cm.var_fund.set('0')
             cm.var_cent.set('0')
             cm.var_cut1.set('0')
@@ -247,9 +254,13 @@ class SignalVisualizer(tk.Frame):
 
             if choice == 'Pitch':
                 dd_meth.config(state='active')
+                ent_minp.config(state='normal')
+                ent_maxp.config(state='normal')
                 but_adse.config(state='active')
             else:
                 dd_meth.config(state='disabled')
+                ent_minp.config(state='disabled')
+                ent_maxp.config(state='disabled')
                 but_adse.config(state='disabled')
 
             if choice == 'Spectrogram': 
@@ -348,6 +359,23 @@ class SignalVisualizer(tk.Frame):
                     text = "The maximum frequency must be greater than the minimum frequency (" + str(minfreq) + "Hz)."
                     tk.messagebox.showerror(parent=cm, title="Maximum frequency too small", message=text) # show error
 
+        def minpitchEntry(event):
+            minPitch = float(ent_minp.get())
+            maxPitch = float(ent_maxp.get())
+            if minPitch >= maxPitch:
+                cm.var_minp.set('75.0') # Reset widget
+                cm.var_maxp.set('600.0') # Reset widget
+                text = "The minimum pitch must be smaller than the maximum pitch (" + str(maxPitch) + "Hz)."
+                tk.messagebox.showerror(parent=cm, title="Pitch floor too big", message=text) # show error
+
+        def maxpitchEntry(event):
+            minPitch = float(ent_minp.get())
+            maxPitch = float(ent_maxp.get())
+            if maxPitch <= minPitch:
+                cm.var_minp.set('75.0') # Reset widget
+                cm.var_maxp.set('600.0') # Reset widget
+                text = "The maximum pitch must be greater than the minimum pitch (" + str(minPitch) + "Hz)."
+                tk.messagebox.showerror(parent=cm, title="Pitch ceiling too small", message=text) # show error
             
         # Called when inserting something in an entry. Only lets the user enter numbers or '.'
         def onValidate(s, S):
@@ -614,6 +642,8 @@ class SignalVisualizer(tk.Frame):
         lab_over = tk.Label(cm, text='Overlap (s)')
         lab_minf = tk.Label(cm, text='Min frequency (Hz)')
         lab_maxf = tk.Label(cm, text='Max frequency (Hz)')
+        lab_minp = tk.Label(cm, text='Pitch floor (Hz)')
+        lab_maxp = tk.Label(cm, text='Pitch ceiling (Hz)')
         lab_fund = tk.Label(cm, text='Fund. freq. multiplication')
         lab_cent = tk.Label(cm, text='Center frequency')
         lab_cut1 = tk.Label(cm, text='Fcut1')
@@ -634,11 +664,13 @@ class SignalVisualizer(tk.Frame):
         lab_over.grid(column=0, row=4, sticky=tk.E)
         lab_minf.grid(column=0, row=6, sticky=tk.E)
         lab_maxf.grid(column=0, row=7, sticky=tk.E)
+        lab_minp.grid(column=0, row=11, sticky=tk.E)
+        lab_maxp.grid(column=0, row=12, sticky=tk.E)
         lab_fund.grid(column=2, row=2, sticky=tk.E)
         lab_cent.grid(column=2, row=3, sticky=tk.E)
         lab_cut1.grid(column=2, row=4, sticky=tk.E)
         lab_cut2.grid(column=2, row=5, sticky=tk.E)
-        lab_fshz.grid(column=2, row=12, sticky=tk.EW)
+        lab_fshz.grid(column=3, row=12, sticky=tk.EW)
 
         lab_spec.grid(column=1, row=5)
         lab_ptch.grid(column=1, row=9)
@@ -649,6 +681,8 @@ class SignalVisualizer(tk.Frame):
         cm.var_over = tk.DoubleVar()
         cm.var_minf = tk.IntVar()
         cm.var_maxf = tk.IntVar(value=self.audiofs/2)
+        cm.var_minp = tk.DoubleVar(value=75.0)
+        cm.var_maxp = tk.DoubleVar(value=600.0)
         cm.var_fund = tk.IntVar()
         cm.var_cent = tk.IntVar()
         cm.var_cut1 = tk.IntVar()
@@ -660,6 +694,8 @@ class SignalVisualizer(tk.Frame):
         ent_over = tk.Entry(cm, textvariable=cm.var_over, state='disabled', validate='key', validatecommand=vcmd)
         ent_minf = tk.Entry(cm, textvariable=cm.var_minf, state='disabled', validate='key', validatecommand=vcmd)
         ent_maxf = tk.Entry(cm, textvariable=cm.var_maxf, state='disabled', validate='key', validatecommand=vcmd)
+        ent_minp = tk.Entry(cm, textvariable=cm.var_minp, state='disabled', validate='key', validatecommand=vcmd)
+        ent_maxp = tk.Entry(cm, textvariable=cm.var_maxp, state='disabled', validate='key', validatecommand=vcmd)
         ent_fund = tk.Entry(cm, textvariable=cm.var_fund, state='disabled', validate='key', validatecommand=vcmd)
         ent_cent = tk.Entry(cm, textvariable=cm.var_cent, state='disabled', validate='key', validatecommand=vcmd)
         ent_cut1 = tk.Entry(cm, textvariable=cm.var_cut1, state='disabled', validate='key', validatecommand=vcmd)
@@ -670,12 +706,16 @@ class SignalVisualizer(tk.Frame):
         ent_over.bind('<Return>', overlapEntry)
         ent_minf.bind('<Return>', minfreqEntry)
         ent_maxf.bind('<Return>', maxfreqEntry)
+        ent_minp.bind('<Return>', minpitchEntry)
+        ent_maxp.bind('<Return>', maxpitchEntry)
 
         # positioning Entrys
         ent_size.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5, columnspan=1)
         ent_over.grid(column=1, row=4, sticky=tk.EW, padx=5, pady=5, columnspan=1)
         ent_minf.grid(column=1, row=6, sticky=tk.EW, padx=5, pady=5)
         ent_maxf.grid(column=1, row=7, sticky=tk.EW, padx=5, pady=5)
+        ent_minp.grid(column=1, row=11, sticky=tk.EW, padx=5, pady=5)
+        ent_maxp.grid(column=1, row=12, sticky=tk.EW, padx=5, pady=5)
         ent_fund.grid(column=3, row=2, sticky=tk.EW, padx=5, pady=5)
         ent_cent.grid(column=3, row=3, sticky=tk.EW, padx=5, pady=5)
         ent_cut1.grid(column=3, row=4, sticky=tk.EW, padx=5, pady=5)
@@ -698,11 +738,12 @@ class SignalVisualizer(tk.Frame):
         but_rese.configure(state='disabled')
         but_fisi.configure(state='disabled')
 
-        but_adse.grid(column=1, row=11, sticky=tk.EW, padx=5)
+        # positioning Buttons
+        but_adse.grid(column=1, row=13, sticky=tk.EW, padx=5)
         but_freq.grid(column=3, row=7, sticky=tk.EW, padx=5)
         but_rese.grid(column=3, row=8, sticky=tk.EW, padx=5)
         but_fisi.grid(column=3, row=9, sticky=tk.EW, padx=5)
-        but_plot.grid(column=3, row=12, sticky=tk.EW, padx=5)
+        but_plot.grid(column=3, row=13, sticky=tk.EW, padx=5)
 
         # OPTION MENUS
         cm.options = ['FT','STFT', 'Spectrogram','STFT + Spect', 'Short-Time-Energy', 'Pitch', 'Spectral Centroid', 'Filtering']
