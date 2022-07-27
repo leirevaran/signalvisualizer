@@ -63,6 +63,27 @@ class SignalVisualizer(tk.Frame):
             ('Save', 'Save the figure', 'filesave', 'save_figure'),
         )
 
+        # Create variables for the advanced settings of Pitch
+        self.maxcand = 15 # max number of candidates
+        self.drawing = 1 # drawing style
+        # Autocorrelation / Cross-correlation
+        self.silenth = 0.03 # silence treshold
+        self.voiceth = 0.45 # voicing treshold
+        self.octcost = 0.01 # octave cost
+        self.ocjumpc = 0.35 # octave jump cost
+        self.vuncost = 0.14 # voiced unvoiced cost
+        self.veryacc = 0 # very accurate
+        # Subharmonics
+        self.maxcomp = 1250.0 # max frequency component
+        self.maxsubh = 15 # max number of subharmonics
+        self.compfac = 0.84 # compression factor
+        self.pntsoct = 48 # number of points per octave
+        # Spinet
+        self.windlen = 0.04 # window length
+        self.minfilt = 70.0 # min filter frequency
+        self.maxfilt = 5000.0 # max filter frequency
+        self.filters = 250 # number of filters
+
     def createMenuBar(self, root):
         # the menu bar will be at the top of the window
         menubar = tk.Menu(root)
@@ -225,11 +246,11 @@ class SignalVisualizer(tk.Frame):
             cm.var_cut1.set('0')
             cm.var_cut2.set('0')
 
-            if choice == 'FT' or choice == 'Filtering' or choice == 'STFT': 
+            if choice == 'FT' or choice == 'STFT' or choice == 'Pitch' or choice == 'Filtering': 
                 ent_over.config(state='disabled')
             else: ent_over.config(state='normal')
 
-            if choice == 'FT' or choice == 'Filtering': 
+            if choice == 'FT' or choice == 'Pitch' or choice == 'Filtering': 
                 ent_size.config(state='disabled')
             else: ent_size.config(state='normal')
 
@@ -388,6 +409,158 @@ class SignalVisualizer(tk.Frame):
         def showFormants():
             pass
 
+        def advancedSettings():
+            adse = tk.Toplevel()
+            adse.geometry('735x408')
+            adse.resizable(False, False)
+            adse.title('Pitch - Advanced settings')
+            adse.iconbitmap('images/icon.ico')
+
+            def apply():
+                self.silenth = float(adse.var_sith.get())
+                self.voiceth = float(adse.var_voth.get())
+                self.octcost = float(adse.var_octc.get())
+                self.ocjumpc = float(adse.var_ocjc.get())
+                self.vuncost = float(adse.var_vunc.get())
+                self.veryacc = float(adse.var_accu.get())
+
+                self.maxcomp = float(adse.var_mxfc.get())
+                self.maxsubh = adse.var_subh.get()
+                self.compfac = float(adse.var_cmpf.get())
+                self.pntsoct = adse.var_ptso.get()
+
+                self.windlen = float(adse.var_winl.get())
+                self.minfilt = float(adse.var_mnfi.get())
+                self.maxfilt = float(adse.var_mxfi.get())
+                self.filters = adse.var_filt.get()
+
+                self.maxcand = adse.var_cand.get()
+                self.drawing = adse.var_draw.get()
+
+                adse.destroy()
+
+            # LABELS (adse)
+            lab_aucc = tk.Label(adse, text='Autocorrelation / Cross-correlation', bd=6, font=('TkDefaultFont', 10))
+            lab_sith = tk.Label(adse, text='Silence treshold')
+            lab_voth = tk.Label(adse, text='Voicing treshold')
+            lab_octc = tk.Label(adse, text='Octave cost')
+            lab_ocjc = tk.Label(adse, text='Octave jump cost')
+            lab_vunc = tk.Label(adse, text='Voiced-unvoiced cost')
+
+            lab_subh = tk.Label(adse, text='Subharmonics', bd=6, font=('TkDefaultFont', 10))
+            lab_mxfc = tk.Label(adse, text='Max frequency component')
+            lab_mxsh = tk.Label(adse, text='Max number of subharmonics')
+            lab_cmpf = tk.Label(adse, text='Compression factor')
+            lab_ptso = tk.Label(adse, text='Number of points per octave')
+
+            lab_spin = tk.Label(adse, text='Spinet', bd=6, font=('TkDefaultFont', 10))
+            lab_winl = tk.Label(adse, text='Window length')
+            lab_mnfi = tk.Label(adse, text='Min filter frequency')
+            lab_mxfi = tk.Label(adse, text='Max filter frequency')
+            lab_filt = tk.Label(adse, text='Number of filters')
+
+            lab_cand = tk.Label(adse, text='Max number of candidates')
+            lab_draw = tk.Label(adse, text='Drawing style')
+
+            # positioning Labels (adse)
+            lab_aucc.grid(column=0, row=0, sticky=tk.E, columnspan=2)
+            lab_sith.grid(column=0, row=1, sticky=tk.E)
+            lab_voth.grid(column=0, row=2, sticky=tk.E)
+            lab_octc.grid(column=0, row=3, sticky=tk.E)
+            lab_ocjc.grid(column=0, row=4, sticky=tk.E)
+            lab_vunc.grid(column=0, row=5, sticky=tk.E)
+
+            lab_subh.grid(column=1, row=7)
+            lab_mxfc.grid(column=0, row=8, sticky=tk.E)
+            lab_mxsh.grid(column=0, row=9, sticky=tk.E)
+            lab_cmpf.grid(column=0, row=10, sticky=tk.E)
+            lab_ptso.grid(column=0, row=11, sticky=tk.E)
+
+            lab_spin.grid(column=3, row=0)
+            lab_winl.grid(column=2, row=1, sticky=tk.E)
+            lab_mnfi.grid(column=2, row=2, sticky=tk.E)
+            lab_mxfi.grid(column=2, row=3, sticky=tk.E)
+            lab_filt.grid(column=2, row=4, sticky=tk.E)
+
+            lab_cand.grid(column=2, row=8, sticky=tk.E)
+            lab_draw.grid(column=2, row=9, sticky=tk.E)
+
+            # ENTRYS (adse)
+            adse.var_sith = tk.DoubleVar(value=self.silenth)
+            adse.var_voth = tk.DoubleVar(value=self.voiceth)
+            adse.var_octc = tk.DoubleVar(value=self.octcost)
+            adse.var_ocjc = tk.DoubleVar(value=self.ocjumpc)
+            adse.var_vunc = tk.DoubleVar(value=self.vuncost)
+
+            adse.var_mxfc = tk.DoubleVar(value=self.maxcomp)
+            adse.var_subh = tk.IntVar(value=self.maxsubh)
+            adse.var_cmpf = tk.DoubleVar(value=self.compfac)
+            adse.var_ptso = tk.IntVar(value=self.pntsoct)
+
+            adse.var_winl = tk.DoubleVar(value=self.windlen)
+            adse.var_mnfi = tk.DoubleVar(value=self.minfilt)
+            adse.var_mxfi = tk.DoubleVar(value=self.maxfilt)
+            adse.var_filt = tk.IntVar(value=self.filters)
+
+            adse.var_cand = tk.IntVar(value=self.maxcand)
+
+            ent_sith = tk.Entry(adse, textvariable=adse.var_sith)
+            ent_voth = tk.Entry(adse, textvariable=adse.var_voth)
+            ent_octc = tk.Entry(adse, textvariable=adse.var_octc)
+            ent_ocjc = tk.Entry(adse, textvariable=adse.var_ocjc)
+            ent_vunc = tk.Entry(adse, textvariable=adse.var_vunc)
+
+            ent_mxfc = tk.Entry(adse, textvariable=adse.var_mxfc)
+            ent_subh = tk.Entry(adse, textvariable=adse.var_subh)
+            ent_cmpf = tk.Entry(adse, textvariable=adse.var_cmpf)
+            ent_ptso = tk.Entry(adse, textvariable=adse.var_ptso)
+            
+            ent_winl = tk.Entry(adse, textvariable=adse.var_winl)
+            ent_mnfi = tk.Entry(adse, textvariable=adse.var_mnfi)
+            ent_mxfi = tk.Entry(adse, textvariable=adse.var_mxfi)
+            ent_filt = tk.Entry(adse, textvariable=adse.var_filt)
+
+            ent_cand = tk.Entry(adse, textvariable=adse.var_cand)
+
+            # positioning Entrys (adse)
+            ent_sith.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5)
+            ent_voth.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5)
+            ent_octc.grid(column=1, row=3, sticky=tk.EW, padx=5, pady=5)
+            ent_ocjc.grid(column=1, row=4, sticky=tk.EW, padx=5, pady=5)
+            ent_vunc.grid(column=1, row=5, sticky=tk.EW, padx=5, pady=5)
+
+            ent_subh.grid(column=1, row=8, sticky=tk.EW, padx=5, pady=5)
+            ent_mxfc.grid(column=1, row=9, sticky=tk.EW, padx=5, pady=5)
+            ent_cmpf.grid(column=1, row=10, sticky=tk.EW, padx=5, pady=5)
+            ent_ptso.grid(column=1, row=11, sticky=tk.EW, padx=5, pady=5)
+
+            ent_winl.grid(column=3, row=1, sticky=tk.EW, padx=5, pady=5)
+            ent_mnfi.grid(column=3, row=2, sticky=tk.EW, padx=5, pady=5)
+            ent_mxfi.grid(column=3, row=3, sticky=tk.EW, padx=5, pady=5)
+            ent_filt.grid(column=3, row=4, sticky=tk.EW, padx=5, pady=5)
+
+            ent_cand.grid(column=3, row=8, sticky=tk.EW, padx=5, pady=5)
+
+            # CHECKBOX (adse)
+            adse.var_accu = tk.StringVar(value=self.veryacc)
+            chk_accu = tk.Checkbutton(adse, text='Very accurate', variable=adse.var_accu)
+            chk_accu.grid(column=1, row=6, sticky=tk.W)
+
+            # RADIOBUTTON (adse)
+            adse.var_draw = tk.IntVar(value=self.drawing)
+            
+            rdb_curv = tk.Radiobutton(adse, text='curve', variable=adse.var_draw, value=1)
+            rdb_spec = tk.Radiobutton(adse, text='speckles', variable=adse.var_draw, value=2)
+            
+            rdb_curv.grid(column=3, row=9, sticky=tk.W)
+            rdb_spec.grid(column=3, row=9, sticky=tk.E)
+
+            # BUTTONS (adse)
+            but_apply = tk.Button(adse, text='Apply', command=apply, font=('TkDefaultFont', 10, 'bold'))
+            but_apply.configure()
+            but_apply.grid(column=3, row=11, sticky=tk.EW, padx=5)
+
+
         # Called when pressing the 'Plot' button
         def plotFigure():
             # VALUES GIVEN BY THE USER
@@ -402,7 +575,25 @@ class SignalVisualizer(tk.Frame):
             formants = cm.var_form.get() # returns 1 if activated, 0 if not
             # Pitch
             method = cm.var_meth.get()
-            dataop = cm.var_data.get()
+            minpitch = cm.var_minp.get()
+            maxpitch = cm.var_maxp.get()
+            ## Pitch - advanced settings
+            silenceTh = self.silenth
+            voiceTh = self.voiceth
+            octaveCost = self.octcost
+            octJumpCost = self.ocjumpc
+            vcdUnvcdCost = self.vuncost
+            accurate = self.veryacc # returns 1 if activated, 0 if not
+            maxFreqComp = self.maxcomp
+            maxSubharm = self.maxsubh
+            compFactor = self.compfac
+            pointsPerOct = self.pntsoct
+            windLen = self.windlen
+            minFiltFreq = self.minfilt
+            maxFiltFreq = self.maxfilt
+            numFilters = self.filters
+            maxCandidates = self.maxcand
+            drawStyle = self.drawing # returns 1 for curve, 2 for speckles
             # Filtering
             fundfreq = cm.var_fund.get()
             centfreq = cm.var_cent.get()
@@ -596,21 +787,60 @@ class SignalVisualizer(tk.Frame):
 
                 # Convert the numpy array containing the audio fragment into a wav file
                 scaled = np.int16(self.audioFrag/np.max(np.abs(self.audioFrag)) * 32767) 
-                write('test.wav', self.audiofs, scaled) # generates the test.wav file in the current folder
-                
+                write('frag.wav', self.audiofs, scaled) # generates a wav file in the current folder
+
+                if accurate == 1: accurate_bool = True
+                else: accurate_bool = False
+
                 # Calculate the pitch of the generated wav file using parselmouth
-                snd = parselmouth.Sound('test.wav')
-                pitch = snd.to_pitch(pitch_floor=75.0, pitch_ceiling=2500.0)
-                print(pitch)
+                snd = parselmouth.Sound('frag.wav')
+                if method == 'Autocorrelation':
+                    pitch = snd.to_pitch_ac(pitch_floor=minpitch,
+                                            max_number_of_candidates=maxCandidates,
+                                            very_accurate=accurate_bool,
+                                            silence_threshold=silenceTh,
+                                            voicing_threshold=voiceTh,
+                                            octave_cost=octaveCost,
+                                            octave_jump_cost=octJumpCost,
+                                            voiced_unvoiced_cost=vcdUnvcdCost,
+                                            pitch_ceiling=maxpitch)
+                elif method == 'Cross-correlation':
+                    pitch = snd.to_pitch_cc(pitch_floor=minpitch, 
+                                            max_number_of_candidates=maxCandidates,
+                                            very_accurate=accurate_bool,
+                                            silence_threshold=silenceTh,
+                                            voicing_threshold=voiceTh,
+                                            octave_cost=octaveCost,
+                                            octave_jump_cost=octJumpCost,
+                                            voiced_unvoiced_cost=vcdUnvcdCost,
+                                            pitch_ceiling=maxpitch)
+                elif method == 'Subharmonics':
+                    pitch = snd.to_pitch_shs(minimum_pitch=minpitch, 
+                                            max_number_of_candidates=maxCandidates,
+                                            maximum_frequency_component=maxFreqComp,
+                                            max_number_of_subharmonics=maxSubharm,
+                                            compression_factor=compFactor,
+                                            ceiling=maxpitch,
+                                            number_of_points_per_octave=pointsPerOct)
+                else: # method == 'Spinet'
+                    pitch = snd.to_pitch_spinet(window_length=windLen,
+                                                minimum_filter_frequency=minFiltFreq,
+                                                maximum_filter_frequency=maxFiltFreq,
+                                                number_of_filters=numFilters,
+                                                ceiling=maxpitch,
+                                                max_number_of_candidates=maxCandidates)
                 pitch_values = pitch.selected_array['frequency'] # extract selected pitch contour
                 pitch_values[pitch_values==0] = np.nan # replace unvoiced samples by NaN to not plot
 
                 cursorPitch = MultiCursor(figFragPitch.canvas, (axFragPitch[0], axFragPitch[1]), color='black', lw=1)
 
+                if drawStyle == 1: draw = '-'
+                else: draw = 'o'
+
                 axFragPitch[0].plot(self.audiotimeFrag, self.audioFrag)
                 axFragPitch[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
                 axFragPitch[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-                axFragPitch[1].plot(pitch.xs(), pitch_values)
+                axFragPitch[1].plot(pitch.xs(), pitch_values, draw)
                 axFragPitch[1].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Pitch measurement overtime')
 
                 plt.show() # show the figure
@@ -727,7 +957,7 @@ class SignalVisualizer(tk.Frame):
         chk_form.grid(column=1, row=8, sticky=tk.W)
 
         # BUTTONS
-        but_adse = tk.Button(cm, text='Advanced settings')
+        but_adse = tk.Button(cm, text='Advanced settings', command=advancedSettings)
         but_freq = tk.Button(cm, text='Filter Frequency Response')
         but_rese = tk.Button(cm, text='Reset Signal')
         but_fisi = tk.Button(cm, text='Filter Signal')
@@ -756,7 +986,6 @@ class SignalVisualizer(tk.Frame):
         cm.var_wind = tk.StringVar()
         cm.var_nfft = tk.IntVar()
         cm.var_meth = tk.StringVar()
-        cm.var_data = tk.StringVar()
         cm.var_filt = tk.StringVar()
 
         cm.var_opts.set(cm.options[0])
