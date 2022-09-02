@@ -2,7 +2,8 @@ import tkinter as tk
 import tkinter.filedialog
 import wave
 import math
-import librosa
+# import librosa
+import scipy.signal
 import parselmouth
 import numpy as np
 import sounddevice as sd
@@ -158,13 +159,13 @@ class SignalVisualizer(tk.Frame):
         def stopSound(event):
             sd.stop()
 
-        axPlay = plt.axes([0.8, 0.01, 0.09, 0.05]) # [x axis, y axis, width, height]
-        playBtn = Button(axPlay, '', image=plt.imread('images/play.png'))
-        playBtn.on_clicked(playSound)
+        # axPlay = plt.axes([0.8, 0.01, 0.09, 0.05]) # [x axis, y axis, width, height]
+        # playBtn = Button(axPlay, '', image=plt.imread('images/play.png'))
+        # playBtn.on_clicked(playSound)
 
-        axStop = plt.axes([0.84, 0.01, 0.09, 0.05])
-        stopBtn = Button(axStop, '', image=plt.imread('images/stop.png'))
-        stopBtn.on_clicked(stopSound)
+        # axStop = plt.axes([0.84, 0.01, 0.09, 0.05])
+        # stopBtn = Button(axStop, '', image=plt.imread('images/stop.png'))
+        # stopBtn.on_clicked(stopSound)
         
         # Select a fragment with the cursor
         cursor = Cursor(self.axFile, horizOn=False, useblit=True, color='black', linewidth=1)
@@ -200,8 +201,7 @@ class SignalVisualizer(tk.Frame):
 
         # To avoid plotting problems with the SpanSelector
         if len(self.audiotimeFrag) != len(self.audioFrag):
-            print('error with SpanSelector')
-            return 
+            raise ValueError('Error with SpanSelector: x and y must have same first dimension')
         
         self.axFragFT[0].plot(self.audiotimeFrag, self.audioFrag)
         self.axFragFT[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
@@ -216,9 +216,9 @@ class SignalVisualizer(tk.Frame):
     def createControlMenu(self):
         cm = tk.Toplevel()
         cm.geometry('726x505')
-        cm.resizable(False, False)
+        cm.resizable(True, True)
         cm.title('Control menu')
-        cm.iconbitmap('images/icon.ico')
+        # cm.iconbitmap('images/icon.ico')
 
         # METHODS
         # Updates the OptionMenu 'om' with the option list 'opt' and variable 'var' passed as a parameter
@@ -414,7 +414,7 @@ class SignalVisualizer(tk.Frame):
             adse.geometry('735x408')
             adse.resizable(False, False)
             adse.title('Pitch - Advanced settings')
-            adse.iconbitmap('images/icon.ico')
+            # adse.iconbitmap('images/icon.ico')
 
             def apply():
                 self.silenth = float(adse.var_sith.get())
@@ -546,7 +546,7 @@ class SignalVisualizer(tk.Frame):
             chk_accu = tk.Checkbutton(adse, text='Very accurate', variable=adse.var_accu)
             chk_accu.grid(column=1, row=6, sticky=tk.W)
 
-            # RADIOBUTTON (adse)
+            # RADIOBUTTONS (adse)
             adse.var_draw = tk.IntVar(value=self.drawing)
             
             rdb_curv = tk.Radiobutton(adse, text='curve', variable=adse.var_draw, value=1)
@@ -559,7 +559,6 @@ class SignalVisualizer(tk.Frame):
             but_apply = tk.Button(adse, text='Apply', command=apply, font=('TkDefaultFont', 10, 'bold'))
             but_apply.configure()
             but_apply.grid(column=3, row=11, sticky=tk.EW, padx=5)
-
 
         # Called when pressing the 'Plot' button
         def plotFigure():
@@ -615,7 +614,7 @@ class SignalVisualizer(tk.Frame):
                 window = np.hanning(windSizeSampInt)
             elif windType == 'Kaiser':
                 window = np.kaiser(windSizeSampInt) # np.kaiser(windSizeSampInt, float:shape parameter for window)
-            
+
             if choice == 'FT':
                 if plt.fignum_exists(self.figFragFT.number):
                     plt.close(self.figFragFT.number) # close the figure of the FT
@@ -631,11 +630,8 @@ class SignalVisualizer(tk.Frame):
                 end_idx = midPoint_idx + int(windSizeSamp/2) # index of the end point
                 if ini_idx < 1: ini_idx = 0
                 if end_idx > self.audioFragLen: end_idx = self.audioFragLen-1
-
-                # Draw the window in the waveform as a rectangle
                 ini = self.audiotimeFrag[ini_idx] # value of the initial point
                 end = self.audiotimeFrag[end_idx] # value of the end point
-                rectangle = Rectangle(xy=(ini,min(self.audioFrag)), width=end-ini, height=max(self.audioFrag), color='silver')
 
                 audioFragWind = self.audioFrag[ini_idx:end_idx]
                 audioFragWind2 = audioFragWind * window
@@ -643,6 +639,9 @@ class SignalVisualizer(tk.Frame):
                 stft2 = stft[range(int(nfftUser/2))]
                 values = np.arange(int(nfftUser/2))
                 frequencies = values * self.audiofs / nfftUser
+
+                # Draw the window in the waveform as a rectangle
+                rectangle = Rectangle(xy=(ini,min(self.audioFrag)), width=end-ini, height=max(20*np.log10(abs(stft2))), color='silver')
 
                 if choice == 'STFT':
                     figFragSTFT, axFragSTFT = plt.subplots(2, figsize=(12,6))
@@ -769,13 +768,24 @@ class SignalVisualizer(tk.Frame):
                 plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
                 figFragSTE.canvas.manager.set_window_title('Short-Time-Energy') # set title to the figure window
 
-                rms = librosa.feature.rms(y=self.audioFrag, frame_length=windSizeSampInt, hop_length=int(windSizeSamp-overlapSamp), center=True)
-                times = librosa.times_like(rms, sr=self.audiofs, hop_length=windSizeSamp-overlapSamp+1, n_fft=None)
+                def ste(x, win):
+                    """Compute short-time energy."""
+                    if isinstance(win, str):
+                        win = scipy.signal.get_window(win, max(1, len(x) // windSizeSampInt))
+                    win = win / len(win)
+                    return scipy.signal.convolve(x**2, win**2, mode="same")
+
+                # rms = librosa.feature.rms(y=self.audioFrag, frame_length=windSizeSampInt, hop_length=int(windSizeSamp-overlapSamp), center=True)
+                # times = librosa.times_like(rms, sr=self.audiofs, hop_length=windSizeSamp-overlapSamp+1, n_fft=None)
+                x = np.array(self.audioFrag, dtype=float)
+                time = np.arange(len(x)) * (1.0/self.audiofs)
+                e = ste(x, scipy.signal.get_window("hamming", 201))
 
                 axFragSTE[0].plot(self.audiotimeFrag, self.audioFrag)
                 axFragSTE[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
                 axFragSTE[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-                axFragSTE[1].plot(times, 20*np.log10(rms[0]))
+                # axFragSTE[1].plot(times, 20*np.log10(rms[0]))
+                axFragSTE[1].plot(time, e)
                 axFragSTE[1].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude (dB)', title='Short Time Energy')
 
                 plt.show() # show the figure
@@ -1017,5 +1027,5 @@ class SignalVisualizer(tk.Frame):
 
 if __name__ == "__main__":
     app = Start()
-    app.iconbitmap('images/icon.ico')
+    # app.iconbitmap('images/icon.ico')
     app.mainloop()
