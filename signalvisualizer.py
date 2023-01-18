@@ -127,6 +127,15 @@ class SignalVisualizer(tk.Frame):
     #     w1Button.configure(state="disabled")
     #     w1Button.grid()
 
+    def playSoundFullFile(self, event):
+        sd.play(self.audio, self.audiofs)
+
+    def playSound(self, event):
+        sd.play(self.audioFrag, self.audiofs)
+    
+    def stopSound(self, event):
+        sd.stop()
+
     def loadAudioFile(self):
         # Load audio file
         filename = tk.filedialog.askopenfilename(title = "Open file",filetypes = (("wav files","*.wav"),)) # select audio file
@@ -148,28 +157,22 @@ class SignalVisualizer(tk.Frame):
         # Plot the audio file
         self.figFile, self.axFile = plt.subplots(figsize=(12,5))
         self.axFile.plot(self.audiotime, self.audio)
-        self.figFile.canvas.manager.set_window_title('Audio file') # set title to the figure window
+        self.figFile.canvas.manager.set_window_title(filename) # set title to the figure window
         self.axFile.axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
         self.axFile.set(xlim=[0, max(self.audiotime)], xlabel='Time (s)', ylabel='Waveform', title='Load an audio file')
 
         # Add play and stop buttons to the figure
-        def playSound(event):
-            sd.play(self.audio, self.audiofs)
+        axPlay = plt.axes([0.8, 0.01, 0.09, 0.05]) # [x axis, y axis, width, height]
+        playBtn = Button(axPlay, '', image=plt.imread('images/play.png'))
+        playBtn.on_clicked(self.playSoundFullFile)
 
-        def stopSound(event):
-            sd.stop()
+        axStop = plt.axes([0.84, 0.01, 0.09, 0.05])
+        stopBtn = Button(axStop, '', image=plt.imread('images/stop.png'))
+        stopBtn.on_clicked(self.stopSound)
 
-        # axPlay = plt.axes([0.8, 0.01, 0.09, 0.05]) # [x axis, y axis, width, height]
-        # playBtn = Button(axPlay, '', image=plt.imread('images/play.png'))
-        # playBtn.on_clicked(playSound)
-
-        # axStop = plt.axes([0.84, 0.01, 0.09, 0.05])
-        # stopBtn = Button(axStop, '', image=plt.imread('images/stop.png'))
-        # stopBtn.on_clicked(stopSound)
-        
         # Select a fragment with the cursor
-        cursor = Cursor(self.axFile, horizOn=False, useblit=True, color='black', linewidth=1)
-        span = SpanSelector(self.axFile, self.selectFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='red'))
+        self.cursor = Cursor(self.axFile, horizOn=False, useblit=True, color='black', linewidth=1)
+        self.span = SpanSelector(self.axFile, self.selectFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='red'))
         
         plt.show() # show the figure
 
@@ -177,6 +180,8 @@ class SignalVisualizer(tk.Frame):
         ini, end = np.searchsorted(self.audiotime, (xmin, xmax))
         self.plotFragment(ini, end)
         plt.close(self.figFile) # close the figure of the waveform
+        self.cursor.clear(self.figFile)
+        self.span.clear()
 
     def plotFragment(self, ini, end):
         # Variables of the segment of the waveform
@@ -188,7 +193,7 @@ class SignalVisualizer(tk.Frame):
         self.plotFT() # Plot the Fast Fourier Transform (FFT) of the fragment
         self.createControlMenu() # Open the control menu window
 
-    # Plots the waveform and the spectrum of the Fast Fourier Transform (FFT) of the fragment
+    # Plots the waveform and the Fast Fourier Transform (FFT) of the fragment
     def plotFT(self):
         self.figFragFT, self.axFragFT = plt.subplots(2, figsize=(12,6))
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
@@ -207,7 +212,16 @@ class SignalVisualizer(tk.Frame):
         self.axFragFT[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
         self.axFragFT[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
         self.axFragFT[1].plot(frequencies, 20*np.log10(abs(fft2)))
-        self.axFragFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Fourier Transform')
+        self.axFragFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Fourier Transform')
+
+        # # Add play and stop buttons to the figure
+        # axPlay = plt.axes([0.8, 0.01, 0.09, 0.05]) # [x axis, y axis, width, height]
+        # playBtn = Button(axPlay, '', image=plt.imread('images/play.png'))
+        # playBtn.on_clicked(self.playSound)
+
+        # axStop = plt.axes([0.84, 0.01, 0.09, 0.05])
+        # stopBtn = Button(axStop, '', image=plt.imread('images/stop.png'))
+        # stopBtn.on_clicked(self.stopSound)
 
         # TO-DO: connect figFrag with w1Button in signalVisualizer
 
@@ -216,7 +230,7 @@ class SignalVisualizer(tk.Frame):
     def createControlMenu(self):
         cm = tk.Toplevel()
         cm.geometry('726x505')
-        cm.resizable(True, True)
+        cm.resizable(False, False)
         cm.title('Control menu')
         # cm.iconbitmap('images/icon.ico')
 
@@ -295,7 +309,7 @@ class SignalVisualizer(tk.Frame):
                 ent_minf.config(state='disabled')
                 ent_maxf.config(state='disabled')
 
-            if choice == 'STFT' or choice == 'Spectrogram' or choice == 'STFT + Spect' or choice == 'Spectral Centroid':
+            if choice == 'STFT' or choice == 'Spectrogram' or choice == 'STFT + Spect' or choice == 'Spectral Centroid' or choice == 'Short-Time-Energy':
                 dd_wind.config(state='active')
             else: dd_wind.config(state='disabled')
 
@@ -344,6 +358,7 @@ class SignalVisualizer(tk.Frame):
                         cm.opt_nfft[0] = 2**first
                         first -= 1
                     updateOptionMenu(dd_nfft, cm.var_nfft, cm.opt_nfft)
+                return True
             
         def overlapEntry(event):
             # Show an error and stop if the inserted overlap is incorrect
@@ -357,6 +372,7 @@ class SignalVisualizer(tk.Frame):
                 elif overlap >= windSize: # The overlap must always be smaller than the window size
                     text2 = "The overlap must always be smaller than the window size (" + str(windSize) + "s)."
                     tk.messagebox.showerror(parent=cm, title="Wrong overlap value", message=text2) # show error
+            else: return True
 
         def minfreqEntry(event):
             # The minimum frequency must be >= 0 and smaller than the maximum frequency
@@ -366,6 +382,7 @@ class SignalVisualizer(tk.Frame):
                 cm.var_minf.set('0') # Reset widget
                 text = "The minimum frequency must be smaller than the maximum frequency (" + str(maxfreq) + "Hz)."
                 tk.messagebox.showerror(parent=cm, title="Minimum frequency too big", message=text) # show error
+            else: return True
 
         def maxfreqEntry(event):
             # The maximum frequency must be <= self.audiofs/2 and greater than the minimum frequency
@@ -379,6 +396,7 @@ class SignalVisualizer(tk.Frame):
                 elif maxfreq <= minfreq:
                     text = "The maximum frequency must be greater than the minimum frequency (" + str(minfreq) + "Hz)."
                     tk.messagebox.showerror(parent=cm, title="Maximum frequency too small", message=text) # show error
+            else: return True
 
         def minpitchEntry(event):
             minPitch = float(ent_minp.get())
@@ -388,6 +406,7 @@ class SignalVisualizer(tk.Frame):
                 cm.var_maxp.set('600.0') # Reset widget
                 text = "The minimum pitch must be smaller than the maximum pitch (" + str(maxPitch) + "Hz)."
                 tk.messagebox.showerror(parent=cm, title="Pitch floor too big", message=text) # show error
+            else: return True
 
         def maxpitchEntry(event):
             minPitch = float(ent_minp.get())
@@ -397,13 +416,13 @@ class SignalVisualizer(tk.Frame):
                 cm.var_maxp.set('600.0') # Reset widget
                 text = "The maximum pitch must be greater than the minimum pitch (" + str(minPitch) + "Hz)."
                 tk.messagebox.showerror(parent=cm, title="Pitch ceiling too small", message=text) # show error
+            else: return True
             
         # Called when inserting something in an entry. Only lets the user enter numbers or '.'
         def onValidate(s, S):
             if S.isdigit() or (S == '.' and s.isdigit()): # Before '.' always a number
                 return True
-            else:
-                return False
+            else: return False
 
         # Called when clicking the 'Formants' checkbox
         def showFormants():
@@ -562,7 +581,7 @@ class SignalVisualizer(tk.Frame):
 
         # Called when pressing the 'Plot' button
         def plotFigure():
-            # VALUES GIVEN BY THE USER
+            ## VALUES GIVEN BY THE USER
             choice = cm.var_opts.get()
             windType = cm.var_wind.get()
             windSize = float(ent_size.get()) # window size in seconds
@@ -576,7 +595,7 @@ class SignalVisualizer(tk.Frame):
             method = cm.var_meth.get()
             minpitch = cm.var_minp.get()
             maxpitch = cm.var_maxp.get()
-            ## Pitch - advanced settings
+            # Pitch - advanced settings
             silenceTh = self.silenth
             voiceTh = self.voiceth
             octaveCost = self.octcost
@@ -604,16 +623,22 @@ class SignalVisualizer(tk.Frame):
             overlapSamp = overlap * self.audiofs # overlap in samples (float)
 
             # Apply the window type to the window
+            beta = 14 # kaiser
             if windType == 'Bartlett':
                 window = np.bartlett(windSizeSampInt)
+                windType = 'bartlett' # used in STE
             elif windType == 'Blackman':
                 window = np.blackman(windSizeSampInt)
+                windType = 'blackman' # used in STE
             elif windType == 'Hamming':
                 window = np.hamming(windSizeSampInt)
+                windType = 'hamming' # used in STE
             elif windType == 'Hanning':
                 window = np.hanning(windSizeSampInt)
+                windType = 'hann' # used in STE
             elif windType == 'Kaiser':
-                window = np.kaiser(windSizeSampInt) # np.kaiser(windSizeSampInt, float:shape parameter for window)
+                window = np.kaiser(windSizeSampInt, beta) # np.kaiser(windSizeSampInt, float:shape parameter for window)
+                windType = ('kaiser', beta) # used in STE
 
             if choice == 'FT':
                 if plt.fignum_exists(self.figFragFT.number):
@@ -621,6 +646,10 @@ class SignalVisualizer(tk.Frame):
                 self.plotFT() # create the figure of the FT (again)
 
             elif choice == 'STFT' or choice == 'STFT + Spect' or choice == 'Spectral Centroid':
+                # Check if the parameters have correct values
+                if minfreqEntry(minfreq) != True or maxfreqEntry(maxfreq) != True or windowLengthEntry(windSize) != True:
+                    return
+
                 # The window is in the middle of the waveform by default
                 midPoint_idx = int(self.audioFragLen/2) # index of the middle point in the waveform
                 midPoint = self.audiotimeFrag[midPoint_idx] # value of the middle point
@@ -657,9 +686,21 @@ class SignalVisualizer(tk.Frame):
                     line1, = axFragSTFT[1].plot(frequencies, 20*np.log10(abs(stft2)))
                     axFragSTFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Short Time Fourier Transform')
 
+                    # Add play and stop buttons to the figure
+                    axPlay = plt.axes([0.8, 0.01, 0.09, 0.05]) # [x axis, y axis, width, height]
+                    playBtn = Button(axPlay, '', image=plt.imread('images/play.png'))
+                    playBtn.on_clicked(self.playSound)
+
+                    axStop = plt.axes([0.84, 0.01, 0.09, 0.05])
+                    stopBtn = Button(axStop, '', image=plt.imread('images/stop.png'))
+                    stopBtn.on_clicked(self.stopSound)
+
                     cursorSTFT = Cursor(axFragSTFT[0], horizOn=False, useblit=True, color='black', linewidth=1)
 
                 elif choice == 'STFT + Spect':
+                    if overlapEntry(overlap) != True: # check if the parameters have correct values
+                        return
+
                     figFragSTFTSpect, axFragSTFTSpect = plt.subplots(3, figsize=(12,6))
                     plt.subplots_adjust(hspace=.6) # to avoid overlapping between xlabel and title
                     figFragSTFTSpect.canvas.manager.set_window_title('STFT + Spectrogram') # set title to the figure window
@@ -679,6 +720,9 @@ class SignalVisualizer(tk.Frame):
                     cursorSTFTSpect = MultiCursor(figFragSTFTSpect.canvas, (axFragSTFTSpect[0], axFragSTFTSpect[2]), color='black', lw=1)
 
                 else: # choice == Spectral Centroid
+                    if overlapEntry(overlap) != True: # check if the parameters have correct values
+                        return
+
                     figFragSC, axFragSC = plt.subplots(3, figsize=(12,6))
                     plt.subplots_adjust(hspace=.6) # to avoid overlapping between xlabel and title
                     figFragSC.canvas.manager.set_window_title('Spectral Centroid') # set title to the figure window
@@ -746,6 +790,10 @@ class SignalVisualizer(tk.Frame):
                 plt.show() # show the figure
 
             elif choice == 'Spectrogram':
+                # Check if the parameters have correct values
+                if minfreqEntry(minfreq)!=True or maxfreqEntry(maxfreq)!=True or windowLengthEntry(windSize)!=True or overlapEntry(overlap)!=True:
+                    return
+
                 figFragSpect, axFragSpect = plt.subplots(2, figsize=(12,6))
                 plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
                 figFragSpect.canvas.manager.set_window_title('Spectrogram') # set title to the figure window
@@ -754,6 +802,9 @@ class SignalVisualizer(tk.Frame):
 
                 if formants == 1:
                     showFormants() # TO-DO
+
+                # print('overlap in seconds: ', overlap)
+                # print('overlap samp:', overlapSamp)
 
                 axFragSpect[0].plot(self.audiotimeFrag, self.audioFrag)
                 axFragSpect[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
@@ -764,22 +815,23 @@ class SignalVisualizer(tk.Frame):
                 plt.show() # show the figure
 
             elif choice == 'Short-Time-Energy':
+                if windowLengthEntry(windSize)!=True or overlapEntry(overlap)!=True: # check if the parameters have correct values
+                    return
+
                 figFragSTE, axFragSTE = plt.subplots(2, figsize=(12,6))
                 plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
                 figFragSTE.canvas.manager.set_window_title('Short-Time-Energy') # set title to the figure window
 
-                def ste(x, win):
-                    """Compute short-time energy."""
-                    if isinstance(win, str):
-                        win = scipy.signal.get_window(win, max(1, len(x) // windSizeSampInt))
-                    win = win / len(win)
-                    return scipy.signal.convolve(x**2, win**2, mode="same")
+                def ste(signal, win):
+                    window1 = scipy.signal.get_window(win, windSizeSampInt)
+                    window = window1 / len(window1)
+                    return scipy.signal.convolve(signal**2, window**2, mode='same')
 
                 # rms = librosa.feature.rms(y=self.audioFrag, frame_length=windSizeSampInt, hop_length=int(windSizeSamp-overlapSamp), center=True)
                 # times = librosa.times_like(rms, sr=self.audiofs, hop_length=windSizeSamp-overlapSamp+1, n_fft=None)
-                x = np.array(self.audioFrag, dtype=float)
-                time = np.arange(len(x)) * (1.0/self.audiofs)
-                e = ste(x, scipy.signal.get_window("hamming", 201))
+                signal = np.array(self.audioFrag, dtype=float)
+                time = np.arange(len(signal)) * (1.0/self.audiofs)
+                e = ste(signal, windType)
 
                 axFragSTE[0].plot(self.audiotimeFrag, self.audioFrag)
                 axFragSTE[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
@@ -791,6 +843,9 @@ class SignalVisualizer(tk.Frame):
                 plt.show() # show the figure
 
             elif choice == 'Pitch':
+                if minpitchEntry(minpitch) != True or maxpitchEntry(maxpitch) != True: # check if the parameters have correct values
+                    return
+
                 figFragPitch, axFragPitch = plt.subplots(2, figsize=(12,6))
                 plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
                 figFragPitch.canvas.manager.set_window_title('Pitch') # set title to the figure window
@@ -856,6 +911,9 @@ class SignalVisualizer(tk.Frame):
                 plt.show() # show the figure
 
             else: # choice == 'Filtering'
+                if minfreqEntry(minfreq)!=True or maxfreqEntry(maxfreq)!=True: # check if the parameters have correct values
+                    return 
+
                 figFragFilt, axFragFilt = plt.subplots(2, figsize=(12,6))
                 plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
                 figFragFilt.canvas.manager.set_window_title('Pitch') # set title to the figure window
@@ -877,7 +935,7 @@ class SignalVisualizer(tk.Frame):
         lab_nfft = tk.Label(cm, text='nfft')
         lab_meth = tk.Label(cm, text='Method')
 
-        # Labels of entrys
+        # Labels of Entrys
         lab_size = tk.Label(cm, text='Window length (s)')
         lab_over = tk.Label(cm, text='Overlap (s)')
         lab_minf = tk.Label(cm, text='Min frequency (Hz)')
