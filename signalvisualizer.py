@@ -204,10 +204,12 @@ class SignalVisualizer(tk.Frame):
         values = np.arange(int(self.audioFragLen/2))
         frequencies = values / (self.audioFragLen/self.audiofs) # values / time period
 
-        # To avoid plotting problems with the SpanSelector
-        if len(self.audiotimeFrag) != len(self.audioFrag):
-            raise ValueError('Error with SpanSelector: x and y must have same first dimension')
-        
+        # 'self.audiotimeFrag' and 'self.audioFrag' need to have the same first dimension
+        if len(self.audiotimeFrag) < len(self.audioFrag):
+            self.audioFrag = self.audioFrag[:-1].copy()
+        elif len(self.audiotimeFrag) > len(self.audioFrag):
+            self.audiotimeFrag = self.audiotimeFrag[:-1].copy()
+
         self.axFragFT[0].plot(self.audiotimeFrag, self.audioFrag)
         self.axFragFT[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
         self.axFragFT[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
@@ -626,19 +628,19 @@ class SignalVisualizer(tk.Frame):
             beta = 14 # kaiser
             if windType == 'Bartlett':
                 window = np.bartlett(windSizeSampInt)
-                windType = 'bartlett' # used in STE
+                windType1 = 'bartlett' # used in STE
             elif windType == 'Blackman':
                 window = np.blackman(windSizeSampInt)
-                windType = 'blackman' # used in STE
+                windType1 = 'blackman' # used in STE
             elif windType == 'Hamming':
                 window = np.hamming(windSizeSampInt)
-                windType = 'hamming' # used in STE
+                windType1 = 'hamming' # used in STE
             elif windType == 'Hanning':
                 window = np.hanning(windSizeSampInt)
-                windType = 'hann' # used in STE
+                windType1 = 'hann' # used in STE
             elif windType == 'Kaiser':
                 window = np.kaiser(windSizeSampInt, beta) # np.kaiser(windSizeSampInt, float:shape parameter for window)
-                windType = ('kaiser', beta) # used in STE
+                windType1 = ('kaiser', beta) # used in STE
 
             if choice == 'FT':
                 if plt.fignum_exists(self.figFragFT.number):
@@ -820,7 +822,7 @@ class SignalVisualizer(tk.Frame):
 
                 figFragSTE, axFragSTE = plt.subplots(2, figsize=(12,6))
                 plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-                figFragSTE.canvas.manager.set_window_title('Short-Time-Energy') # set title to the figure window
+                figFragSTE.canvas.manager.set_window_title('Short-Time-Energy - Window: '+ str(windType) +', '+ str(windSize) +'s; Overlap: '+ str(overlap) +'s.') # set title to the figure window
 
                 def ste(signal, win):
                     window1 = scipy.signal.get_window(win, windSizeSampInt)
@@ -831,7 +833,7 @@ class SignalVisualizer(tk.Frame):
                 # times = librosa.times_like(rms, sr=self.audiofs, hop_length=windSizeSamp-overlapSamp+1, n_fft=None)
                 signal = np.array(self.audioFrag, dtype=float)
                 time = np.arange(len(signal)) * (1.0/self.audiofs)
-                e = ste(signal, windType)
+                e = ste(signal, windType1)
 
                 axFragSTE[0].plot(self.audiotimeFrag, self.audioFrag)
                 axFragSTE[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
