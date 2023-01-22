@@ -206,9 +206,9 @@ class SignalVisualizer(tk.Frame):
 
         # 'self.audiotimeFrag' and 'self.audioFrag' need to have the same first dimension
         if len(self.audiotimeFrag) < len(self.audioFrag):
-            self.audioFrag = self.audioFrag[:-1].copy()
+            self.audioFrag = self.audioFrag[:-1].copy() # delete last element of the numpy array
         elif len(self.audiotimeFrag) > len(self.audioFrag):
-            self.audiotimeFrag = self.audiotimeFrag[:-1].copy()
+            self.audiotimeFrag = self.audiotimeFrag[:-1].copy() # delete last element of the numpy array
 
         self.axFragFT[0].plot(self.audiotimeFrag, self.audioFrag)
         self.axFragFT[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
@@ -688,15 +688,6 @@ class SignalVisualizer(tk.Frame):
                     line1, = axFragSTFT[1].plot(frequencies, 20*np.log10(abs(stft2)))
                     axFragSTFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Short Time Fourier Transform')
 
-                    # Add play and stop buttons to the figure
-                    axPlay = plt.axes([0.8, 0.01, 0.09, 0.05]) # [x axis, y axis, width, height]
-                    playBtn = Button(axPlay, '', image=plt.imread('images/play.png'))
-                    playBtn.on_clicked(self.playSound)
-
-                    axStop = plt.axes([0.84, 0.01, 0.09, 0.05])
-                    stopBtn = Button(axStop, '', image=plt.imread('images/stop.png'))
-                    stopBtn.on_clicked(self.stopSound)
-
                     cursorSTFT = Cursor(axFragSTFT[0], horizOn=False, useblit=True, color='black', linewidth=1)
 
                 elif choice == 'STFT + Spect':
@@ -804,9 +795,6 @@ class SignalVisualizer(tk.Frame):
 
                 if formants == 1:
                     showFormants() # TO-DO
-
-                # print('overlap in seconds: ', overlap)
-                # print('overlap samp:', overlapSamp)
 
                 axFragSpect[0].plot(self.audiotimeFrag, self.audioFrag)
                 axFragSpect[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
