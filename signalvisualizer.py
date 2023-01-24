@@ -796,6 +796,10 @@ class SignalVisualizer(tk.Frame):
                 if formants == 1:
                     showFormants() # TO-DO
 
+                # mel = librosa.feature.melspectrogram(y=self.audioFrag, sr=self.audiofs, S=None, n_fft=windSizeSampInt, hop_length=512, win_length=windSizeSampInt, window=window, center=True, pad_mode='constant', power=2.0)
+                # D = np.abs(librosa.stft(self.audioFrag))**2
+                # S = librosa.feature.melspectrogram(S=D, sr=sr)
+
                 axFragSpect[0].plot(self.audiotimeFrag, self.audioFrag)
                 axFragSpect[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
                 axFragSpect[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
