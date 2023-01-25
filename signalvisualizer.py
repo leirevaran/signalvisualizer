@@ -2,7 +2,7 @@ import tkinter as tk
 import tkinter.filedialog
 import wave
 import math
-# import librosa
+import librosa
 import scipy.signal
 import parselmouth
 import numpy as np
@@ -231,7 +231,7 @@ class SignalVisualizer(tk.Frame):
 
     def createControlMenu(self):
         cm = tk.Toplevel()
-        cm.geometry('726x505')
+        cm.geometry('726x535')
         cm.resizable(False, False)
         cm.title('Control menu')
         # cm.iconbitmap('images/icon.ico')
@@ -261,6 +261,7 @@ class SignalVisualizer(tk.Frame):
             cm.var_cent.set('0')
             cm.var_cut1.set('0')
             cm.var_cut2.set('0')
+            cm.var_beta.set('0')
 
             if choice == 'FT' or choice == 'STFT' or choice == 'Pitch' or choice == 'Filtering': 
                 ent_over.config(state='disabled')
@@ -318,6 +319,10 @@ class SignalVisualizer(tk.Frame):
             if choice == 'STFT' or choice == 'Spectrogram' or choice == 'STFT + Spect':
                 dd_nfft.config(state='active')
             else: dd_nfft.config(state='disabled')
+
+            if choice == 'Short-Time-Energy':
+                ent_beta.config(state='normal')
+            else: ent_beta.config(state='disabled')
 
         # Called when inserting a value in the entry of the window length and pressing enter
         def windowLengthEntry(event):
@@ -418,6 +423,14 @@ class SignalVisualizer(tk.Frame):
                 cm.var_maxp.set('600.0') # Reset widget
                 text = "The maximum pitch must be greater than the minimum pitch (" + str(minPitch) + "Hz)."
                 tk.messagebox.showerror(parent=cm, title="Pitch ceiling too small", message=text) # show error
+            else: return True
+
+        def betaEntry(event):
+            beta = float(ent_beta.get())
+            if beta < 0 or beta > 14:
+                cm.var_beta.set('0') # Reset widget
+                text = "The value of beta must be a number between 0 and 14."
+                tk.messagebox.showerror(parent=cm, title="Incorrect value of beta", message=text) # show error
             else: return True
             
         # Called when inserting something in an entry. Only lets the user enter numbers or '.'
@@ -593,6 +606,7 @@ class SignalVisualizer(tk.Frame):
             minfreq = cm.var_minf.get()
             maxfreq = cm.var_maxf.get()
             formants = cm.var_form.get() # returns 1 if activated, 0 if not
+            draw = cm.var_draw.get()
             # Pitch
             method = cm.var_meth.get()
             minpitch = cm.var_minp.get()
@@ -619,13 +633,14 @@ class SignalVisualizer(tk.Frame):
             centfreq = cm.var_cent.get()
             fcut1 = cm.var_cut1.get()
             fcut2 = cm.var_cut2.get()
+            # Short-Time-Energy
+            beta = cm.var_beta.get()
 
             windSizeSamp = windSize * self.audiofs # window size in samples
             windSizeSampInt = int(windSizeSamp)
             overlapSamp = overlap * self.audiofs # overlap in samples (float)
 
             # Apply the window type to the window
-            beta = 14 # kaiser
             if windType == 'Bartlett':
                 window = np.bartlett(windSizeSampInt)
                 windType1 = 'bartlett' # used in STE
@@ -677,7 +692,7 @@ class SignalVisualizer(tk.Frame):
                 if choice == 'STFT':
                     figFragSTFT, axFragSTFT = plt.subplots(2, figsize=(12,6))
                     plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-                    figFragSTFT.canvas.manager.set_window_title('STFT') # set title to the figure window
+                    figFragSTFT.canvas.manager.set_window_title('STFT - Window: '+ str(windType) +', '+ str(windSize) +'s; Nfft: '+ str(nfftUser)) # set title to the figure window
 
                     midLine = axFragSTFT[0].axvline(x=midPoint, color='black', linewidth='1', fillstyle='full') # line in the middle
                     axFragSTFT[0].add_artist(rectangle) # draw the rectangle
@@ -696,7 +711,7 @@ class SignalVisualizer(tk.Frame):
 
                     figFragSTFTSpect, axFragSTFTSpect = plt.subplots(3, figsize=(12,6))
                     plt.subplots_adjust(hspace=.6) # to avoid overlapping between xlabel and title
-                    figFragSTFTSpect.canvas.manager.set_window_title('STFT + Spectrogram') # set title to the figure window
+                    figFragSTFTSpect.canvas.manager.set_window_title('STFT + Spectrogram - Window: '+ str(windType) +', '+ str(windSize) +'s; Nfft: '+ str(nfftUser) +'; Overlap: '+ str(overlap) +'s; Min freq: '+ str(minfreq) + 'Hz, Max freq: '+ str(maxfreq) + 'Hz.') # set title to the figure window
 
                     midLineWavef = axFragSTFTSpect[0].axvline(x=midPoint, color='black', linewidth='1', fillstyle='full') # line in the middle (waveform)
                     midLineSpect = axFragSTFTSpect[2].axvline(x=midPoint, color='black', linewidth='1', fillstyle='full') # line in the middle (spectrogram)
@@ -718,7 +733,7 @@ class SignalVisualizer(tk.Frame):
 
                     figFragSC, axFragSC = plt.subplots(3, figsize=(12,6))
                     plt.subplots_adjust(hspace=.6) # to avoid overlapping between xlabel and title
-                    figFragSC.canvas.manager.set_window_title('Spectral Centroid') # set title to the figure window
+                    figFragSC.canvas.manager.set_window_title('Spectral Centroid - Window: '+ str(windType) +', '+ str(windSize) +'s; Overlap: '+ str(overlap) +'s; Min freq: '+ str(minfreq) + 'Hz, Max freq: '+ str(maxfreq) + 'Hz.') # set title to the figure window
 
                     midLineWavefSC = axFragSC[0].axvline(x=midPoint, color='black', linewidth='1', fillstyle='full') # line in the middle (waveform)
                     midLineSpectSC = axFragSC[2].axvline(x=midPoint, color='black', linewidth='1', fillstyle='full') # line in the middle (spectrogram)
@@ -789,27 +804,29 @@ class SignalVisualizer(tk.Frame):
 
                 figFragSpect, axFragSpect = plt.subplots(2, figsize=(12,6))
                 plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-                figFragSpect.canvas.manager.set_window_title('Spectrogram') # set title to the figure window
+                figFragSpect.canvas.manager.set_window_title('Spectrogram - Window: '+ str(windType) +', '+ str(windSize) +'s; Nfft: '+ str(nfftUser) +'; Overlap: '+ str(overlap) +'s; Min freq: '+ str(minfreq) + 'Hz, Max freq: '+ str(maxfreq) + 'Hz.') # set title to the figure window
 
                 cursorSpect = MultiCursor(figFragSpect.canvas, (axFragSpect[0], axFragSpect[1]), color='black', lw=1)
 
                 if formants == 1:
                     showFormants() # TO-DO
 
-                # mel = librosa.feature.melspectrogram(y=self.audioFrag, sr=self.audiofs, S=None, n_fft=windSizeSampInt, hop_length=512, win_length=windSizeSampInt, window=window, center=True, pad_mode='constant', power=2.0)
-                # D = np.abs(librosa.stft(self.audioFrag))**2
-                # S = librosa.feature.melspectrogram(S=D, sr=sr)
-
                 axFragSpect[0].plot(self.audiotimeFrag, self.audioFrag)
                 axFragSpect[0].axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
                 axFragSpect[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-                axFragSpect[1].specgram(x=self.audioFrag, Fs=self.audiofs, window=window, pad_to=nfftUser, NFFT=windSizeSampInt, mode='magnitude', noverlap=overlapSamp, scale='dB')
-                axFragSpect[1].set(xlim=[0, self.audioFragDuration], ylim=[minfreq, maxfreq], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
+                if draw == 1: # draw the linear spectrogram
+                    axFragSpect[1].specgram(x=self.audioFrag, Fs=self.audiofs, window=window, pad_to=nfftUser, NFFT=windSizeSampInt, mode='magnitude', noverlap=overlapSamp, scale='dB')
+                    axFragSpect[1].set(xlim=[0, self.audioFragDuration], ylim=[minfreq, maxfreq], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
+                else: # draw the mel spectrogram
+                    mel = librosa.feature.melspectrogram(y=self.audioFrag, sr=self.audiofs, n_fft=windSizeSampInt, window=window, fmin=minfreq, fmax=maxfreq)
+                    time = np.arange(len(mel)) * (1.0/self.audiofs)
+                    axFragSpect[1].plot(time, mel)
+                    axFragSpect[1].set(title='Mel-frequency spectrogram')
 
                 plt.show() # show the figure
 
             elif choice == 'Short-Time-Energy':
-                if windowLengthEntry(windSize)!=True or overlapEntry(overlap)!=True: # check if the parameters have correct values
+                if windowLengthEntry(windSize)!=True or overlapEntry(overlap)!=True or betaEntry(beta)!=True: # check if the parameters have correct values
                     return
 
                 figFragSTE, axFragSTE = plt.subplots(2, figsize=(12,6))
@@ -842,7 +859,7 @@ class SignalVisualizer(tk.Frame):
 
                 figFragPitch, axFragPitch = plt.subplots(2, figsize=(12,6))
                 plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-                figFragPitch.canvas.manager.set_window_title('Pitch') # set title to the figure window
+                figFragPitch.canvas.manager.set_window_title('Pitch - Method: '+ str(method) +'; Pitch floor: '+ str(minpitch) + 'Hz, Pitch ceiling: '+ str(maxpitch) + 'Hz.') # set title to the figure window
 
                 # Convert the numpy array containing the audio fragment into a wav file
                 scaled = np.int16(self.audioFrag/np.max(np.abs(self.audioFrag)) * 32767) 
@@ -940,33 +957,42 @@ class SignalVisualizer(tk.Frame):
         lab_cent = tk.Label(cm, text='Center frequency')
         lab_cut1 = tk.Label(cm, text='Fcut1')
         lab_cut2 = tk.Label(cm, text='Fcut2')
+        lab_beta = tk.Label(cm, text='Beta')
         lab_fshz = tk.Label(cm, text='Fs: '+str(self.audiofs)+' Hz')
 
         lab_spec = tk.Label(cm, text='Spectrogram', bd=6, font=('TkDefaultFont', 10))
         lab_ptch = tk.Label(cm, text='Pitch', bd=6, font=('TkDefaultFont', 10))
         lab_filt = tk.Label(cm, text='Filtering', bd=6, font=('TkDefaultFont', 10))
+        lab_sten = tk.Label(cm, text='Short-Time-Energy', bd=6, font=('TkDefaultFont', 10))
+
+        #Labels of radio buttons
+        lab_draw = tk.Label(cm, text='Drawing style')
         
         # positioning Labels
         lab_opts.grid(column=0, row=0, sticky=tk.E, columnspan=2)
         lab_wind.grid(column=0, row=1, sticky=tk.E)
         lab_nfft.grid(column=0, row=3, sticky=tk.E)
-        lab_meth.grid(column=0, row=10, sticky=tk.E)
+        lab_meth.grid(column=0, row=11, sticky=tk.E)
 
         lab_size.grid(column=0, row=2, sticky=tk.E)
         lab_over.grid(column=0, row=4, sticky=tk.E)
         lab_minf.grid(column=0, row=6, sticky=tk.E)
         lab_maxf.grid(column=0, row=7, sticky=tk.E)
-        lab_minp.grid(column=0, row=11, sticky=tk.E)
-        lab_maxp.grid(column=0, row=12, sticky=tk.E)
+        lab_minp.grid(column=0, row=12, sticky=tk.E)
+        lab_maxp.grid(column=0, row=13, sticky=tk.E)
         lab_fund.grid(column=2, row=2, sticky=tk.E)
         lab_cent.grid(column=2, row=3, sticky=tk.E)
         lab_cut1.grid(column=2, row=4, sticky=tk.E)
         lab_cut2.grid(column=2, row=5, sticky=tk.E)
-        lab_fshz.grid(column=3, row=12, sticky=tk.EW)
+        lab_beta.grid(column=2, row=11, sticky=tk.E)
+        lab_fshz.grid(column=3, row=13, sticky=tk.EW)
 
         lab_spec.grid(column=1, row=5)
-        lab_ptch.grid(column=1, row=9)
+        lab_ptch.grid(column=1, row=10)
         lab_filt.grid(column=3, row=1)
+        lab_sten.grid(column=3, row=10)
+
+        lab_draw.grid(column=0, row=9)
 
         # ENTRYS
         cm.var_size = tk.DoubleVar(value=0.09)
@@ -979,6 +1005,7 @@ class SignalVisualizer(tk.Frame):
         cm.var_cent = tk.IntVar()
         cm.var_cut1 = tk.IntVar()
         cm.var_cut2 = tk.IntVar()
+        cm.var_beta = tk.IntVar()
 
         vcmd = (cm.register(onValidate), '%s', '%S')
         
@@ -992,6 +1019,7 @@ class SignalVisualizer(tk.Frame):
         ent_cent = tk.Entry(cm, textvariable=cm.var_cent, state='disabled', validate='key', validatecommand=vcmd)
         ent_cut1 = tk.Entry(cm, textvariable=cm.var_cut1, state='disabled', validate='key', validatecommand=vcmd)
         ent_cut2 = tk.Entry(cm, textvariable=cm.var_cut2, state='disabled', validate='key', validatecommand=vcmd)
+        ent_beta = tk.Entry(cm, textvariable=cm.var_beta, state='disabled', validate='key', validatecommand=vcmd)
 
         # calling functions after entering a value and pressing enter
         ent_size.bind('<Return>', windowLengthEntry)
@@ -1000,23 +1028,34 @@ class SignalVisualizer(tk.Frame):
         ent_maxf.bind('<Return>', maxfreqEntry)
         ent_minp.bind('<Return>', minpitchEntry)
         ent_maxp.bind('<Return>', maxpitchEntry)
+        ent_beta.bind('<Return>', betaEntry)
 
         # positioning Entrys
         ent_size.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5, columnspan=1)
         ent_over.grid(column=1, row=4, sticky=tk.EW, padx=5, pady=5, columnspan=1)
         ent_minf.grid(column=1, row=6, sticky=tk.EW, padx=5, pady=5)
         ent_maxf.grid(column=1, row=7, sticky=tk.EW, padx=5, pady=5)
-        ent_minp.grid(column=1, row=11, sticky=tk.EW, padx=5, pady=5)
-        ent_maxp.grid(column=1, row=12, sticky=tk.EW, padx=5, pady=5)
+        ent_minp.grid(column=1, row=12, sticky=tk.EW, padx=5, pady=5)
+        ent_maxp.grid(column=1, row=13, sticky=tk.EW, padx=5, pady=5)
         ent_fund.grid(column=3, row=2, sticky=tk.EW, padx=5, pady=5)
         ent_cent.grid(column=3, row=3, sticky=tk.EW, padx=5, pady=5)
         ent_cut1.grid(column=3, row=4, sticky=tk.EW, padx=5, pady=5)
         ent_cut2.grid(column=3, row=5, sticky=tk.EW, padx=5, pady=5)
+        ent_beta.grid(column=3, row=11, sticky=tk.EW, padx=5, pady=5)
 
         # CHECKBOX
         cm.var_form = tk.StringVar(value=0)
         chk_form = tk.Checkbutton(cm, text='Formants', command=showFormants, variable=cm.var_form, state='disabled')
         chk_form.grid(column=1, row=8, sticky=tk.W)
+
+        # RADIOBUTTONS (adse)
+        cm.var_draw = tk.IntVar(value=1)
+            
+        rdb_lin = tk.Radiobutton(cm, text='linear', variable=cm.var_draw, value=1)
+        rdb_mel = tk.Radiobutton(cm, text='mel', variable=cm.var_draw, value=2)
+           
+        rdb_lin.grid(column=1, row=9, sticky=tk.W)
+        rdb_mel.grid(column=1, row=9, sticky=tk.E)
 
         # BUTTONS
         but_adse = tk.Button(cm, text='Advanced settings', command=advancedSettings)
@@ -1031,11 +1070,11 @@ class SignalVisualizer(tk.Frame):
         but_fisi.configure(state='disabled')
 
         # positioning Buttons
-        but_adse.grid(column=1, row=13, sticky=tk.EW, padx=5)
+        but_adse.grid(column=1, row=14, sticky=tk.EW, padx=5)
         but_freq.grid(column=3, row=7, sticky=tk.EW, padx=5)
         but_rese.grid(column=3, row=8, sticky=tk.EW, padx=5)
         but_fisi.grid(column=3, row=9, sticky=tk.EW, padx=5)
-        but_plot.grid(column=3, row=13, sticky=tk.EW, padx=5)
+        but_plot.grid(column=3, row=14, sticky=tk.EW, padx=5)
 
         # OPTION MENUS
         cm.options = ['FT','STFT', 'Spectrogram','STFT + Spect', 'Short-Time-Energy', 'Pitch', 'Spectral Centroid', 'Filtering']
@@ -1074,7 +1113,7 @@ class SignalVisualizer(tk.Frame):
         dd_opts.grid(column=2, row=0, sticky=tk.W, padx=5, columnspan=2)
         dd_wind.grid(column=1, row=1, sticky=tk.W, padx=5)
         dd_nfft.grid(column=1, row=3, sticky=tk.W, padx=5)
-        dd_meth.grid(column=1, row=10, sticky=tk.W, padx=5)
+        dd_meth.grid(column=1, row=11, sticky=tk.W, padx=5)
         dd_filt.grid(column=3, row=6, sticky=tk.W, padx=5)
 
 if __name__ == "__main__":
