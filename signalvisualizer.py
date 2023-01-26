@@ -3,6 +3,7 @@ import tkinter.filedialog
 import wave
 import math
 import librosa
+import librosa.display
 import scipy.signal
 import parselmouth
 import numpy as np
@@ -303,7 +304,12 @@ class SignalVisualizer(tk.Frame):
 
             if choice == 'Spectrogram': 
                 chk_form.config(state='active')
-            else: chk_form.config(state='disabled')
+                rdb_lin.config(state='active')
+                rdb_mel.config(state='active')
+            else: 
+                chk_form.config(state='disabled')
+                rdb_lin.config(state='disabled')
+                rdb_mel.config(state='disabled')
 
             if choice == 'Spectrogram' or choice == 'STFT + Spect' or choice == 'Spectral Centroid' or choice == 'Filtering':
                 ent_minf.config(state='normal')
@@ -819,9 +825,12 @@ class SignalVisualizer(tk.Frame):
                     axFragSpect[1].set(xlim=[0, self.audioFragDuration], ylim=[minfreq, maxfreq], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
                 else: # draw the mel spectrogram
                     mel = librosa.feature.melspectrogram(y=self.audioFrag, sr=self.audiofs, n_fft=windSizeSampInt, window=window, fmin=minfreq, fmax=maxfreq)
-                    time = np.arange(len(mel)) * (1.0/self.audiofs)
-                    axFragSpect[1].plot(time, mel)
-                    axFragSpect[1].set(title='Mel-frequency spectrogram')
+                    mel_dB = librosa.power_to_db(mel)
+                    img = librosa.display.specshow(mel_dB, x_axis='time', y_axis='mel', sr=self.audiofs, fmin=minfreq, fmax=maxfreq, ax=axFragSpect[1])
+                    figFragSpect.subplots_adjust(right=0.9) # leave space for the color bar
+                    sub_ax = plt.axes([0.91, 0.12, 0.02, 0.3]) # add a small custom axis (left, bottom, width, height)
+                    figFragSpect.colorbar(img, cax=sub_ax, format='%+2.0f dB')
+                    axFragSpect[1].set(xlim=[0, self.audioFragDuration], title='Mel-frequency spectrogram')
 
                 plt.show() # show the figure
 
@@ -1048,26 +1057,21 @@ class SignalVisualizer(tk.Frame):
         chk_form = tk.Checkbutton(cm, text='Formants', command=showFormants, variable=cm.var_form, state='disabled')
         chk_form.grid(column=1, row=8, sticky=tk.W)
 
-        # RADIOBUTTONS (adse)
+        # RADIOBUTTONS
         cm.var_draw = tk.IntVar(value=1)
             
-        rdb_lin = tk.Radiobutton(cm, text='linear', variable=cm.var_draw, value=1)
-        rdb_mel = tk.Radiobutton(cm, text='mel', variable=cm.var_draw, value=2)
+        rdb_lin = tk.Radiobutton(cm, text='linear', variable=cm.var_draw, value=1, state='disabled')
+        rdb_mel = tk.Radiobutton(cm, text='mel', variable=cm.var_draw, value=2, state='disabled')
            
         rdb_lin.grid(column=1, row=9, sticky=tk.W)
-        rdb_mel.grid(column=1, row=9, sticky=tk.E)
+        rdb_mel.grid(column=1, row=9, sticky=tk.NS)
 
         # BUTTONS
-        but_adse = tk.Button(cm, text='Advanced settings', command=advancedSettings)
-        but_freq = tk.Button(cm, text='Filter Frequency Response')
-        but_rese = tk.Button(cm, text='Reset Signal')
-        but_fisi = tk.Button(cm, text='Filter Signal')
+        but_adse = tk.Button(cm, text='Advanced settings', command=advancedSettings, state='disabled')
+        but_freq = tk.Button(cm, text='Filter Frequency Response', state='disabled')
+        but_rese = tk.Button(cm, text='Reset Signal', state='disabled')
+        but_fisi = tk.Button(cm, text='Filter Signal', state='disabled')
         but_plot = tk.Button(cm, text='Plot', command=plotFigure, font=('TkDefaultFont', 10, 'bold'))
-
-        but_adse.configure(state='disabled')
-        but_freq.configure(state='disabled')
-        but_rese.configure(state='disabled')
-        but_fisi.configure(state='disabled')
 
         # positioning Buttons
         but_adse.grid(column=1, row=14, sticky=tk.EW, padx=5)
