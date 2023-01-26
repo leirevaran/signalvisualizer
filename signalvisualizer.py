@@ -302,7 +302,7 @@ class SignalVisualizer(tk.Frame):
                 ent_maxp.config(state='disabled')
                 but_adse.config(state='disabled')
 
-            if choice == 'Spectrogram': 
+            if choice == 'Spectrogram' or choice == 'STFT + Spect': 
                 chk_form.config(state='active')
                 rdb_lin.config(state='active')
                 rdb_mel.config(state='active')
@@ -728,8 +728,17 @@ class SignalVisualizer(tk.Frame):
                     axFragSTFTSpect[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
                     line1, = axFragSTFTSpect[1].plot(frequencies, 20*np.log10(abs(stft2)))
                     axFragSTFTSpect[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Short Time Fourier Transform')
-                    axFragSTFTSpect[2].specgram(x=self.audioFrag, Fs=self.audiofs, window=window, pad_to=nfftUser, NFFT=windSizeSampInt, mode='magnitude', noverlap=overlapSamp, scale='dB')
-                    axFragSTFTSpect[2].set(xlim=[0, self.audioFragDuration], ylim=[minfreq, maxfreq], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
+                    if draw == 1: # draw the linear spectrogram
+                        axFragSTFTSpect[2].specgram(x=self.audioFrag, Fs=self.audiofs, window=window, pad_to=nfftUser, NFFT=windSizeSampInt, mode='magnitude', noverlap=overlapSamp, scale='dB')
+                        axFragSTFTSpect[2].set(xlim=[0, self.audioFragDuration], ylim=[minfreq, maxfreq], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
+                    else: # draw the mel spectrogram
+                        mel = librosa.feature.melspectrogram(y=self.audioFrag, sr=self.audiofs, n_fft=windSizeSampInt, window=window, fmin=minfreq, fmax=maxfreq)
+                        mel_dB = librosa.power_to_db(mel)
+                        img = librosa.display.specshow(mel_dB, x_axis='time', y_axis='mel', sr=self.audiofs, fmin=minfreq, fmax=maxfreq, ax=axFragSTFTSpect[2])
+                        figFragSTFTSpect.subplots_adjust(right=0.9) # leave space for the color bar
+                        sub_ax = plt.axes([0.91, 0.12, 0.02, 0.17]) # add a small custom axis (left, bottom, width, height)
+                        figFragSTFTSpect.colorbar(img, cax=sub_ax, format='%+2.0f dB')
+                        axFragSTFTSpect[2].set(xlim=[0, self.audioFragDuration], title='Mel-frequency spectrogram')
 
                     cursorSTFTSpect = MultiCursor(figFragSTFTSpect.canvas, (axFragSTFTSpect[0], axFragSTFTSpect[2]), color='black', lw=1)
 
@@ -987,6 +996,7 @@ class SignalVisualizer(tk.Frame):
         lab_over.grid(column=0, row=4, sticky=tk.E)
         lab_minf.grid(column=0, row=6, sticky=tk.E)
         lab_maxf.grid(column=0, row=7, sticky=tk.E)
+        lab_draw.grid(column=0, row=9, sticky=tk.E)
         lab_minp.grid(column=0, row=12, sticky=tk.E)
         lab_maxp.grid(column=0, row=13, sticky=tk.E)
         lab_fund.grid(column=2, row=2, sticky=tk.E)
@@ -1000,8 +1010,6 @@ class SignalVisualizer(tk.Frame):
         lab_ptch.grid(column=1, row=10)
         lab_filt.grid(column=3, row=1)
         lab_sten.grid(column=3, row=10)
-
-        lab_draw.grid(column=0, row=9)
 
         # ENTRYS
         cm.var_size = tk.DoubleVar(value=0.09)
