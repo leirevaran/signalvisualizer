@@ -24,29 +24,7 @@ class Load(tk.Frame):
     def __init__(self, master, controller):
         tk.Frame.__init__(self, master)
         self.controller = controller
-        # self.controller.title('Page one')
         self.loadAudioFile()
-
-        # Create variables for the advanced settings of Pitch
-        self.maxcand = 15 # max number of candidates
-        self.drawing = 1 # drawing style
-        # Autocorrelation / Cross-correlation
-        self.silenth = 0.03 # silence treshold
-        self.voiceth = 0.45 # voicing treshold
-        self.octcost = 0.01 # octave cost
-        self.ocjumpc = 0.35 # octave jump cost
-        self.vuncost = 0.14 # voiced unvoiced cost
-        self.veryacc = 0 # very accurate
-        # Subharmonics
-        self.maxcomp = 1250.0 # max frequency component
-        self.maxsubh = 15 # max number of subharmonics
-        self.compfac = 0.84 # compression factor
-        self.pntsoct = 48 # number of points per octave
-        # Spinet
-        self.windlen = 0.04 # window length
-        self.minfilt = 70.0 # min filter frequency
-        self.maxfilt = 5000.0 # max filter frequency
-        self.filters = 250 # number of filters
 
     def loadAudioFile(self):
         # Load audio file
@@ -102,8 +80,8 @@ class Load(tk.Frame):
         cm.geometry('726x535')
         cm.resizable(True, True)
         cm.title('Control menu: ' + self.fileName)
+        cm.iconbitmap('images/icon.ico')
         cm.wm_transient(self) # Place the toplevel window at the top
-        # cm.iconbitmap('images/icon.ico')
 
         # LABELS
         # Labels of OptionMenus
@@ -340,8 +318,8 @@ class Load(tk.Frame):
             self.minfreq = cm.var_minf.get()
             self.maxfreq = cm.var_maxf.get()
             self.beta = cm.var_beta.get()
-            minpitch = cm.var_minp.get()
-            maxpitch = cm.var_maxp.get()
+            self.minpitch = cm.var_minp.get()
+            self.maxpitch = cm.var_maxp.get()
 
             if choice == 'STFT' or choice == 'STFT + Spect' or choice == 'Spectral Centroid' or choice == 'Spectrogram' or choice == 'Filtering' or choice == 'Short-Time-Energy':
                 if choice == 'Short-Time-Energy':
@@ -353,7 +331,7 @@ class Load(tk.Frame):
                     return
                 if (choice == 'STFT + Spect' or choice == 'Spectral Centroid' or choice == 'Short-Time-Energy' or choice == 'Spectrogram') and overlapEntry(self.overlap) != True:
                     return
-            elif choice == 'Pitch' and (minpitchEntry(minpitch) != True or maxpitchEntry(maxpitch) != True):
+            elif choice == 'Pitch' and (minpitchEntry(self.minpitch) != True or maxpitchEntry(self.maxpitch) != True):
                 return
             
             self.plotFigure(cm) 
@@ -439,6 +417,26 @@ class Load(tk.Frame):
                 self.but_fisi.configure(state='disabled')
 
             if choice == 'Pitch':
+                # Create variables for the advanced settings of Pitch
+                self.maxcand = 15 # max number of candidates
+                self.drawing = 1 # drawing style
+                # Autocorrelation / Cross-correlation
+                self.silenth = 0.03 # silence treshold
+                self.voiceth = 0.45 # voicing treshold
+                self.octcost = 0.01 # octave cost
+                self.ocjumpc = 0.35 # octave jump cost
+                self.vuncost = 0.14 # voiced unvoiced cost
+                self.veryacc = 0 # very accurate
+                # Subharmonics
+                self.maxcomp = 1250.0 # max frequency component
+                self.maxsubh = 15 # max number of subharmonics
+                self.compfac = 0.84 # compression factor
+                self.pntsoct = 48 # number of points per octave
+                # Spinet
+                self.windlen = 0.04 # window length
+                self.minfilt = 70.0 # min filter frequency
+                self.maxfilt = 5000.0 # max filter frequency
+                self.filters = 250 # number of filters
                 self.dd_meth.config(state='active')
                 self.ent_minp.config(state='normal')
                 self.ent_maxp.config(state='normal')
@@ -449,7 +447,7 @@ class Load(tk.Frame):
                 self.ent_maxp.config(state='disabled')
                 self.but_adse.config(state='disabled')
 
-            if choice == 'Spectrogram' or choice == 'STFT + Spect': 
+            if choice == 'Spectrogram' or choice == 'STFT + Spect' or choice == 'Spectral Centroid': 
                 self.chk_form.config(state='active')
                 self.rdb_lin.config(state='active')
                 self.rdb_mel.config(state='active')
@@ -515,19 +513,12 @@ class Load(tk.Frame):
 
     # Called when pressing the 'Plot' button
     def plotFigure(self, cm):
-        ## VALUES GIVEN BY THE USER
+        ## VALUES GIVEN BY THE USER (that were not created in checkValues())
         choice = cm.var_opts.get()
         self.windType = cm.var_wind.get()
-        self.windSize = float(self.ent_size.get()) # window size in seconds
         self.nfftUser = cm.var_nfft.get()
-        self.overlap = float(self.ent_over.get()) # overlap in seconds
-        # Spectrogram
-        self.minfreq = cm.var_minf.get()
-        self.maxfreq = cm.var_maxf.get()
         self.formants = cm.var_form.get() # returns 1 if activated, 0 if not
         self.draw = cm.var_draw.get()
-        # Short-Time-Energy
-        self.beta = cm.var_beta.get()
 
         self.windSizeSamp = self.windSize * self.audiofs # window size in samples
         self.windSizeSampInt = int(self.windSizeSamp)
@@ -615,16 +606,6 @@ class Load(tk.Frame):
                         new_psd, new_freqs = axFragSC[1].psd(new_audioFragWind2, NFFT=self.windSizeSampInt, pad_to=self.nfftUser, Fs=self.audiofs, window=self.window, noverlap=self.overlapSamp)
                         axFragSC[1].axvline(x=new_spectralC, color='r', linewidth='1') # draw a vertical line in x=value of the spectral centroid
                         axFragSC[1].set(xlim=[0, max(new_freqs)], xlabel='Frequency (Hz)', ylabel='Power spectral density (dB/Hz)', title='Power spectral density using fft, spectral centroid value is '+ new_scValue)
-                        # # recalculate the spectrogram
-                        # new_sc = librosa.feature.spectral_centroid(y=new_audioFragWind, sr=self.audiofs, n_fft=nfftUser, hop_length=hopSize, window=window, win_length=windSizeSampInt)
-                        # new_times = librosa.times_like(new_sc)
-                        # new_mag, phase = librosa.magphase(librosa.stft(y=new_audioFragWind, n_fft=self.nfftUser, hop_length=self.hopSize, win_length=self.windSizeSampInt, window=self.window, center=True, dtype=None, pad_mode='constant')) # magnitude of the spectrogram
-                        # new_mag_dB = librosa.amplitude_to_db(new_mag, ref=np.max)
-                        # new_img = librosa.display.specshow(new_mag_dB, y_axis='log', x_axis='time', sr=self.audiofs, win_length=windSizeSampInt, fmin=minfreq, fmax=maxfreq, ax=axFragSC[2], hop_length=hopSize, cmap=None)
-                        # yticks(minfreq, maxfreq) # represent the numbers of y axis
-                        # colorBar(figFragSC, 0.17, new_img)
-                        # self.line1.set_xdata(new_times)
-                        # self.line1.set_ydata(new_sc)
                     else: # recalculate STFT
                         new_stft = self.calculateSTFT(new_audioFragWind2, self.nfftUser)
                         self.line1.set_ydata(20*np.log10(abs(new_stft)))
@@ -786,13 +767,17 @@ class Load(tk.Frame):
         spectralC = self.calculateSC(audioFragWind2)
         scValue = str(round(spectralC, 2)) # take only two decimals
 
-        # Calculate the spectral centroid in the log power spectrogram
+        # Calculate the spectral centroid in the log power linear/mel spectrogram
         sc = librosa.feature.spectral_centroid(y=self.audioFrag, sr=self.audiofs, n_fft=self.nfftUser, hop_length=self.hopSize, window=self.window, win_length=self.windSizeSampInt)
-        print(sc.shape)
         times = librosa.times_like(sc, sr=self.audiofs, hop_length=self.hopSize, n_fft=self.nfftUser)
-        mag, phase = librosa.magphase(librosa.stft(y=self.audioFrag, n_fft=self.nfftUser, hop_length=self.hopSize, win_length=self.windSizeSampInt, window=self.window, center=True, dtype=None, pad_mode='constant')) # magnitude of the spectrogram
-        mag_dB = librosa.amplitude_to_db(mag, ref=np.max)
-        img = librosa.display.specshow(mag_dB, y_axis='log', x_axis='time', sr=self.audiofs, win_length=self.windSizeSampInt, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSC[2], hop_length=self.hopSize, cmap=None)
+        if self.draw == 1: # linear
+            linear = librosa.stft(self.audioFrag, n_fft=self.nfftUser, hop_length=self.hopSize, win_length=self.windSizeSampInt, window=self.window, center=True, dtype=None, pad_mode='constant')
+            linear_dB = librosa.amplitude_to_db(np.abs(linear), ref=np.max)
+            img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.audiofs, win_length=self.windSizeSampInt, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSC[2], hop_length=self.hopSize, cmap=None)
+        else: # mel
+            mag, phase = librosa.magphase(librosa.stft(self.audioFrag, n_fft=self.nfftUser, hop_length=self.hopSize, win_length=self.windSizeSampInt, window=self.window, center=True, dtype=None, pad_mode='constant')) # magnitude of the spectrogram
+            mag_dB = librosa.amplitude_to_db(mag, ref=np.max)
+            img = librosa.display.specshow(mag_dB, x_axis='time', y_axis='log', sr=self.audiofs, win_length=self.windSizeSampInt, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSC[2], hop_length=self.hopSize, cmap=None)
         self.yticks(self.minfreq, self.maxfreq) # represent the numbers of y axis
         self.colorBar(figFragSC, 0.17, img)
 
@@ -863,8 +848,6 @@ class Load(tk.Frame):
     def plotPitch(self, cm):
         # Pitch
         method = cm.var_meth.get()
-        minpitch = cm.var_minp.get()
-        maxpitch = cm.var_maxp.get()
         # Pitch - advanced settings
         silenceTh = self.silenth
         voiceTh = self.voiceth
@@ -885,7 +868,7 @@ class Load(tk.Frame):
         
         figFragPitch, axFragPitch = plt.subplots(2, figsize=(12,6))
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-        figFragPitch.canvas.manager.set_window_title('Pitch - Method: '+ str(method) +'; Pitch floor: '+ str(minpitch) + 'Hz, Pitch ceiling: '+ str(maxpitch) + 'Hz.') # set title to the figure window
+        figFragPitch.canvas.manager.set_window_title('Pitch - Method: '+ str(method) +'; Pitch floor: '+ str(self.minpitch) + 'Hz, Pitch ceiling: '+ str(self.maxpitch) + 'Hz.') # set title to the figure window
 
         # Convert the numpy array containing the audio fragment into a wav file
         scaled = np.int16(self.audioFrag/np.max(np.abs(self.audioFrag)) * 32767) 
@@ -897,7 +880,7 @@ class Load(tk.Frame):
         # Calculate the pitch of the generated wav file using parselmouth
         snd = parselmouth.Sound('frag.wav')
         if method == 'Autocorrelation':
-            pitch = snd.to_pitch_ac(pitch_floor=minpitch,
+            pitch = snd.to_pitch_ac(pitch_floor=self.minpitch,
                                     max_number_of_candidates=maxCandidates,
                                     very_accurate=accurate_bool,
                                     silence_threshold=silenceTh,
@@ -905,9 +888,9 @@ class Load(tk.Frame):
                                     octave_cost=octaveCost,
                                     octave_jump_cost=octJumpCost,
                                     voiced_unvoiced_cost=vcdUnvcdCost,
-                                    pitch_ceiling=maxpitch)
+                                    pitch_ceiling=self.maxpitch)
         elif method == 'Cross-correlation':
-            pitch = snd.to_pitch_cc(pitch_floor=minpitch, 
+            pitch = snd.to_pitch_cc(pitch_floor=self.minpitch, 
                                     max_number_of_candidates=maxCandidates,
                                     very_accurate=accurate_bool,
                                     silence_threshold=silenceTh,
@@ -915,21 +898,21 @@ class Load(tk.Frame):
                                     octave_cost=octaveCost,
                                     octave_jump_cost=octJumpCost,
                                     voiced_unvoiced_cost=vcdUnvcdCost,
-                                    pitch_ceiling=maxpitch)
+                                    pitch_ceiling=self.maxpitch)
         elif method == 'Subharmonics':
-            pitch = snd.to_pitch_shs(minimum_pitch=minpitch, 
+            pitch = snd.to_pitch_shs(minimum_pitch=self.minpitch, 
                                     max_number_of_candidates=maxCandidates,
                                     maximum_frequency_component=maxFreqComp,
                                     max_number_of_subharmonics=maxSubharm,
                                     compression_factor=compFactor,
-                                    ceiling=maxpitch,
+                                    ceiling=self.maxpitch,
                                     number_of_points_per_octave=pointsPerOct)
         else: # method == 'Spinet'
             pitch = snd.to_pitch_spinet(window_length=windLen,
                                         minimum_filter_frequency=minFiltFreq,
                                         maximum_filter_frequency=maxFiltFreq,
                                         number_of_filters=numFilters,
-                                        ceiling=maxpitch,
+                                        ceiling=self.maxpitch,
                                         max_number_of_candidates=maxCandidates)
         pitch_values = pitch.selected_array['frequency'] # extract selected pitch contour
         pitch_values[pitch_values==0] = np.nan # replace unvoiced samples by NaN to not plot
@@ -973,7 +956,7 @@ class Load(tk.Frame):
         adse.geometry('735x408')
         adse.resizable(True, True)
         adse.title('Pitch - Advanced settings')
-        # adse.iconbitmap('images/icon.ico')
+        adse.iconbitmap('images/icon.ico')
 
         # LABELS (adse)
         lab_aucc = tk.Label(adse, text='Autocorrelation / Cross-correlation', bd=6, font=('TkDefaultFont', 10))
