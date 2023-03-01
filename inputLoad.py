@@ -25,6 +25,7 @@ class Load(tk.Frame):
     def __init__(self, master, controller):
         tk.Frame.__init__(self, master)
         self.controller = controller
+        self.audioFrag = np.empty(1)
         self.loadAudioFile()
 
     def loadAudioFile(self):
@@ -53,22 +54,40 @@ class Load(tk.Frame):
         self.axFile.axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
         self.axFile.set(xlim=[0, max(self.audiotime)], xlabel='Time (s)', ylabel='Waveform', title='Load an audio file')
 
-        # Select a fragment with the cursor
-        self.cursor = Cursor(self.axFile, horizOn=False, useblit=True, color='black', linewidth=1)
-        self.span = SpanSelector(self.axFile, self.selectFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='red'))
+        def load(event):
+            if self.audioFrag.shape == (1,): # if no fragment has been selected
+                text = "First select a fragment with the left button of the cursor."
+                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
+                return
+            self.plotFragment()
+            plt.close(self.figFile) # close the figure of the waveform
+            self.span.clear()
+        
+        axload = self.figFile.add_axes([0.8, 0.01, 0.09, 0.05])
+        but_load = Button(axload, 'Load')
+        but_load.on_clicked(load)
+        
+        # Select a fragment with the cursor and play the audio of that fragment
+        self.span = SpanSelector(self.axFile, self.selectFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
         
         plt.show() # show the figure
 
     def selectFragment(self, xmin, xmax):
         ini, end = np.searchsorted(self.audiotime, (xmin, xmax))
-        self.plotFragment(ini, end)
-        plt.close(self.figFile) # close the figure of the waveform
-        self.cursor.clear(self.figFile)
-        self.span.clear()
-
-    def plotFragment(self, ini, end):
-        # Variables of the segment of the waveform
         self.audioFrag = self.audio[ini:end+1]
+        sd.play(self.audioFrag, self.audiofs)
+
+    def listenFragment(self, xmin, xmax):
+        ini, end = np.searchsorted(self.audiotimeFrag, (xmin, xmax))
+        audio = self.audioFrag[ini:end+1]
+        sd.play(audio, self.audiofs)
+
+    def createSpanSelector(self, ax):
+        span = SpanSelector(ax, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
+        return span
+
+    def plotFragment(self):
+        # Variables of the segment of the waveform
         self.audiotimeFrag = np.arange(0, len(self.audioFrag)/self.audiofs, 1/self.audiofs)
         self.audioFragDuration = max(self.audiotimeFrag)
         self.audioFragLen = len(self.audioFrag)
@@ -696,6 +715,7 @@ class Load(tk.Frame):
 
         # TO-DO: connect figFrag with w1Button in signalVisualizer
 
+        self.span = self.createSpanSelector(self.axFragFT[0]) # Select a fragment with the cursor and play the audio of that fragment
         self.figFragFT.show() # show the figure
 
     def plotSTFT(self, midPoint, rectangle, stft, frequencies):
@@ -713,6 +733,7 @@ class Load(tk.Frame):
         axFragSTFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Short Time Fourier Transform')
 
         cursorSTFT = Cursor(axFragSTFT[0], horizOn=False, useblit=True, color='black', linewidth=1)
+        self.span = self.createSpanSelector(axFragSTFT[0]) # Select a fragment with the cursor and play the audio of that fragment
 
         return midLine, axFragSTFT
 
@@ -746,6 +767,7 @@ class Load(tk.Frame):
         axFragSTFTSpect[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Short Time Fourier Transform')
 
         cursorSTFTSpect = MultiCursor(figFragSTFTSpect.canvas, (axFragSTFTSpect[0], axFragSTFTSpect[2]), color='black', lw=1)
+        self.span = self.createSpanSelector(axFragSTFTSpect[0]) # Select a fragment with the cursor and play the audio of that fragment
 
         return midLineWavef, midLineSpect, axFragSTFTSpect
 
@@ -786,6 +808,7 @@ class Load(tk.Frame):
         axFragSC[2].set(xlim=[0, self.audioFragDuration], title='log Power spectrogram')
 
         cursorSC = MultiCursor(figFragSC.canvas, (axFragSC[0], axFragSC[2]), color='black', lw=1)
+        self.span = self.createSpanSelector(axFragSC[0]) # Select a fragment with the cursor and play the audio of that fragment
 
         return midLineWavefSC, midLineSpectSC, axFragSC
 
@@ -820,6 +843,7 @@ class Load(tk.Frame):
         axFragSpect[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
 
         cursorSpect.clear(figFragSpect)
+        self.span = self.createSpanSelector(axFragSpect[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
 
     def plotSTE(self):
@@ -838,6 +862,7 @@ class Load(tk.Frame):
         axFragSTE[1].plot(time, ste)
         axFragSTE[1].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude (dB)', title='Short Time Energy')
 
+        self.span = self.createSpanSelector(self.axFragSTE[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
 
     def plotPitch(self, cm):
@@ -923,6 +948,7 @@ class Load(tk.Frame):
         axFragPitch[1].plot(pitch.xs(), pitch_values, draw)
         axFragPitch[1].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Pitch measurement overtime')
 
+        self.span = self.createSpanSelector(axFragPitch[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
 
     def plotFiltering(self, cm):
@@ -944,6 +970,7 @@ class Load(tk.Frame):
         axFragFilt[1].specgram(x=self.audioFrag, Fs=self.audiofs, window=self.window, pad_to=self.nfftUser, NFFT=self.windSizeSampInt, mode='magnitude', noverlap=self.overlapSamp, scale='dB')
         axFragFilt[1].set(xlim=[0, self.audioFragDuration], ylim=[self.minfreq, self.maxfreq], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
 
+        self.span = self.createSpanSelector(axFragFilt[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
 
     def advancedSettings(self):
