@@ -4,6 +4,7 @@ from matplotlib import backend_bases
 from inputLoad import Load
 from generateNoise import Noise
 from generatePureTone import PureTone
+from generateFreeAdd import FreeAdditionPureTones
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -49,7 +50,10 @@ class Start(tk.Tk):
             self.frames['PureTone'] = PureTone(master=self.container, controller=self)
             self.frames['PureTone'].grid(row=0, column=0, sticky="nsew")
             self.show_frame('PureTone')
-        
+        elif page_name == 'FreeAdditionPureTones':
+            self.frames['FreeAdditionPureTones'] = FreeAdditionPureTones(master=self.container, controller=self)
+            self.frames['FreeAdditionPureTones'].grid(row=0, column=0, sticky="nsew")
+            self.show_frame('FreeAdditionPureTones')
 
     def show_frame(self, page_name):
         '''Show a frame for the given page name'''
@@ -58,7 +62,6 @@ class Start(tk.Tk):
         if page_name == 'SignalVisualizer':
             menubar = frame.menubar(self)
             self.configure(menu=menubar)
-
 
 class SignalVisualizer(tk.Frame):
     def __init__(self, master, controller):
@@ -80,7 +83,7 @@ class SignalVisualizer(tk.Frame):
 
         generatemenu = tk.Menu(menubar, tearoff=0)
         generatemenu.add_command(label="Pure tone", command=lambda: self.controller.initialize_frame('PureTone'))
-        generatemenu.add_command(label="Free addition of pure tones")
+        generatemenu.add_command(label="Free addition of pure tones", command=lambda: self.controller.initialize_frame('FreeAdditionPureTones'))
         generatemenu.add_command(label="Noise", command=lambda: self.controller.initialize_frame('Noise'))
 
         knownmenu = tk.Menu(generatemenu, tearoff=0)

@@ -8,6 +8,7 @@ import numpy as np
 import sounddevice as sd
 import soundfile as sf
 import matplotlib.pyplot as plt
+from tkinter import ttk
 from tkinter import PhotoImage
 from matplotlib import backend_bases
 from matplotlib.widgets import Button, Cursor, SpanSelector, MultiCursor
@@ -77,7 +78,7 @@ class Load(tk.Frame):
 
     def createControlMenu(self):
         cm = tk.Toplevel()
-        cm.geometry('726x535')
+        cm.geometry('700x525')
         cm.resizable(True, True)
         cm.title('Control menu: ' + self.fileName)
         cm.iconbitmap('images/icon.ico')
@@ -152,17 +153,17 @@ class Load(tk.Frame):
 
         vcmd = (cm.register(self.onValidate), '%s', '%S')
         
-        self.ent_size = tk.Entry(cm, textvariable=cm.var_size, state='disabled', validate='key', validatecommand=vcmd)
-        self.ent_over = tk.Entry(cm, textvariable=cm.var_over, state='disabled', validate='key', validatecommand=vcmd)
-        self.ent_minf = tk.Entry(cm, textvariable=cm.var_minf, state='disabled', validate='key', validatecommand=vcmd)
-        self.ent_maxf = tk.Entry(cm, textvariable=cm.var_maxf, state='disabled', validate='key', validatecommand=vcmd)
-        self.ent_minp = tk.Entry(cm, textvariable=cm.var_minp, state='disabled', validate='key', validatecommand=vcmd)
-        self.ent_maxp = tk.Entry(cm, textvariable=cm.var_maxp, state='disabled', validate='key', validatecommand=vcmd)
-        self.ent_fund = tk.Entry(cm, textvariable=cm.var_fund, state='disabled', validate='key', validatecommand=vcmd)
-        self.ent_cent = tk.Entry(cm, textvariable=cm.var_cent, state='disabled', validate='key', validatecommand=vcmd)
-        self.ent_cut1 = tk.Entry(cm, textvariable=cm.var_cut1, state='disabled', validate='key', validatecommand=vcmd)
-        self.ent_cut2 = tk.Entry(cm, textvariable=cm.var_cut2, state='disabled', validate='key', validatecommand=vcmd)
-        self.ent_beta = tk.Entry(cm, textvariable=cm.var_beta, state='disabled', validate='key', validatecommand=vcmd)
+        self.ent_size = ttk.Entry(cm, textvariable=cm.var_size, state='disabled', validate='key', validatecommand=vcmd)
+        self.ent_over = ttk.Entry(cm, textvariable=cm.var_over, state='disabled', validate='key', validatecommand=vcmd)
+        self.ent_minf = ttk.Entry(cm, textvariable=cm.var_minf, state='disabled', validate='key', validatecommand=vcmd)
+        self.ent_maxf = ttk.Entry(cm, textvariable=cm.var_maxf, state='disabled', validate='key', validatecommand=vcmd)
+        self.ent_minp = ttk.Entry(cm, textvariable=cm.var_minp, state='disabled', validate='key', validatecommand=vcmd)
+        self.ent_maxp = ttk.Entry(cm, textvariable=cm.var_maxp, state='disabled', validate='key', validatecommand=vcmd)
+        self.ent_fund = ttk.Entry(cm, textvariable=cm.var_fund, state='disabled', validate='key', validatecommand=vcmd)
+        self.ent_cent = ttk.Entry(cm, textvariable=cm.var_cent, state='disabled', validate='key', validatecommand=vcmd)
+        self.ent_cut1 = ttk.Entry(cm, textvariable=cm.var_cut1, state='disabled', validate='key', validatecommand=vcmd)
+        self.ent_cut2 = ttk.Entry(cm, textvariable=cm.var_cut2, state='disabled', validate='key', validatecommand=vcmd)
+        self.ent_beta = ttk.Entry(cm, textvariable=cm.var_beta, state='disabled', validate='key', validatecommand=vcmd)
 
         # Called when inserting a value in the entry of the window length and pressing enter
         def windowLengthEntry(event):
@@ -336,41 +337,35 @@ class Load(tk.Frame):
             
             self.plotFigure(cm) 
 
-        self.but_adse = tk.Button(cm, text='Advanced settings', command=lambda: self.advancedSettings(), state='disabled')
-        self.but_freq = tk.Button(cm, text='Filter Frequency Response', state='disabled')
-        self.but_rese = tk.Button(cm, text='Reset Signal', state='disabled')
-        self.but_fisi = tk.Button(cm, text='Filter Signal', state='disabled')
-        self.but_play = tk.Button(cm, text='Play', command=lambda: sd.play(self.audioFrag, self.audiofs))
-        self.but_stop = tk.Button(cm, text='Stop', command=lambda: sd.stop())
-        self.but_plot = tk.Button(cm, text='Plot', command=lambda: checkValues(), font=('TkDefaultFont', 10, 'bold'))
+        self.but_adse = ttk.Button(cm, text='Advanced settings', command=lambda: self.advancedSettings(), state='disabled')
+        self.but_freq = ttk.Button(cm, text='Filter Frequency Response', state='disabled')
+        self.but_rese = ttk.Button(cm, text='Reset Signal', state='disabled')
+        self.but_fisi = ttk.Button(cm, text='Filter Signal', state='disabled')
+        # self.but_play = ttk.Button(cm, text='Play', command=lambda: sd.play(self.audioFrag, self.audiofs))
+        # self.but_stop = ttk.Button(cm, text='Stop', command=lambda: sd.stop())
+        self.but_plot = ttk.Button(cm, text='Plot', command=lambda: checkValues())
 
         # positioning Buttons
         self.but_adse.grid(column=1, row=14, sticky=tk.EW, padx=5)
         self.but_freq.grid(column=3, row=7, sticky=tk.EW, padx=5)
         self.but_rese.grid(column=3, row=8, sticky=tk.EW, padx=5)
         self.but_fisi.grid(column=3, row=9, sticky=tk.EW, padx=5)
-        self.but_play.grid(column=2, row=14, sticky=tk.NS, padx=5)
-        self.but_stop.grid(column=2, row=14, sticky=tk.E, padx=5)
+        # self.but_play.grid(column=2, row=14, sticky=tk.NS, padx=5)
+        # self.but_stop.grid(column=2, row=14, sticky=tk.E, padx=5)
         self.but_plot.grid(column=3, row=14, sticky=tk.EW, padx=5)
 
         # OPTION MENUS
-        cm.options = ['FT','STFT', 'Spectrogram','STFT + Spect', 'Short-Time-Energy', 'Pitch', 'Spectral Centroid', 'Filtering']
-        cm.opt_wind = ['Bartlett','Blackman', 'Hamming','Hanning', 'Kaiser']
-        cm.opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
-        cm.opt_meth = ['Autocorrelation', 'Cross-correlation', 'Subharmonics', 'Spinet']
-        cm.opt_filt = ['Butterworth','Elliptic', 'Chebyshev', 'FIR least-squares']
+        cm.options = ('FT','STFT', 'Spectrogram','STFT + Spect', 'Short-Time-Energy', 'Pitch', 'Spectral Centroid', 'Filtering')
+        cm.opt_wind = ('Bartlett','Blackman', 'Hamming','Hanning', 'Kaiser')
+        cm.opt_nfft = (2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23)
+        cm.opt_meth = ('Autocorrelation', 'Cross-correlation', 'Subharmonics', 'Spinet')
+        cm.opt_filt = ('Butterworth','Elliptic', 'Chebyshev', 'FIR least-squares')
 
         cm.var_opts = tk.StringVar()
         cm.var_wind = tk.StringVar()
         cm.var_nfft = tk.IntVar()
         cm.var_meth = tk.StringVar()
         cm.var_filt = tk.StringVar()
-
-        cm.var_opts.set(cm.options[0])
-        cm.var_wind.set(cm.opt_wind[0])
-        cm.var_nfft.set(cm.opt_nfft[0])
-        cm.var_meth.set(cm.opt_meth[0])
-        cm.var_filt.set(cm.opt_filt[0])
 
         # Called when changing the main option (FT, STFT, etc.) for disabling or activating widgets
         def displayOptions(choice):
@@ -476,25 +471,25 @@ class Load(tk.Frame):
             else: self.ent_beta.config(state='disabled')
 
         # creating option menus
-        self.dd_opts = tk.OptionMenu(cm, cm.var_opts, *cm.options, command=displayOptions)
-        self.dd_wind = tk.OptionMenu(cm, cm.var_wind, *cm.opt_wind)
-        self.dd_nfft = tk.OptionMenu(cm, cm.var_nfft, *cm.opt_nfft)
-        self.dd_meth = tk.OptionMenu(cm, cm.var_meth, *cm.opt_meth)
-        self.dd_filt = tk.OptionMenu(cm, cm.var_filt, *cm.opt_filt)
+        self.dd_opts = ttk.OptionMenu(cm, cm.var_opts, cm.options[0], *cm.options, command=displayOptions)
+        self.dd_wind = ttk.OptionMenu(cm, cm.var_wind, cm.opt_wind[0], *cm.opt_wind)
+        self.dd_nfft = ttk.OptionMenu(cm, cm.var_nfft, cm.opt_nfft[0], *cm.opt_nfft)
+        self.dd_meth = ttk.OptionMenu(cm, cm.var_meth, cm.opt_meth[0], *cm.opt_meth)
+        self.dd_filt = ttk.OptionMenu(cm, cm.var_filt, cm.opt_filt[0], *cm.opt_filt)
 
         # size of the OptionMenus
-        self.dd_opts.config(width=15)
+        self.dd_opts.config(width=16)
         self.dd_wind.config(width=18, state='disabled')
         self.dd_nfft.config(width=18, state='disabled')
         self.dd_meth.config(width=18, state='disabled')
         self.dd_filt.config(width=18, state='disabled')
 
         # positioning OptionMenus
-        self.dd_opts.grid(column=2, row=0, sticky=tk.W, padx=5, columnspan=2)
-        self.dd_wind.grid(column=1, row=1, sticky=tk.W, padx=5)
-        self.dd_nfft.grid(column=1, row=3, sticky=tk.W, padx=5)
-        self.dd_meth.grid(column=1, row=11, sticky=tk.W, padx=5)
-        self.dd_filt.grid(column=3, row=6, sticky=tk.W, padx=5)
+        self.dd_opts.grid(column=2, row=0, sticky=tk.EW, padx=5)
+        self.dd_wind.grid(column=1, row=1, sticky=tk.EW, padx=5)
+        self.dd_nfft.grid(column=1, row=3, sticky=tk.EW, padx=5)
+        self.dd_meth.grid(column=1, row=11, sticky=tk.EW, padx=5)
+        self.dd_filt.grid(column=3, row=6, sticky=tk.EW, padx=5)
 
     # METHODS
     # Updates the OptionMenu 'om' with the option list 'opt' and variable 'var' passed as a parameter
@@ -907,7 +902,7 @@ class Load(tk.Frame):
                                     compression_factor=compFactor,
                                     ceiling=self.maxpitch,
                                     number_of_points_per_octave=pointsPerOct)
-        else: # method == 'Spinet'
+        elif method == 'Spinet':
             pitch = snd.to_pitch_spinet(window_length=windLen,
                                         minimum_filter_frequency=minFiltFreq,
                                         maximum_filter_frequency=maxFiltFreq,
@@ -953,7 +948,7 @@ class Load(tk.Frame):
 
     def advancedSettings(self):
         adse = tk.Toplevel()
-        adse.geometry('735x408')
+        adse.geometry('738x420')
         adse.resizable(True, True)
         adse.title('Pitch - Advanced settings')
         adse.iconbitmap('images/icon.ico')
@@ -1023,23 +1018,23 @@ class Load(tk.Frame):
 
         adse.var_cand = tk.IntVar(value=self.maxcand)
 
-        ent_sith = tk.Entry(adse, textvariable=adse.var_sith)
-        ent_voth = tk.Entry(adse, textvariable=adse.var_voth)
-        ent_octc = tk.Entry(adse, textvariable=adse.var_octc)
-        ent_ocjc = tk.Entry(adse, textvariable=adse.var_ocjc)
-        ent_vunc = tk.Entry(adse, textvariable=adse.var_vunc)
+        ent_sith = ttk.Entry(adse, textvariable=adse.var_sith)
+        ent_voth = ttk.Entry(adse, textvariable=adse.var_voth)
+        ent_octc = ttk.Entry(adse, textvariable=adse.var_octc)
+        ent_ocjc = ttk.Entry(adse, textvariable=adse.var_ocjc)
+        ent_vunc = ttk.Entry(adse, textvariable=adse.var_vunc)
 
-        ent_mxfc = tk.Entry(adse, textvariable=adse.var_mxfc)
-        ent_subh = tk.Entry(adse, textvariable=adse.var_subh)
-        ent_cmpf = tk.Entry(adse, textvariable=adse.var_cmpf)
-        ent_ptso = tk.Entry(adse, textvariable=adse.var_ptso)
+        ent_mxfc = ttk.Entry(adse, textvariable=adse.var_mxfc)
+        ent_subh = ttk.Entry(adse, textvariable=adse.var_subh)
+        ent_cmpf = ttk.Entry(adse, textvariable=adse.var_cmpf)
+        ent_ptso = ttk.Entry(adse, textvariable=adse.var_ptso)
         
-        ent_winl = tk.Entry(adse, textvariable=adse.var_winl)
-        ent_mnfi = tk.Entry(adse, textvariable=adse.var_mnfi)
-        ent_mxfi = tk.Entry(adse, textvariable=adse.var_mxfi)
-        ent_filt = tk.Entry(adse, textvariable=adse.var_filt)
+        ent_winl = ttk.Entry(adse, textvariable=adse.var_winl)
+        ent_mnfi = ttk.Entry(adse, textvariable=adse.var_mnfi)
+        ent_mxfi = ttk.Entry(adse, textvariable=adse.var_mxfi)
+        ent_filt = ttk.Entry(adse, textvariable=adse.var_filt)
 
-        ent_cand = tk.Entry(adse, textvariable=adse.var_cand)
+        ent_cand = ttk.Entry(adse, textvariable=adse.var_cand)
 
         # positioning Entrys (adse)
         ent_sith.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5)
@@ -1075,7 +1070,7 @@ class Load(tk.Frame):
         rdb_spec.grid(column=3, row=9, sticky=tk.E)
 
         # BUTTONS (adse)
-        but_apply = tk.Button(adse, text='Apply', command=lambda: self.apply(adse), font=('TkDefaultFont', 10, 'bold'))
+        but_apply = ttk.Button(adse, text='Apply', command=lambda: self.apply(adse))
         but_apply.configure()
         but_apply.grid(column=3, row=11, sticky=tk.EW, padx=5)
 
