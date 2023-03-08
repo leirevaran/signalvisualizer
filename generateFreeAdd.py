@@ -21,7 +21,7 @@ class FreeAdditionPureTones(tk.Frame):
         fam.geometry('750x500')
         fam.resizable(True, True)
         fam.title('Free addition of pure tones')
-        fam.iconbitmap('images/icon.ico')
+        fam.iconbitmap('icon.ico')
         fam.wm_transient(self) # Place the toplevel window at the top
         self.ax = plt.axes()
         self.fs = 48000 # sample frequency

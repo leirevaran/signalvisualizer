@@ -7,7 +7,7 @@ subprocess.check_call([sys.executable, "-m", "pip", "install", "librosa"])
 
 PyInstaller.__main__.run([
     '-w',
-    '--icon=./images/icon.ico',
+    '--icon=./icon.ico',
     '--collect-data',
     'librosa',
     '--hidden-import=sklearn.utils._typedefs',

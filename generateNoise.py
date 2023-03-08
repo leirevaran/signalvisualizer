@@ -2,7 +2,11 @@ import tkinter as tk
 import colorednoise as cn
 import matplotlib.pyplot as plt
 import numpy as np
+import sounddevice as sd
 from tkinter import ttk
+from matplotlib.widgets import SpanSelector
+
+from controlMenu import ControlMenu
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -20,7 +24,7 @@ class Noise(tk.Frame):
         nm.geometry('815x200')
         nm.resizable(True, True)
         nm.title('Generate noise')
-        nm.iconbitmap('images/icon.ico')
+        nm.iconbitmap('icon.ico')
         nm.wm_transient(self) # Place the toplevel window at the top
         self.ax = plt.axes()
         self.fs = 48000 # sample frequency
@@ -29,7 +33,7 @@ class Noise(tk.Frame):
         nm.var_ampl = tk.DoubleVar(value=1)
         nm.var_dura = tk.DoubleVar(value=1)
         self.sca_ampl = tk.Scale(nm, from_=0, to=1, variable=nm.var_ampl, length=500, orient='horizontal', tickinterval=0.1, resolution=0.01)
-        self.sca_dura = tk.Scale(nm, from_=1, to=30, variable=nm.var_dura, length=500, orient='horizontal')
+        self.sca_dura = tk.Scale(nm, from_=0.01, to=30, variable=nm.var_dura, length=500, orient='horizontal', resolution=0.01)
         self.sca_ampl.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5, columnspan=3)
         self.sca_dura.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5, columnspan=3)
 
@@ -48,7 +52,7 @@ class Noise(tk.Frame):
         lab_dura.grid(column=0, row=2, sticky=tk.E)
         
         # BUTTONS
-        self.but_load = ttk.Button(nm, text='Load', command=lambda: self.controller.initialize_frame('Load'))
+        self.but_load = ttk.Button(nm, text='Load', command=lambda: self.loadNoise(), state='disabled')
         self.but_gene = ttk.Button(nm, text='Generate', command=lambda: self.generateNoise(nm))
         self.but_load.grid(column=3, row=4, sticky=tk.EW, padx=5)
         self.but_gene.grid(column=4, row=4, sticky=tk.EW, padx=5)
@@ -60,38 +64,52 @@ class Noise(tk.Frame):
         self.dd_opts.config(width=11)
         self.dd_opts.grid(column=1, row=0, sticky=tk.W, padx=5)
 
-    # def newSample(self, nm):
-    #     pass
+    def loadNoise(self):
+        noisetime = np.arange(0, len(self.noise3)/self.fs, 1/self.fs)
+        noiseDuration = max(noisetime)
+        noiseLen = len(self.noise3)
+
+        cm = ControlMenu()
+        cm.createControlMenu(self, self.choice, self.fs, self.noise3, noisetime, noiseDuration, noiseLen)
 
     def generateNoise(self, nm):
+        self.but_load.config(state='active')
         self.ax.clear()
-        choice = nm.var_opts.get()
+        self.choice = nm.var_opts.get()
         amplitude = float(self.sca_ampl.get())
         duration = self.sca_dura.get()
-        samples = duration*self.fs
+        samples = int(duration*self.fs)
 
         time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
 
-        if choice == 'White noise':
+        if self.choice == 'White noise':
             beta = 0
-        elif choice == 'Pink noise':
+        elif self.choice == 'Pink noise':
             beta = 1
-        elif choice == 'Brown noise':
+        elif self.choice == 'Brown noise':
             beta = 2
 
         noise = cn.powerlaw_psd_gaussian(beta, samples)
         # noise2 = noise*np.sqrt(power) # con control de potencia (power = amplitude)
-        noise3 = amplitude * noise / max(abs(noise))
+        self.noise3 = amplitude * noise / max(abs(noise))
 
         # # para calcular la potencia
         # L2 = [x**2 for x in noise]
         # suma = sum(L2)/np.size(noise)
 
-        plt.plot(time, noise3)
+        def listenFragment(xmin, xmax):
+            ini, end = np.searchsorted(time, (xmin, xmax))
+            audio = self.noise3[ini:end+1]
+            sd.play(audio, self.fs)
+
+        plt.plot(time, self.noise3)
         self.ax = plt.gca() # gca = get current axes
+        fig = plt.gcf() # gca = get current figure
+        fig.canvas.manager.set_window_title(self.choice)
         plt.xlim(0, duration)
-        plt.axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
+        plt.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         plt.xlabel('Time (s)')
         plt.ylabel('Amplitude')
-        plt.title(str(choice))
+        plt.title(str(self.choice))
+        self.span = SpanSelector(self.ax, listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
         plt.show()

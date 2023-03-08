@@ -70,7 +70,7 @@ class SignalVisualizer(tk.Frame):
         self.master = master
         self.controller.geometry('710x420') # size of the window
         self.controller.title('Signal Visualizer')
-        self.controller.iconbitmap('images/icon.ico')
+        self.controller.iconbitmap('icon.ico')
 
     def menubar(self, root):
         # the menu bar will be at the top of the window
