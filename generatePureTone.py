@@ -4,8 +4,7 @@ import numpy as np
 import unicodedata
 import sounddevice as sd
 from tkinter import ttk
-from scipy import signal
-from matplotlib.widgets import SpanSelector
+from matplotlib.widgets import Button, SpanSelector
 
 from controlMenu import ControlMenu
 
@@ -18,6 +17,10 @@ class PureTone(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
+        self.ax = plt.axes()
+        self.fs = 48000 # sample frequency
+        self.ptFrag = np.empty(1)
+        self.cm = ControlMenu()
         self.toneMenu()
 
     def toneMenu(self):
@@ -27,8 +30,6 @@ class PureTone(tk.Frame):
         tm.title('Generate pure tone')
         tm.iconbitmap('icon.ico')
         tm.wm_transient(self) # Place the toplevel window at the top
-        self.ax = plt.axes()
-        self.fs = 48000 # sample frequency
 
         # SCALERS
         tm.var_dura = tk.IntVar(value=1)
@@ -90,21 +91,10 @@ class PureTone(tk.Frame):
         lab_sign.grid(column=1, row=5, sticky=tk.EW, columnspan=3)
         
         # BUTTONS
-        self.but_load = ttk.Button(tm, text='Load', command=lambda: self.loadNoise(), state='disabled')
-        self.but_gene = ttk.Button(tm, text='Generate', command=lambda: self.generatePureTone(lab_sign))
-        self.but_load.grid(column=4, row=5, sticky=tk.EW, padx=5)
+        self.but_gene = ttk.Button(tm, text='Generate', command=lambda: self.generatePureTone(tm, lab_sign))
         self.but_gene.grid(column=4, row=6, sticky=tk.EW, padx=5)
 
-    def loadNoise(self):
-        ptonetime = np.arange(0, len(self.sig)/self.fs, 1/self.fs)
-        ptoneDuration = max(ptonetime)
-        ptoneLen = len(self.sig)
-
-        cm = ControlMenu()
-        cm.createControlMenu(self, 'Pure tone', self.fs, self.sig, ptonetime, ptoneDuration, ptoneLen)
-    
-    def generatePureTone(self, lab_sign):
-        self.but_load.config(state='active')
+    def generatePureTone(self, tm, lab_sign):
         self.ax.clear()
         amplitude = float(self.ent_ampl.get())
         frequency = float(self.ent_freq.get())
@@ -112,19 +102,15 @@ class PureTone(tk.Frame):
         duration = float(self.ent_dura.get())
         offset = float(self.ent_offs.get())
 
-        # update expression
+        # Update expression
         sign = str(self.ent_offs.get()+' + '+str(self.ent_ampl.get())+' COS(2'+unicodedata.lookup("GREEK SMALL LETTER PI")+' '+str(self.ent_freq.get())+'t + '+str(self.ent_phas.get())+unicodedata.lookup("GREEK SMALL LETTER PI")+')')
         lab_sign.configure(text=sign)
 
-        time = np.linspace(start=0, stop=duration, num=self.fs, endpoint=False)
-        self.sig = amplitude * (np.cos(2*np.pi * frequency*time + phase*np.pi)) + offset
+        self.time = np.linspace(start=0, stop=duration, num=self.fs, endpoint=False)
+        self.sig = amplitude * (np.cos(2*np.pi * frequency*self.time + phase*np.pi)) + offset
 
-        def listenFragment(xmin, xmax):
-            ini, end = np.searchsorted(time, (xmin, xmax))
-            audio = self.sig[ini:end+1]
-            sd.play(audio, self.fs)
-
-        plt.plot(time, self.sig)
+        # Plot the pure tone
+        plt.plot(self.time, self.sig)
         plt.grid() # add grid lines
         self.ax = plt.gca() # gca = get current axes
         fig = plt.gcf() # gca = get current figure
@@ -140,5 +126,27 @@ class PureTone(tk.Frame):
         plt.xlabel('Time (s)')
         plt.ylabel('Amplitude')
         plt.title('Generate pure tone')
-        self.span = SpanSelector(self.ax, listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
+
+        span = SpanSelector(self.ax, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
+        
+        # Add a 'Load' button that takes the selected fragment and opens the control menu when clicked
+        def load(event):
+            if self.ptFrag.shape == (1,): # if no fragment has been selected
+                text = "First select a fragment with the left button of the cursor."
+                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
+                return
+            plt.close(fig)
+            span.clear()
+            tm.destroy()
+            self.cm.createControlMenu(self, 'Pure tone', self.fs, self.ptFrag)
+
+        axload = fig.add_axes([0.8, 0.01, 0.09, 0.05])
+        but_load = Button(axload, 'Load')
+        but_load.on_clicked(load)
+        
         plt.show()
+
+    def listenFragment(self, xmin, xmax):
+        ini, end = np.searchsorted(self.time, (xmin, xmax))
+        self.ptFrag = self.sig[ini:end+1]
+        sd.play(self.ptFrag, self.fs)

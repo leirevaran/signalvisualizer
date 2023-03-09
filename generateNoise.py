@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sounddevice as sd
 from tkinter import ttk
-from matplotlib.widgets import SpanSelector
+from matplotlib.widgets import Button, SpanSelector
 
 from controlMenu import ControlMenu
 
@@ -17,6 +17,10 @@ class Noise(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
+        self.ax = plt.axes()
+        self.fs = 48000 # sample frequency
+        self.noiseFrag = np.empty(1)
+        self.cm = ControlMenu()
         self.noiseMenu()
 
     def noiseMenu(self):
@@ -26,8 +30,6 @@ class Noise(tk.Frame):
         nm.title('Generate noise')
         nm.iconbitmap('icon.ico')
         nm.wm_transient(self) # Place the toplevel window at the top
-        self.ax = plt.axes()
-        self.fs = 48000 # sample frequency
 
         # SCALERS
         nm.var_ampl = tk.DoubleVar(value=1)
@@ -52,9 +54,7 @@ class Noise(tk.Frame):
         lab_dura.grid(column=0, row=2, sticky=tk.E)
         
         # BUTTONS
-        self.but_load = ttk.Button(nm, text='Load', command=lambda: self.loadNoise(), state='disabled')
         self.but_gene = ttk.Button(nm, text='Generate', command=lambda: self.generateNoise(nm))
-        self.but_load.grid(column=3, row=4, sticky=tk.EW, padx=5)
         self.but_gene.grid(column=4, row=4, sticky=tk.EW, padx=5)
 
         # OPTION MENUS
@@ -64,23 +64,14 @@ class Noise(tk.Frame):
         self.dd_opts.config(width=11)
         self.dd_opts.grid(column=1, row=0, sticky=tk.W, padx=5)
 
-    def loadNoise(self):
-        noisetime = np.arange(0, len(self.noise3)/self.fs, 1/self.fs)
-        noiseDuration = max(noisetime)
-        noiseLen = len(self.noise3)
-
-        cm = ControlMenu()
-        cm.createControlMenu(self, self.choice, self.fs, self.noise3, noisetime, noiseDuration, noiseLen)
-
     def generateNoise(self, nm):
-        self.but_load.config(state='active')
         self.ax.clear()
         self.choice = nm.var_opts.get()
         amplitude = float(self.sca_ampl.get())
         duration = self.sca_dura.get()
         samples = int(duration*self.fs)
 
-        time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
+        self.time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
 
         if self.choice == 'White noise':
             beta = 0
@@ -97,12 +88,8 @@ class Noise(tk.Frame):
         # L2 = [x**2 for x in noise]
         # suma = sum(L2)/np.size(noise)
 
-        def listenFragment(xmin, xmax):
-            ini, end = np.searchsorted(time, (xmin, xmax))
-            audio = self.noise3[ini:end+1]
-            sd.play(audio, self.fs)
-
-        plt.plot(time, self.noise3)
+        # Plot the noise
+        plt.plot(self.time, self.noise3)
         self.ax = plt.gca() # gca = get current axes
         fig = plt.gcf() # gca = get current figure
         fig.canvas.manager.set_window_title(self.choice)
@@ -111,5 +98,27 @@ class Noise(tk.Frame):
         plt.xlabel('Time (s)')
         plt.ylabel('Amplitude')
         plt.title(str(self.choice))
-        self.span = SpanSelector(self.ax, listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
+
+        span = SpanSelector(self.ax, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
+
+        # Add a 'Load' button that takes the selected fragment and opens the control menu when clicked
+        def load(event):
+            if self.noiseFrag.shape == (1,): # if no fragment has been selected
+                text = "First select a fragment with the left button of the cursor."
+                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
+                return
+            plt.close(fig)
+            span.clear()
+            nm.destroy()
+            self.cm.createControlMenu(self, self.choice, self.fs, self.noiseFrag)
+
+        axload = fig.add_axes([0.8, 0.01, 0.09, 0.05])
+        but_load = Button(axload, 'Load')
+        but_load.on_clicked(load)
+
         plt.show()
+
+    def listenFragment(self, xmin, xmax):
+        ini, end = np.searchsorted(self.time, (xmin, xmax))
+        self.noiseFrag = self.noise3[ini:end+1]
+        sd.play(self.noiseFrag, self.fs)

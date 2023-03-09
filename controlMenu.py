@@ -1,21 +1,16 @@
 import tkinter as tk
-import wave
 import math
 import librosa, librosa.display 
 import scipy.signal
 import parselmouth
 import numpy as np
 import sounddevice as sd
-import soundfile as sf
 import matplotlib.pyplot as plt
 from tkinter import ttk
-from tkinter import PhotoImage
-from matplotlib import backend_bases
 from matplotlib.widgets import Button, Cursor, SpanSelector, MultiCursor
 from matplotlib.backend_bases import MouseButton
 from matplotlib.patches import Rectangle
 from scipy.io.wavfile import write
-from pathlib import Path
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -23,26 +18,18 @@ windll.shcore.SetProcessDpiAwareness(1)
 
 class ControlMenu():
 
-    def listenFragment(self, xmin, xmax):
-        ini, end = np.searchsorted(self.audiotimeFrag, (xmin, xmax))
-        audio = self.audioFrag[ini:end+1]
-        sd.play(audio, self.audiofs)
-
-    def createSpanSelector(self, ax):
-        span = SpanSelector(ax, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
-        return span
-    
-    def createControlMenu(self, root, fileName, fs, audioFrag, audiotimeFrag, audioFragDuration, audioFragLen):
+    def createControlMenu(self, root, fileName, fs, audioFrag):
         self.audiofs = fs
+        self.fileName = fileName
         self.audioFrag = audioFrag
-        self.audiotimeFrag = audiotimeFrag
-        self.audioFragDuration = audioFragDuration
-        self.audioFragLen = audioFragLen
+        self.audiotimeFrag = np.arange(0, len(self.audioFrag)/self.audiofs, 1/self.audiofs)
+        self.audioFragDuration = max(self.audiotimeFrag)
+        self.audioFragLen = len(self.audioFrag)
 
         cm = tk.Toplevel()
         cm.geometry('700x525')
         cm.resizable(True, True)
-        cm.title('Control menu: ' + fileName)
+        cm.title('Control menu: ' + self.fileName)
         cm.iconbitmap('icon.ico')
         cm.wm_transient(root) # Place the toplevel window at the top
 
@@ -464,6 +451,51 @@ class ControlMenu():
             return True
         else: return False
 
+    # Plays the audio of the selected fragment of the fragment
+    def listenFragFrag(self, xmin, xmax):
+        ini, end = np.searchsorted(self.audiotimeFrag, (xmin, xmax))
+        audio = self.audioFrag[ini:end+1]
+        sd.play(audio, self.audiofs)
+
+    def createSpanSelector(self, ax):
+        span = SpanSelector(ax, self.listenFragFrag, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
+        return span
+    
+    # Called when clicking the 'Formants' checkbox
+    def showFormants(self):
+        pass
+
+    def yticks(self, minfreq, maxfreq):
+        freq = maxfreq-minfreq
+        if freq <=100: 
+            plt.yticks(np.arange(minfreq,maxfreq,20))
+        elif freq <=1000:
+            plt.yticks(np.arange(minfreq,maxfreq,100))
+        else:
+            x = freq//1000
+            y = x//8
+            plt.yticks(np.arange(minfreq,maxfreq,1000*(y+1)))
+
+    def colorBar(self, fig, x, img):
+        fig.subplots_adjust(right=0.9) # leave space for the color bar
+        sub_ax = plt.axes([0.91, 0.12, 0.02, x]) # add a small custom axis (left, bottom, width, height)
+        fig.colorbar(img, cax=sub_ax, format='%+2.0f dB')
+
+    def calculateSTFT(self, audioFragWindow, nfft):
+        stft = np.fft.fft(audioFragWindow, nfft)
+        return stft[range(int(nfft/2))]
+    
+    def calculateSC(self, audioFragWindow):
+        magnitudes = np.abs(np.fft.rfft(audioFragWindow)) # magnitudes of positive frequencies
+        length = len(audioFragWindow)
+        freqs = np.abs(np.fft.fftfreq(length, 1.0/self.audiofs)[:length//2+1]) # positive frequencies
+        return np.sum(magnitudes*freqs)/np.sum(magnitudes) # return weighted mean
+    
+    def calculateSTE(self, signal, win, windSizeSampInt):
+        window1 = scipy.signal.get_window(win, windSizeSampInt)
+        window = window1 / len(window1)
+        return scipy.signal.convolve(signal**2, window**2, mode='same')
+
     # Called when pressing the 'Plot' button
     def plotFigure(self, cm):
         ## VALUES GIVEN BY THE USER (that were not created in checkValues())
@@ -593,41 +625,6 @@ class ControlMenu():
             self.plotPitch(cm)
         elif choice == 'Filtering':
             self.plotFiltering(cm)
-
-    # Called when clicking the 'Formants' checkbox
-    def showFormants(self):
-        pass
-
-    def yticks(self, minfreq, maxfreq):
-        freq = maxfreq-minfreq
-        if freq <=100: 
-            plt.yticks(np.arange(minfreq,maxfreq,20))
-        elif freq <=1000:
-            plt.yticks(np.arange(minfreq,maxfreq,100))
-        else:
-            x = freq//1000
-            y = x//8
-            plt.yticks(np.arange(minfreq,maxfreq,1000*(y+1)))
-
-    def colorBar(self, fig, x, img):
-        fig.subplots_adjust(right=0.9) # leave space for the color bar
-        sub_ax = plt.axes([0.91, 0.12, 0.02, x]) # add a small custom axis (left, bottom, width, height)
-        fig.colorbar(img, cax=sub_ax, format='%+2.0f dB')
-
-    def calculateSTFT(self, audioFragWindow, nfft):
-        stft = np.fft.fft(audioFragWindow, nfft)
-        return stft[range(int(nfft/2))]
-    
-    def calculateSC(self, audioFragWindow):
-        magnitudes = np.abs(np.fft.rfft(audioFragWindow)) # magnitudes of positive frequencies
-        length = len(audioFragWindow)
-        freqs = np.abs(np.fft.fftfreq(length, 1.0/self.audiofs)[:length//2+1]) # positive frequencies
-        return np.sum(magnitudes*freqs)/np.sum(magnitudes) # return weighted mean
-    
-    def calculateSTE(self, signal, win, windSizeSampInt):
-        window1 = scipy.signal.get_window(win, windSizeSampInt)
-        window = window1 / len(window1)
-        return scipy.signal.convolve(signal**2, window**2, mode='same')
 
     # Plots the waveform and the Fast Fourier Transform (FFT) of the fragment
     def plotFT(self):
@@ -910,6 +907,7 @@ class ControlMenu():
         self.span = self.createSpanSelector(axFragFilt[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
 
+    # PITCH - ADVANCED SETTINGS WINDOW
     def advancedSettings(self):
         adse = tk.Toplevel()
         adse.geometry('738x420')
