@@ -24,7 +24,7 @@ class FreeAdditionPureTones(tk.Frame):
 
     def freeAddMenu(self):
         fam = tk.Toplevel()
-        fam.geometry('750x500')
+        fam.geometry('790x570')
         fam.resizable(True, True)
         fam.title('Free addition of pure tones')
         fam.iconbitmap('icon.ico')
@@ -46,7 +46,7 @@ class FreeAdditionPureTones(tk.Frame):
         self.sca_amp5 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp5, length=300, orient='vertical', tickinterval=0.1, resolution=0.01)
         self.sca_amp6 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp6, length=300, orient='vertical', tickinterval=0.1, resolution=0.01)
         self.sca_dura = tk.Scale(fam, from_=1, to=30, variable=fam.var_dura, length=500, orient='horizontal')
-        
+
         self.sca_amp1.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5)
         self.sca_amp2.grid(column=2, row=2, sticky=tk.EW, padx=5, pady=5)
         self.sca_amp3.grid(column=3, row=2, sticky=tk.EW, padx=5, pady=5)
@@ -55,21 +55,23 @@ class FreeAdditionPureTones(tk.Frame):
         self.sca_amp6.grid(column=6, row=2, sticky=tk.EW, padx=5, pady=5)
         self.sca_dura.grid(column=1, row=3, sticky=tk.EW, padx=5, pady=5, columnspan=5)
 
-        # ENTRYS
+        # ENTRY/SPINBOX
         fam.var_frq1 = tk.DoubleVar(value=2)
         fam.var_frq2 = tk.DoubleVar(value=0)
         fam.var_frq3 = tk.DoubleVar(value=0)
         fam.var_frq4 = tk.DoubleVar(value=0)
         fam.var_frq5 = tk.DoubleVar(value=0)
         fam.var_frq6 = tk.DoubleVar(value=0)
+        fam.var_octv = tk.IntVar(value=1)
 
-        self.ent_frq1 = ttk.Entry(fam, textvariable=fam.var_frq1, validate='key', width=10)
-        self.ent_frq2 = ttk.Entry(fam, textvariable=fam.var_frq2, validate='key', width=10)
-        self.ent_frq3 = ttk.Entry(fam, textvariable=fam.var_frq3, validate='key', width=10)
-        self.ent_frq4 = ttk.Entry(fam, textvariable=fam.var_frq4, validate='key', width=10)
-        self.ent_frq5 = ttk.Entry(fam, textvariable=fam.var_frq5, validate='key', width=10)
-        self.ent_frq6 = ttk.Entry(fam, textvariable=fam.var_frq6, validate='key', width=10)
+        self.ent_frq1 = ttk.Spinbox(fam, from_=0, to=20000, textvariable=fam.var_frq1, validate='key', width=10)
+        self.ent_frq2 = ttk.Spinbox(fam, from_=0, to=20000, textvariable=fam.var_frq2, validate='key', width=10)
+        self.ent_frq3 = ttk.Spinbox(fam, from_=0, to=20000, textvariable=fam.var_frq3, validate='key', width=10)
+        self.ent_frq4 = ttk.Spinbox(fam, from_=0, to=20000, textvariable=fam.var_frq4, validate='key', width=10)
+        self.ent_frq5 = ttk.Spinbox(fam, from_=0, to=24000, textvariable=fam.var_frq5, validate='key', width=10)
+        self.ent_frq6 = ttk.Spinbox(fam, from_=0, to=24000, textvariable=fam.var_frq6, validate='key', width=10)
         self.ent_dura = ttk.Entry(fam, textvariable=fam.var_dura, validate='key', width=10)
+        self.ent_octv = ttk.Spinbox(fam, from_=1, to=6, textvariable=fam.var_octv, validate='key', width=10, state='readonly')
 
         self.ent_frq1.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5)
         self.ent_frq2.grid(column=2, row=1, sticky=tk.EW, padx=5, pady=5)
@@ -78,6 +80,7 @@ class FreeAdditionPureTones(tk.Frame):
         self.ent_frq5.grid(column=5, row=1, sticky=tk.EW, padx=5, pady=5)
         self.ent_frq6.grid(column=6, row=1, sticky=tk.EW, padx=5, pady=5)
         self.ent_dura.grid(column=6, row=3, sticky=tk.EW, padx=5, pady=5)
+        self.ent_octv.grid(column=1, row=4, sticky=tk.EW, padx=5, pady=5)
 
         # LABELS
         lab_ton1 = tk.Label(fam, text='1')
@@ -105,8 +108,35 @@ class FreeAdditionPureTones(tk.Frame):
         # BUTTONS
         self.but_gene = ttk.Button(fam, text='Generate', command=lambda: self.generateFAPT())
         self.but_load = ttk.Button(fam, text='Load', command=lambda: self.load(fam), state='disabled')
-        self.but_gene.grid(column=6, row=6, sticky=tk.EW, padx=5)
-        self.but_load.grid(column=5, row=6, sticky=tk.EW, padx=5)
+        self.but_gene.grid(column=6, row=8, sticky=tk.EW, padx=5)
+        self.but_load.grid(column=5, row=8, sticky=tk.EW, padx=5)
+
+        # notes
+        self.but_noteC = ttk.Button(fam, text='C', command=lambda: self.notePushed(1))
+        self.but_ntCDb = ttk.Button(fam, text='CDb', command=lambda: self.notePushed(2))
+        self.but_noteD = ttk.Button(fam, text='D', command=lambda: self.notePushed(3))
+        self.but_ntDEb = ttk.Button(fam, text='DEb', command=lambda: self.notePushed(4))
+        self.but_noteE = ttk.Button(fam, text='E', command=lambda: self.notePushed(5))
+        self.but_noteF = ttk.Button(fam, text='F', command=lambda: self.notePushed(6))
+        self.but_ntFGb = ttk.Button(fam, text='FGb', command=lambda: self.notePushed(7))
+        self.but_noteG = ttk.Button(fam, text='G', command=lambda: self.notePushed(8))
+        self.but_ntGAb = ttk.Button(fam, text='GAb', command=lambda: self.notePushed(9))
+        self.but_noteA = ttk.Button(fam, text='A', command=lambda: self.notePushed(10))
+        self.but_ntABb = ttk.Button(fam, text='ABb', command=lambda: self.notePushed(11))
+        self.but_noteB = ttk.Button(fam, text='B', command=lambda: self.notePushed(12))
+
+        self.but_noteC.grid(column=1, row=6, sticky=tk.EW, padx=5)
+        self.but_ntCDb.grid(column=2, row=6, sticky=tk.EW, padx=5)
+        self.but_noteD.grid(column=3, row=6, sticky=tk.EW, padx=5)
+        self.but_ntDEb.grid(column=4, row=6, sticky=tk.EW, padx=5)
+        self.but_noteE.grid(column=5, row=6, sticky=tk.EW, padx=5)
+        self.but_noteF.grid(column=6, row=6, sticky=tk.EW, padx=5)
+        self.but_ntFGb.grid(column=1, row=7, sticky=tk.EW, padx=5)
+        self.but_noteG.grid(column=2, row=7, sticky=tk.EW, padx=5)
+        self.but_ntGAb.grid(column=3, row=7, sticky=tk.EW, padx=5)
+        self.but_noteA.grid(column=4, row=7, sticky=tk.EW, padx=5)
+        self.but_ntABb.grid(column=5, row=7, sticky=tk.EW, padx=5)
+        self.but_noteB.grid(column=6, row=7, sticky=tk.EW, padx=5)
 
     def generateFAPT(self):
         self.ax.clear()
@@ -173,3 +203,40 @@ class FreeAdditionPureTones(tk.Frame):
         else: # if figure window closed
             text = "First generate a signal and select a fragment with the left button of the cursor."
             tk.messagebox.showerror(parent=self, title="No signal generated", message=text) # show error
+
+    def notePushed(self, note):
+        self.notesHarmonics(note)
+    
+    def notesHarmonics(self, note):
+        # Calculate fundamental frequency of the note
+        oct = float(self.ent_octv.get())
+        fundfreq = 440*np.exp(((oct-4)+(note-10)/12)*np.log(2))
+
+        # Configure the fundamental frequency in the slider
+        self.ent_frq1.set(value=round(fundfreq,2))
+        self.sca_amp1.set(value=1)
+
+        # 2nd harmonic
+        freq = fundfreq*2
+        self.ent_frq2.set(value=round(freq,2))
+        self.sca_amp2.set(value=0.83)
+
+        # 3rd harmonic
+        freq = fundfreq*3
+        self.ent_frq3.set(value=round(freq,2))
+        self.sca_amp3.set(value=0.67)
+
+        # 4th harmonic
+        freq = fundfreq*4
+        self.ent_frq4.set(value=round(freq,2))
+        self.sca_amp4.set(value=0.5)
+
+        # 5th harmonic
+        freq = fundfreq*5
+        self.ent_frq5.set(value=round(freq,2))
+        self.sca_amp5.set(value=0.33)
+
+        # 6th harmonic
+        freq = fundfreq*6
+        self.ent_frq6.set(value=round(freq,2))
+        self.sca_amp6.set(value=0.17)
