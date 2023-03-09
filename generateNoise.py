@@ -55,7 +55,9 @@ class Noise(tk.Frame):
         
         # BUTTONS
         self.but_gene = ttk.Button(nm, text='Generate', command=lambda: self.generateNoise(nm))
+        self.but_load = ttk.Button(nm, text='Load', command=lambda: self.load(nm), state='disabled')
         self.but_gene.grid(column=4, row=4, sticky=tk.EW, padx=5)
+        self.but_load.grid(column=3, row=4, sticky=tk.EW, padx=5)
 
         # OPTION MENUS
         nm.options = ('White noise','Pink noise', 'Brown noise')
@@ -66,12 +68,11 @@ class Noise(tk.Frame):
 
     def generateNoise(self, nm):
         self.ax.clear()
+        self.but_load.config(state='active')
         self.choice = nm.var_opts.get()
         amplitude = float(self.sca_ampl.get())
         duration = self.sca_dura.get()
         samples = int(duration*self.fs)
-
-        self.time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
 
         if self.choice == 'White noise':
             beta = 0
@@ -80,6 +81,7 @@ class Noise(tk.Frame):
         elif self.choice == 'Brown noise':
             beta = 2
 
+        self.time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
         noise = cn.powerlaw_psd_gaussian(beta, samples)
         # noise2 = noise*np.sqrt(power) # con control de potencia (power = amplitude)
         self.noise3 = amplitude * noise / max(abs(noise))
@@ -91,30 +93,15 @@ class Noise(tk.Frame):
         # Plot the noise
         plt.plot(self.time, self.noise3)
         self.ax = plt.gca() # gca = get current axes
-        fig = plt.gcf() # gca = get current figure
-        fig.canvas.manager.set_window_title(self.choice)
+        self.fig = plt.gcf() # gca = get current figure
+        self.fig.canvas.manager.set_window_title(self.choice)
         plt.xlim(0, duration)
         plt.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         plt.xlabel('Time (s)')
         plt.ylabel('Amplitude')
         plt.title(str(self.choice))
 
-        span = SpanSelector(self.ax, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
-
-        # Add a 'Load' button that takes the selected fragment and opens the control menu when clicked
-        def load(event):
-            if self.noiseFrag.shape == (1,): # if no fragment has been selected
-                text = "First select a fragment with the left button of the cursor."
-                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
-                return
-            plt.close(fig)
-            span.clear()
-            nm.destroy()
-            self.cm.createControlMenu(self, self.choice, self.fs, self.noiseFrag)
-
-        axload = fig.add_axes([0.8, 0.01, 0.09, 0.05])
-        but_load = Button(axload, 'Load')
-        but_load.on_clicked(load)
+        self.span = SpanSelector(self.ax, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
 
         plt.show()
 
@@ -122,3 +109,19 @@ class Noise(tk.Frame):
         ini, end = np.searchsorted(self.time, (xmin, xmax))
         self.noiseFrag = self.noise3[ini:end+1]
         sd.play(self.noiseFrag, self.fs)
+
+    # Add a 'Load' button that takes the selected fragment and opens the control menu when clicked
+    def load(self, nm):
+        # if the window of the figure has been closed or no fragment has been selected, show error
+        if plt.fignum_exists(self.fig.number): # if no fragment selected
+            if self.faptFrag.shape == (1,): 
+                text = "First select a fragment with the left button of the cursor."
+                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
+            else:
+                plt.close(self.fig)
+                self.span.clear()
+                nm.destroy()
+                self.cm.createControlMenu(self, 'Free addition of pure tones', self.fs, self.faptFrag)
+        else: # if figure window closed
+            text = "First generate a signal and select a fragment with the left button of the cursor."
+            tk.messagebox.showerror(parent=self, title="No signal generated", message=text) # show error

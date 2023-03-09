@@ -1,9 +1,11 @@
 import tkinter as tk
 import matplotlib.pyplot as plt
 import numpy as np
-import unicodedata
+import sounddevice as sd
 from tkinter import ttk
-from scipy import signal
+from matplotlib.widgets import Button, SpanSelector
+
+from controlMenu import ControlMenu
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -14,6 +16,10 @@ class FreeAdditionPureTones(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
+        self.ax = plt.axes()
+        self.fs = 48000 # sample frequency
+        self.faptFrag = np.empty(1)
+        self.cm = ControlMenu()
         self.freeAddMenu()
 
     def freeAddMenu(self):
@@ -23,8 +29,6 @@ class FreeAdditionPureTones(tk.Frame):
         fam.title('Free addition of pure tones')
         fam.iconbitmap('icon.ico')
         fam.wm_transient(self) # Place the toplevel window at the top
-        self.ax = plt.axes()
-        self.fs = 48000 # sample frequency
 
         # SCALERS
         fam.var_amp1 = tk.DoubleVar(value=0.5)
@@ -82,7 +86,7 @@ class FreeAdditionPureTones(tk.Frame):
         lab_ton4 = tk.Label(fam, text='4')
         lab_ton5 = tk.Label(fam, text='5')
         lab_ton6 = tk.Label(fam, text='6')
-        lab_freq = ttk.Label(fam, text='Frequency (Hz)')
+        lab_freq = tk.Label(fam, text='Frequency (Hz)')
         lab_ampl = tk.Label(fam, text='Amplitude')
         lab_dura = tk.Label(fam, text='Total duration (s)')
         lab_octv = tk.Label(fam, text='Octave')
@@ -99,26 +103,73 @@ class FreeAdditionPureTones(tk.Frame):
         lab_octv.grid(column=0, row=4, sticky=tk.E)
         
         # BUTTONS
-        self.but_gene = ttk.Button(fam, text='Generate', command=lambda: self.generatePureTone())
+        self.but_gene = ttk.Button(fam, text='Generate', command=lambda: self.generateFAPT())
+        self.but_load = ttk.Button(fam, text='Load', command=lambda: self.load(fam), state='disabled')
         self.but_gene.grid(column=6, row=6, sticky=tk.EW, padx=5)
+        self.but_load.grid(column=5, row=6, sticky=tk.EW, padx=5)
 
-    def generatePureTone(self):
+    def generateFAPT(self):
         self.ax.clear()
-        amplitude = float(self.ent_ampl.get())
-        frequency = float(self.ent_freq.get())
-        phase = float(self.ent_phas.get())
+        self.but_load.config(state='active')
+        frq1 = float(self.ent_frq1.get())
+        frq2 = float(self.ent_frq2.get())
+        frq3 = float(self.ent_frq3.get())
+        frq4 = float(self.ent_frq4.get())
+        frq5 = float(self.ent_frq5.get())
+        frq6 = float(self.ent_frq6.get())
+        amp1 = self.sca_amp1.get()
+        amp2 = self.sca_amp2.get()
+        amp3 = self.sca_amp3.get()
+        amp4 = self.sca_amp4.get()
+        amp5 = self.sca_amp5.get()
+        amp6 = self.sca_amp6.get()
         duration = float(self.ent_dura.get())
-        offset = float(self.ent_offs.get())
+        samples = int(duration*self.fs)
 
-        time = np.linspace(start=0, stop=duration, num=self.fs, endpoint=False)
-        sig = amplitude * (np.cos(2*np.pi * frequency*time + phase*np.pi)) + offset
+        self.time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
+        fapt1 = amp1 * (np.sin(2*np.pi * frq1*self.time))
+        fapt2 = amp2 * (np.sin(2*np.pi * frq2*self.time))
+        fapt3 = amp3 * (np.sin(2*np.pi * frq3*self.time))
+        fapt4 = amp4 * (np.sin(2*np.pi * frq4*self.time))
+        fapt5 = amp5 * (np.sin(2*np.pi * frq5*self.time))
+        fapt6 = amp6 * (np.sin(2*np.pi * frq6*self.time))
+        self.fapt = fapt1+fapt2+fapt3+fapt4+fapt5+fapt6
 
-        plt.plot(time, sig)
+        # Plot free addition of pure tones
+        plt.plot(self.time, self.fapt)
+        plt.grid() # add grid lines
         self.ax = plt.gca() # gca = get current axes
+        self.fig = plt.gcf() # gca = get current figure
+        self.fig.canvas.manager.set_window_title('Free addition of pure tones')
         plt.xlim(0, duration)
-        plt.ylim(min(sig), max(sig))
-        plt.axhline(y=0, color='black', linewidth='1', linestyle='--') # draw an horizontal line in y=0.0
+        limite = max(abs(self.fapt))*1.1
+        plt.ylim(-limite, limite)
+        plt.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         plt.xlabel('Time (s)')
         plt.ylabel('Amplitude')
-        plt.title('Generate pure tone')
+        plt.title('Generate free addition of pure tones')
+
+        self.span = SpanSelector(self.ax, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
+        
         plt.show()
+
+    def listenFragment(self, xmin, xmax):
+        ini, end = np.searchsorted(self.time, (xmin, xmax))
+        self.faptFrag = self.fapt[ini:end+1]
+        sd.play(self.faptFrag, self.fs)
+
+    # Add a 'Load' button that takes the selected fragment and opens the control menu when clicked
+    def load(self, fam):
+        # if the window of the figure has been closed or no fragment has been selected, show error
+        if plt.fignum_exists(self.fig.number): # if no fragment selected
+            if self.faptFrag.shape == (1,): 
+                text = "First select a fragment with the left button of the cursor."
+                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
+            else:
+                plt.close(self.fig)
+                self.span.clear()
+                fam.destroy()
+                self.cm.createControlMenu(self, 'Free addition of pure tones', self.fs, self.faptFrag)
+        else: # if figure window closed
+            text = "First generate a signal and select a fragment with the left button of the cursor."
+            tk.messagebox.showerror(parent=self, title="No signal generated", message=text) # show error
