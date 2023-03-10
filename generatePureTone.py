@@ -28,7 +28,7 @@ class PureTone(tk.Frame):
         tm.geometry('815x445')
         tm.resizable(True, True)
         tm.title('Generate pure tone')
-        tm.iconbitmap('icon.ico')
+        # tm.iconbitmap('icon.ico')
         tm.wm_transient(self) # Place the toplevel window at the top
 
         # SCALERS
@@ -144,14 +144,14 @@ class PureTone(tk.Frame):
     def load(self, tm):
         # if the window of the figure has been closed or no fragment has been selected, show error
         if plt.fignum_exists(self.fig.number): # if no fragment selected
-            if self.faptFrag.shape == (1,): 
+            if self.ptFrag.shape == (1,): 
                 text = "First select a fragment with the left button of the cursor."
                 tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
             else:
                 plt.close(self.fig)
                 self.span.clear()
                 tm.destroy()
-                self.cm.createControlMenu(self, 'Free addition of pure tones', self.fs, self.faptFrag)
+                self.cm.createControlMenu(self, 'Pure tone', self.fs, self.ptFrag)
         else: # if figure window closed
             text = "First generate a signal and select a fragment with the left button of the cursor."
             tk.messagebox.showerror(parent=self, title="No signal generated", message=text) # show error

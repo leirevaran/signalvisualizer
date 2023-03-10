@@ -30,7 +30,7 @@ class ControlMenu():
         cm.geometry('700x525')
         cm.resizable(True, True)
         cm.title('Control menu: ' + self.fileName)
-        cm.iconbitmap('icon.ico')
+        # cm.iconbitmap('icon.ico')
         cm.wm_transient(root) # Place the toplevel window at the top
 
         # LABELS
@@ -913,7 +913,7 @@ class ControlMenu():
         adse.geometry('738x420')
         adse.resizable(True, True)
         adse.title('Pitch - Advanced settings')
-        adse.iconbitmap('icon.ico')
+        # adse.iconbitmap('icon.ico')
 
         # LABELS (adse)
         lab_aucc = tk.Label(adse, text='Autocorrelation / Cross-correlation', bd=6, font=('TkDefaultFont', 10))

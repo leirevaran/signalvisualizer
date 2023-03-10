@@ -28,7 +28,7 @@ class Noise(tk.Frame):
         nm.geometry('815x200')
         nm.resizable(True, True)
         nm.title('Generate noise')
-        nm.iconbitmap('icon.ico')
+        # nm.iconbitmap('icon.ico')
         nm.wm_transient(self) # Place the toplevel window at the top
 
         # SCALERS
@@ -114,14 +114,14 @@ class Noise(tk.Frame):
     def load(self, nm):
         # if the window of the figure has been closed or no fragment has been selected, show error
         if plt.fignum_exists(self.fig.number): # if no fragment selected
-            if self.faptFrag.shape == (1,): 
+            if self.noiseFrag.shape == (1,): 
                 text = "First select a fragment with the left button of the cursor."
                 tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
             else:
                 plt.close(self.fig)
                 self.span.clear()
                 nm.destroy()
-                self.cm.createControlMenu(self, 'Free addition of pure tones', self.fs, self.faptFrag)
+                self.cm.createControlMenu(self, self.choice, self.fs, self.noiseFrag)
         else: # if figure window closed
             text = "First generate a signal and select a fragment with the left button of the cursor."
             tk.messagebox.showerror(parent=self, title="No signal generated", message=text) # show error

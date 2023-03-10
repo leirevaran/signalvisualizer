@@ -27,7 +27,7 @@ class FreeAdditionPureTones(tk.Frame):
         fam.geometry('790x570')
         fam.resizable(True, True)
         fam.title('Free addition of pure tones')
-        fam.iconbitmap('icon.ico')
+        # fam.iconbitmap('icon.ico')
         fam.wm_transient(self) # Place the toplevel window at the top
 
         # SCALERS
@@ -112,18 +112,18 @@ class FreeAdditionPureTones(tk.Frame):
         self.but_load.grid(column=5, row=8, sticky=tk.EW, padx=5)
 
         # notes
-        self.but_noteC = ttk.Button(fam, text='C', command=lambda: self.notePushed(1))
-        self.but_ntCDb = ttk.Button(fam, text='CDb', command=lambda: self.notePushed(2))
-        self.but_noteD = ttk.Button(fam, text='D', command=lambda: self.notePushed(3))
-        self.but_ntDEb = ttk.Button(fam, text='DEb', command=lambda: self.notePushed(4))
-        self.but_noteE = ttk.Button(fam, text='E', command=lambda: self.notePushed(5))
-        self.but_noteF = ttk.Button(fam, text='F', command=lambda: self.notePushed(6))
-        self.but_ntFGb = ttk.Button(fam, text='FGb', command=lambda: self.notePushed(7))
-        self.but_noteG = ttk.Button(fam, text='G', command=lambda: self.notePushed(8))
-        self.but_ntGAb = ttk.Button(fam, text='GAb', command=lambda: self.notePushed(9))
-        self.but_noteA = ttk.Button(fam, text='A', command=lambda: self.notePushed(10))
-        self.but_ntABb = ttk.Button(fam, text='ABb', command=lambda: self.notePushed(11))
-        self.but_noteB = ttk.Button(fam, text='B', command=lambda: self.notePushed(12))
+        self.but_noteC = ttk.Button(fam, text='C', command=lambda: self.notesHarmonics(1))
+        self.but_ntCDb = ttk.Button(fam, text='CDb', command=lambda: self.notesHarmonics(2))
+        self.but_noteD = ttk.Button(fam, text='D', command=lambda: self.notesHarmonics(3))
+        self.but_ntDEb = ttk.Button(fam, text='DEb', command=lambda: self.notesHarmonics(4))
+        self.but_noteE = ttk.Button(fam, text='E', command=lambda: self.notesHarmonics(5))
+        self.but_noteF = ttk.Button(fam, text='F', command=lambda: self.notesHarmonics(6))
+        self.but_ntFGb = ttk.Button(fam, text='FGb', command=lambda: self.notesHarmonics(7))
+        self.but_noteG = ttk.Button(fam, text='G', command=lambda: self.notesHarmonics(8))
+        self.but_ntGAb = ttk.Button(fam, text='GAb', command=lambda: self.notesHarmonics(9))
+        self.but_noteA = ttk.Button(fam, text='A', command=lambda: self.notesHarmonics(10))
+        self.but_ntABb = ttk.Button(fam, text='ABb', command=lambda: self.notesHarmonics(11))
+        self.but_noteB = ttk.Button(fam, text='B', command=lambda: self.notesHarmonics(12))
 
         self.but_noteC.grid(column=1, row=6, sticky=tk.EW, padx=5)
         self.but_ntCDb.grid(column=2, row=6, sticky=tk.EW, padx=5)
@@ -204,9 +204,6 @@ class FreeAdditionPureTones(tk.Frame):
             text = "First generate a signal and select a fragment with the left button of the cursor."
             tk.messagebox.showerror(parent=self, title="No signal generated", message=text) # show error
 
-    def notePushed(self, note):
-        self.notesHarmonics(note)
-    
     def notesHarmonics(self, note):
         # Calculate fundamental frequency of the note
         oct = float(self.ent_octv.get())
