@@ -17,19 +17,25 @@ class Noise(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
-        self.ax = plt.axes()
-        self.fs = 48000 # sample frequency
+        self.fig, self.ax = plt.subplots()
         self.noiseFrag = np.empty(1)
         self.cm = ControlMenu()
         self.noiseMenu()
 
     def noiseMenu(self):
         nm = tk.Toplevel()
-        nm.geometry('815x200')
         nm.resizable(True, True)
         nm.title('Generate noise')
         # nm.iconbitmap('icon.ico')
         nm.wm_transient(self) # Place the toplevel window at the top
+        self.cm.windowGeometry(nm, 815, 200)
+
+        # Adapt the window to different sizes
+        for i in range(4):
+            nm.columnconfigure(i, weight=1)
+
+        for i in range(4):
+            nm.rowconfigure(i, weight=1)
 
         # SCALERS
         nm.var_ampl = tk.DoubleVar(value=1)
@@ -40,24 +46,27 @@ class Noise(tk.Frame):
         self.sca_dura.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5, columnspan=3)
 
         # ENTRYS
+        nm.var_fs = tk.IntVar(value=48000)
         self.ent_ampl = ttk.Entry(nm, textvariable=nm.var_ampl, validate='key')
         self.ent_dura = ttk.Entry(nm, textvariable=nm.var_dura, validate='key')
+        self.ent_fs = ttk.Entry(nm, textvariable=nm.var_fs, validate='key')
         self.ent_ampl.grid(column=4, row=1, sticky=tk.EW, padx=5, pady=5)
         self.ent_dura.grid(column=4, row=2, sticky=tk.EW, padx=5, pady=5)
+        self.ent_fs.grid(column=1, row=4, sticky=tk.EW, padx=5, pady=5)
         
         # LABELS
-        lab_type = tk.Label(nm, text='Noise type')
-        lab_ampl = tk.Label(nm, text='Max. amplitude')
-        lab_dura = tk.Label(nm, text='Total duration (s)')
+        lab_type = ttk.Label(nm, text='Noise type')
+        lab_ampl = ttk.Label(nm, text='Max. amplitude')
+        lab_dura = ttk.Label(nm, text='Total duration (s)')
+        lab_fs = ttk.Label(nm, text='Fs (Hz)')
         lab_type.grid(column=0, row=0, sticky=tk.E)
         lab_ampl.grid(column=0, row=1, sticky=tk.E)
         lab_dura.grid(column=0, row=2, sticky=tk.E)
+        lab_fs.grid(column=0, row=4, sticky=tk.E)
         
         # BUTTONS
         self.but_gene = ttk.Button(nm, text='Generate', command=lambda: self.generateNoise(nm))
-        self.but_load = ttk.Button(nm, text='Load', command=lambda: self.load(nm), state='disabled')
-        self.but_gene.grid(column=4, row=4, sticky=tk.EW, padx=5)
-        self.but_load.grid(column=3, row=4, sticky=tk.EW, padx=5)
+        self.but_gene.grid(column=4, row=4, sticky=tk.EW, padx=5, pady=5)
 
         # OPTION MENUS
         nm.options = ('White noise','Pink noise', 'Brown noise')
@@ -67,11 +76,10 @@ class Noise(tk.Frame):
         self.dd_opts.grid(column=1, row=0, sticky=tk.W, padx=5)
 
     def generateNoise(self, nm):
-        self.ax.clear()
-        self.but_load.config(state='active')
         self.choice = nm.var_opts.get()
         amplitude = float(self.sca_ampl.get())
         duration = self.sca_dura.get()
+        self.fs = int(self.ent_fs.get()) # sample frequency
         samples = int(duration*self.fs)
 
         if self.choice == 'White noise':
@@ -82,24 +90,42 @@ class Noise(tk.Frame):
             beta = 2
 
         self.time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
-        noise = cn.powerlaw_psd_gaussian(beta, samples)
-        # noise2 = noise*np.sqrt(power) # con control de potencia (power = amplitude)
-        self.noise3 = amplitude * noise / max(abs(noise))
+        noiseGaussian = cn.powerlaw_psd_gaussian(beta, samples)
+        self.noise = amplitude * noiseGaussian / max(abs(noiseGaussian))
 
-        # # para calcular la potencia
+        # noisePower = noise*np.sqrt(power) # con control de potencia (power = amplitude)
+        # # Para calcular la potencia
         # L2 = [x**2 for x in noise]
         # suma = sum(L2)/np.size(noise)
 
+        # If the window has been closed, create it again
+        if plt.fignum_exists(self.fig.number):
+            self.ax.clear() # delete the previous plot
+        else:
+            self.fig, self.ax = plt.subplots() # create the window
+
+        # Takes the selected fragment and opens the control menu when clicked
+        def load(event):
+            print('entra en load')
+            if self.noiseFrag.shape == (1,): 
+                text = "First select a fragment with the left button of the cursor."
+                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
+                return
+            plt.close(self.fig)
+            self.span.clear()
+            nm.destroy()
+            self.cm.createControlMenu(self, self.choice, self.fs, self.noiseFrag)
+
+        # Adds a 'Load' button to the figure
+        axload = self.fig.add_axes([0.8, 0.01, 0.09, 0.05])
+        self.but_load = Button(axload, 'Load')
+        self.but_load.on_clicked(load)
+
         # Plot the noise
-        plt.plot(self.time, self.noise3)
-        self.ax = plt.gca() # gca = get current axes
-        self.fig = plt.gcf() # gca = get current figure
+        self.ax.plot(self.time, self.noise)
         self.fig.canvas.manager.set_window_title(self.choice)
-        plt.xlim(0, duration)
-        plt.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        plt.xlabel('Time (s)')
-        plt.ylabel('Amplitude')
-        plt.title(str(self.choice))
+        self.ax.set(xlim=[0, duration], xlabel='Time (s)', ylabel='Amplitude')
+        self.ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
 
         self.span = SpanSelector(self.ax, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
 
@@ -107,21 +133,5 @@ class Noise(tk.Frame):
 
     def listenFragment(self, xmin, xmax):
         ini, end = np.searchsorted(self.time, (xmin, xmax))
-        self.noiseFrag = self.noise3[ini:end+1]
+        self.noiseFrag = self.noise[ini:end+1]
         sd.play(self.noiseFrag, self.fs)
-
-    # Add a 'Load' button that takes the selected fragment and opens the control menu when clicked
-    def load(self, nm):
-        # if the window of the figure has been closed or no fragment has been selected, show error
-        if plt.fignum_exists(self.fig.number): # if no fragment selected
-            if self.noiseFrag.shape == (1,): 
-                text = "First select a fragment with the left button of the cursor."
-                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
-            else:
-                plt.close(self.fig)
-                self.span.clear()
-                nm.destroy()
-                self.cm.createControlMenu(self, self.choice, self.fs, self.noiseFrag)
-        else: # if figure window closed
-            text = "First generate a signal and select a fragment with the left button of the cursor."
-            tk.messagebox.showerror(parent=self, title="No signal generated", message=text) # show error

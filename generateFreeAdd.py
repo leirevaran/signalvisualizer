@@ -16,7 +16,7 @@ class FreeAdditionPureTones(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
-        self.ax = plt.axes()
+        self.fig, self.ax = plt.subplots()
         self.fs = 48000 # sample frequency
         self.faptFrag = np.empty(1)
         self.cm = ControlMenu()
@@ -24,11 +24,18 @@ class FreeAdditionPureTones(tk.Frame):
 
     def freeAddMenu(self):
         fam = tk.Toplevel()
-        fam.geometry('790x570')
         fam.resizable(True, True)
         fam.title('Free addition of pure tones')
         # fam.iconbitmap('icon.ico')
         fam.wm_transient(self) # Place the toplevel window at the top
+        self.cm.windowGeometry(fam, 790, 570)
+
+        # Adapt the window to different sizes
+        for i in range(6):
+            fam.columnconfigure(i, weight=1)
+
+        for i in range(4):
+            fam.rowconfigure(i, weight=1)
 
         # SCALERS
         fam.var_amp1 = tk.DoubleVar(value=0.5)
@@ -106,41 +113,12 @@ class FreeAdditionPureTones(tk.Frame):
         lab_octv.grid(column=0, row=4, sticky=tk.E)
         
         # BUTTONS
-        self.but_gene = ttk.Button(fam, text='Generate', command=lambda: self.generateFAPT())
-        self.but_load = ttk.Button(fam, text='Load', command=lambda: self.load(fam), state='disabled')
-        self.but_gene.grid(column=6, row=8, sticky=tk.EW, padx=5)
-        self.but_load.grid(column=5, row=8, sticky=tk.EW, padx=5)
+        self.but_gene = ttk.Button(fam, text='Generate', command=lambda: self.generateFAPT(fam))
+        self.but_pian = ttk.Button(fam, text='Show piano', command=lambda: self.pianoKeyboard())
+        self.but_gene.grid(column=6, row=8, sticky=tk.EW, padx=5, pady=5)
+        self.but_pian.grid(column=2, row=4, sticky=tk.EW, padx=5, pady=5)
 
-        # notes
-        self.but_noteC = ttk.Button(fam, text='C', command=lambda: self.notesHarmonics(1))
-        self.but_ntCDb = ttk.Button(fam, text='CDb', command=lambda: self.notesHarmonics(2))
-        self.but_noteD = ttk.Button(fam, text='D', command=lambda: self.notesHarmonics(3))
-        self.but_ntDEb = ttk.Button(fam, text='DEb', command=lambda: self.notesHarmonics(4))
-        self.but_noteE = ttk.Button(fam, text='E', command=lambda: self.notesHarmonics(5))
-        self.but_noteF = ttk.Button(fam, text='F', command=lambda: self.notesHarmonics(6))
-        self.but_ntFGb = ttk.Button(fam, text='FGb', command=lambda: self.notesHarmonics(7))
-        self.but_noteG = ttk.Button(fam, text='G', command=lambda: self.notesHarmonics(8))
-        self.but_ntGAb = ttk.Button(fam, text='GAb', command=lambda: self.notesHarmonics(9))
-        self.but_noteA = ttk.Button(fam, text='A', command=lambda: self.notesHarmonics(10))
-        self.but_ntABb = ttk.Button(fam, text='ABb', command=lambda: self.notesHarmonics(11))
-        self.but_noteB = ttk.Button(fam, text='B', command=lambda: self.notesHarmonics(12))
-
-        self.but_noteC.grid(column=1, row=6, sticky=tk.EW, padx=5)
-        self.but_ntCDb.grid(column=2, row=6, sticky=tk.EW, padx=5)
-        self.but_noteD.grid(column=3, row=6, sticky=tk.EW, padx=5)
-        self.but_ntDEb.grid(column=4, row=6, sticky=tk.EW, padx=5)
-        self.but_noteE.grid(column=5, row=6, sticky=tk.EW, padx=5)
-        self.but_noteF.grid(column=6, row=6, sticky=tk.EW, padx=5)
-        self.but_ntFGb.grid(column=1, row=7, sticky=tk.EW, padx=5)
-        self.but_noteG.grid(column=2, row=7, sticky=tk.EW, padx=5)
-        self.but_ntGAb.grid(column=3, row=7, sticky=tk.EW, padx=5)
-        self.but_noteA.grid(column=4, row=7, sticky=tk.EW, padx=5)
-        self.but_ntABb.grid(column=5, row=7, sticky=tk.EW, padx=5)
-        self.but_noteB.grid(column=6, row=7, sticky=tk.EW, padx=5)
-
-    def generateFAPT(self):
-        self.ax.clear()
-        self.but_load.config(state='active')
+    def generateFAPT(self, fam):
         frq1 = float(self.ent_frq1.get())
         frq2 = float(self.ent_frq2.get())
         frq3 = float(self.ent_frq3.get())
@@ -165,19 +143,37 @@ class FreeAdditionPureTones(tk.Frame):
         fapt6 = amp6 * (np.sin(2*np.pi * frq6*self.time))
         self.fapt = fapt1+fapt2+fapt3+fapt4+fapt5+fapt6
 
+        # If the window has been closed, create it again
+        if plt.fignum_exists(self.fig.number):
+            self.ax.clear() # delete the previous plot
+        else:
+            self.fig, self.ax = plt.subplots() # create the window
+
+        # Takes the selected fragment and opens the control menu when clicked
+        def load(event):
+            if self.faptFrag.shape == (1,): 
+                text = "First select a fragment with the left button of the cursor."
+                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
+                return
+            plt.close(self.fig)
+            self.span.clear()
+            fam.destroy()
+            self.piano.destroy()
+            self.cm.createControlMenu(self, 'Free addition of pure tones', self.fs, self.faptFrag)
+
+        # Adds a 'Load' button to the figure
+        axload = self.fig.add_axes([0.8, 0.01, 0.09, 0.05])
+        self.but_load = Button(axload, 'Load')
+        self.but_load.on_clicked(load)
+
         # Plot free addition of pure tones
-        plt.plot(self.time, self.fapt)
-        plt.grid() # add grid lines
-        self.ax = plt.gca() # gca = get current axes
-        self.fig = plt.gcf() # gca = get current figure
-        self.fig.canvas.manager.set_window_title('Free addition of pure tones')
-        plt.xlim(0, duration)
         limite = max(abs(self.fapt))*1.1
-        plt.ylim(-limite, limite)
-        plt.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        plt.xlabel('Time (s)')
-        plt.ylabel('Amplitude')
-        plt.title('Generate free addition of pure tones')
+        self.ax.clear()
+        self.ax.plot(self.time, self.fapt)
+        self.fig.canvas.manager.set_window_title('Free addition of pure tones')
+        self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
+        self.ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
+        self.ax.grid() # add grid lines
 
         self.span = SpanSelector(self.ax, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
         
@@ -187,22 +183,6 @@ class FreeAdditionPureTones(tk.Frame):
         ini, end = np.searchsorted(self.time, (xmin, xmax))
         self.faptFrag = self.fapt[ini:end+1]
         sd.play(self.faptFrag, self.fs)
-
-    # Add a 'Load' button that takes the selected fragment and opens the control menu when clicked
-    def load(self, fam):
-        # if the window of the figure has been closed or no fragment has been selected, show error
-        if plt.fignum_exists(self.fig.number): # if no fragment selected
-            if self.faptFrag.shape == (1,): 
-                text = "First select a fragment with the left button of the cursor."
-                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
-            else:
-                plt.close(self.fig)
-                self.span.clear()
-                fam.destroy()
-                self.cm.createControlMenu(self, 'Free addition of pure tones', self.fs, self.faptFrag)
-        else: # if figure window closed
-            text = "First generate a signal and select a fragment with the left button of the cursor."
-            tk.messagebox.showerror(parent=self, title="No signal generated", message=text) # show error
 
     def notesHarmonics(self, note):
         # Calculate fundamental frequency of the note
@@ -237,3 +217,28 @@ class FreeAdditionPureTones(tk.Frame):
         freq = fundfreq*6
         self.ent_frq6.set(value=round(freq,2))
         self.sca_amp6.set(value=0.17)
+
+    def pianoKeyboard(self):
+        self.piano = tk.Toplevel()
+        self.piano.title("Piano")
+        self.piano.geometry('{}x200'.format(300))
+
+        white_keys = 7
+        black = [1, 1, 0, 1, 1, 1, 0]
+        white_notes = [1, 3, 5, 6, 8, 10, 12]
+        black_notes = [2, 4, 0, 7, 9, 11]
+
+        for i in range(white_keys):
+            btn_white = tk.Button(self.piano, bg='white', activebackground='gray87', command=lambda i=i: self.notesHarmonics(white_notes[i]))
+            btn_white.grid(row=0, column=i*3, rowspan=2, columnspan=3, sticky='nsew')
+
+        for i in range(white_keys - 1):
+            if black[i]:
+                btn_black = tk.Button(self.piano, bg='black', activebackground='gray12', command=lambda i=i: self.notesHarmonics(black_notes[i]))
+                btn_black.grid(row=0, column=(i*3)+2, rowspan=1, columnspan=2, sticky='nsew')
+
+        for i in range(white_keys*3):
+            self.piano.columnconfigure(i, weight=1)
+
+        for i in range(2):
+            self.piano.rowconfigure(i, weight=1)

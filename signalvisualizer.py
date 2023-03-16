@@ -1,6 +1,7 @@
 import tkinter as tk
 from matplotlib import backend_bases
 
+from controlMenu import ControlMenu
 from inputLoad import Load
 from generateNoise import Noise
 from generatePureTone import PureTone
@@ -68,9 +69,11 @@ class SignalVisualizer(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
-        self.controller.geometry('710x420') # size of the window
         self.controller.title('Signal Visualizer')
         # self.controller.iconbitmap('icon.ico')
+        self.cm = ControlMenu()
+        self.cm.windowGeometry(self.controller, 710, 420)
+        # self.controller.geometry('710x420') # size of the window
 
     def menubar(self, root):
         # the menu bar will be at the top of the window

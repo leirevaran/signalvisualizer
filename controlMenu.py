@@ -18,6 +18,15 @@ windll.shcore.SetProcessDpiAwareness(1)
 
 class ControlMenu():
 
+    # Calculates the width and height of the window depending on the screen size of the computer
+    def windowGeometry(self, window, x, y):
+        normal_w = 1920
+        normal_h = 1080
+        w, h = window.winfo_screenwidth(), window.winfo_screenheight()
+        window_w = int(w * x / normal_w)
+        window_h = int(h * y / normal_h)
+        window.geometry(str(window_w)+'x'+str(window_h))
+
     def createControlMenu(self, root, fileName, fs, audioFrag):
         self.audiofs = fs
         self.fileName = fileName
@@ -27,12 +36,19 @@ class ControlMenu():
         self.audioFragLen = len(self.audioFrag)
 
         cm = tk.Toplevel()
-        cm.geometry('700x525')
         cm.resizable(True, True)
         cm.title('Control menu: ' + self.fileName)
         # cm.iconbitmap('icon.ico')
         cm.wm_transient(root) # Place the toplevel window at the top
+        self.windowGeometry(cm, 700, 525)
 
+        # Adapt the window to different sizes
+        for i in range(3):
+            cm.columnconfigure(i, weight=1)
+
+        for i in range(14):
+            cm.rowconfigure(i, weight=1)
+        
         # LABELS
         # Labels of OptionMenus
         lab_opts = tk.Label(cm, text='Choose an option', bd=6, font=('TkDefaultFont', 10, 'bold'))
@@ -293,11 +309,11 @@ class ControlMenu():
         self.but_plot = ttk.Button(cm, text='Plot', command=lambda: checkValues())
 
         # positioning Buttons
-        self.but_adse.grid(column=1, row=14, sticky=tk.EW, padx=5)
-        self.but_freq.grid(column=3, row=7, sticky=tk.EW, padx=5)
-        self.but_rese.grid(column=3, row=8, sticky=tk.EW, padx=5)
-        self.but_fisi.grid(column=3, row=9, sticky=tk.EW, padx=5)
-        self.but_plot.grid(column=3, row=14, sticky=tk.EW, padx=5)
+        self.but_adse.grid(column=1, row=14, sticky=tk.EW, padx=5, pady=5)
+        self.but_freq.grid(column=3, row=7, sticky=tk.EW, padx=5, pady=5)
+        self.but_rese.grid(column=3, row=8, sticky=tk.EW, padx=5, pady=5)
+        self.but_fisi.grid(column=3, row=9, sticky=tk.EW, padx=5, pady=5)
+        self.but_plot.grid(column=3, row=14, sticky=tk.EW, padx=5, pady=5)
 
         # OPTION MENUS
         cm.options = ('FT','STFT', 'Spectrogram','STFT + Spect', 'Short-Time-Energy', 'Pitch', 'Spectral Centroid', 'Filtering')
@@ -915,6 +931,13 @@ class ControlMenu():
         adse.title('Pitch - Advanced settings')
         # adse.iconbitmap('icon.ico')
 
+        # Adapt the window to different sizes
+        for i in range(3):
+            adse.columnconfigure(i, weight=1)
+
+        for i in range(11):
+            adse.rowconfigure(i, weight=1)
+
         # LABELS (adse)
         lab_aucc = tk.Label(adse, text='Autocorrelation / Cross-correlation', bd=6, font=('TkDefaultFont', 10))
         lab_sith = tk.Label(adse, text='Silence treshold')
@@ -1034,7 +1057,7 @@ class ControlMenu():
         # BUTTONS (adse)
         but_apply = ttk.Button(adse, text='Apply', command=lambda: self.apply(adse))
         but_apply.configure()
-        but_apply.grid(column=3, row=11, sticky=tk.EW, padx=5)
+        but_apply.grid(column=3, row=11, sticky=tk.EW, padx=5, pady=5)
 
     def apply(self, adse):
         self.silenth = float(adse.var_sith.get())
