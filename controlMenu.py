@@ -25,7 +25,8 @@ class ControlMenu():
         w, h = window.winfo_screenwidth(), window.winfo_screenheight()
         window_w = int(w * x / normal_w)
         window_h = int(h * y / normal_h)
-        window.geometry(str(window_w)+'x'+str(window_h))
+        # window.geometry(str(window_w)+'x'+str(window_h))
+        window.geometry('%dx%d' % (window_w, window_h))
 
     def createControlMenu(self, root, fileName, fs, audioFrag):
         self.audiofs = fs
@@ -33,14 +34,17 @@ class ControlMenu():
         self.audioFrag = audioFrag
         self.audiotimeFrag = np.arange(0, len(self.audioFrag)/self.audiofs, 1/self.audiofs)
         self.audioFragDuration = max(self.audiotimeFrag)
+        self.audioFragDuration2 = str(round(self.audioFragDuration/2, 2)) # take only two decimals
         self.audioFragLen = len(self.audioFrag)
+
+        self.plotFT() # show the figure of the FT
 
         cm = tk.Toplevel()
         cm.resizable(True, True)
         cm.title('Control menu: ' + self.fileName)
         # cm.iconbitmap('icon.ico')
         cm.wm_transient(root) # Place the toplevel window at the top
-        self.windowGeometry(cm, 700, 525)
+        self.windowGeometry(cm, 750, 575)
 
         # Adapt the window to different sizes
         for i in range(3):
@@ -104,7 +108,7 @@ class ControlMenu():
         lab_sten.grid(column=3, row=10)
 
         # ENTRYS
-        cm.var_size = tk.DoubleVar(value=0.09)
+        cm.var_size = tk.DoubleVar(value=self.audioFragDuration2)
         cm.var_over = tk.DoubleVar()
         cm.var_minf = tk.IntVar()
         cm.var_maxf = tk.IntVar(value=self.audiofs/2)
@@ -137,7 +141,7 @@ class ControlMenu():
             overlap = float(self.ent_over.get())
             if windSize > self.audioFragDuration or windSize == 0:
                 # Reset widgets
-                cm.var_size.set('0.09')
+                cm.var_size.set(self.audioFragDuration)
                 cm.opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
                 self.updateOptionMenu(self.dd_nfft, cm.var_nfft, cm.opt_nfft)
                 if windSize > self.audioFragDuration: # The window size can't be greater than the duration of the signal
@@ -333,7 +337,7 @@ class ControlMenu():
             # Reset widgets
             opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
             self.updateOptionMenu(self.dd_nfft, cm.var_nfft, opt_nfft)
-            cm.var_size.set('0.09')
+            cm.var_size.set(self.audioFragDuration2)
             cm.var_over.set('0')
             cm.var_minf.set('0')
             cm.var_maxf.set(self.audiofs/2)
@@ -544,8 +548,8 @@ class ControlMenu():
             self.windType1 = ('kaiser', self.beta) # used in STE
 
         if choice == 'FT':
-            # if plt.fignum_exists(self.figFragFT.number):
-            #     plt.close(self.figFragFT.number) # close the figure of the FT
+            if plt.fignum_exists(self.figFragFT.number):
+                plt.close(self.figFragFT.number) # close the figure of the FT
             self.plotFT() # create the figure of the FT (again)
 
         elif choice == 'STFT' or choice == 'STFT + Spect' or choice == 'Spectral Centroid':
@@ -682,7 +686,7 @@ class ControlMenu():
         axFragSTFT[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         axFragSTFT[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
         self.line1, = axFragSTFT[1].plot(frequencies, 20*np.log10(abs(stft)))
-        axFragSTFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Short Time Fourier Transform')
+        axFragSTFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Short Time Fourier Transform')
 
         cursorSTFT = Cursor(axFragSTFT[0], horizOn=False, useblit=True, color='black', linewidth=1)
         self.span = self.createSpanSelector(axFragSTFT[0]) # Select a fragment with the cursor and play the audio of that fragment
@@ -1003,23 +1007,25 @@ class ControlMenu():
 
         adse.var_cand = tk.IntVar(value=self.maxcand)
 
-        ent_sith = ttk.Entry(adse, textvariable=adse.var_sith)
-        ent_voth = ttk.Entry(adse, textvariable=adse.var_voth)
-        ent_octc = ttk.Entry(adse, textvariable=adse.var_octc)
-        ent_ocjc = ttk.Entry(adse, textvariable=adse.var_ocjc)
-        ent_vunc = ttk.Entry(adse, textvariable=adse.var_vunc)
+        vcmd = (adse.register(self.onValidate), '%s', '%S')
 
-        ent_mxfc = ttk.Entry(adse, textvariable=adse.var_mxfc)
-        ent_subh = ttk.Entry(adse, textvariable=adse.var_subh)
-        ent_cmpf = ttk.Entry(adse, textvariable=adse.var_cmpf)
-        ent_ptso = ttk.Entry(adse, textvariable=adse.var_ptso)
+        ent_sith = ttk.Entry(adse, textvariable=adse.var_sith, validate='key', validatecommand=vcmd)
+        ent_voth = ttk.Entry(adse, textvariable=adse.var_voth, validate='key', validatecommand=vcmd)
+        ent_octc = ttk.Entry(adse, textvariable=adse.var_octc, validate='key', validatecommand=vcmd)
+        ent_ocjc = ttk.Entry(adse, textvariable=adse.var_ocjc, validate='key', validatecommand=vcmd)
+        ent_vunc = ttk.Entry(adse, textvariable=adse.var_vunc, validate='key', validatecommand=vcmd)
+
+        ent_mxfc = ttk.Entry(adse, textvariable=adse.var_mxfc, validate='key', validatecommand=vcmd)
+        ent_subh = ttk.Entry(adse, textvariable=adse.var_subh, validate='key', validatecommand=vcmd)
+        ent_cmpf = ttk.Entry(adse, textvariable=adse.var_cmpf, validate='key', validatecommand=vcmd)
+        ent_ptso = ttk.Entry(adse, textvariable=adse.var_ptso, validate='key', validatecommand=vcmd)
         
-        ent_winl = ttk.Entry(adse, textvariable=adse.var_winl)
-        ent_mnfi = ttk.Entry(adse, textvariable=adse.var_mnfi)
-        ent_mxfi = ttk.Entry(adse, textvariable=adse.var_mxfi)
-        ent_filt = ttk.Entry(adse, textvariable=adse.var_filt)
+        ent_winl = ttk.Entry(adse, textvariable=adse.var_winl, validate='key', validatecommand=vcmd)
+        ent_mnfi = ttk.Entry(adse, textvariable=adse.var_mnfi, validate='key', validatecommand=vcmd)
+        ent_mxfi = ttk.Entry(adse, textvariable=adse.var_mxfi, validate='key', validatecommand=vcmd)
+        ent_filt = ttk.Entry(adse, textvariable=adse.var_filt, validate='key', validatecommand=vcmd)
 
-        ent_cand = ttk.Entry(adse, textvariable=adse.var_cand)
+        ent_cand = ttk.Entry(adse, textvariable=adse.var_cand, validate='key', validatecommand=vcmd)
 
         # positioning Entrys (adse)
         ent_sith.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5)

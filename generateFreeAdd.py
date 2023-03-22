@@ -28,7 +28,7 @@ class FreeAdditionPureTones(tk.Frame):
         fam.title('Free addition of pure tones')
         # fam.iconbitmap('icon.ico')
         fam.wm_transient(self) # Place the toplevel window at the top
-        self.cm.windowGeometry(fam, 790, 570)
+        self.cm.windowGeometry(fam, 800, 600)
 
         # Adapt the window to different sizes
         for i in range(6):
@@ -71,13 +71,15 @@ class FreeAdditionPureTones(tk.Frame):
         fam.var_frq6 = tk.DoubleVar(value=0)
         fam.var_octv = tk.IntVar(value=1)
 
+        vcmd = (fam.register(self.cm.onValidate), '%s', '%S')
+
         self.ent_frq1 = ttk.Spinbox(fam, from_=0, to=20000, textvariable=fam.var_frq1, validate='key', width=10)
         self.ent_frq2 = ttk.Spinbox(fam, from_=0, to=20000, textvariable=fam.var_frq2, validate='key', width=10)
         self.ent_frq3 = ttk.Spinbox(fam, from_=0, to=20000, textvariable=fam.var_frq3, validate='key', width=10)
         self.ent_frq4 = ttk.Spinbox(fam, from_=0, to=20000, textvariable=fam.var_frq4, validate='key', width=10)
         self.ent_frq5 = ttk.Spinbox(fam, from_=0, to=24000, textvariable=fam.var_frq5, validate='key', width=10)
         self.ent_frq6 = ttk.Spinbox(fam, from_=0, to=24000, textvariable=fam.var_frq6, validate='key', width=10)
-        self.ent_dura = ttk.Entry(fam, textvariable=fam.var_dura, validate='key', width=10)
+        self.ent_dura = ttk.Entry(fam, textvariable=fam.var_dura, validate='key', width=10, validatecommand=vcmd)
         self.ent_octv = ttk.Spinbox(fam, from_=1, to=6, textvariable=fam.var_octv, validate='key', width=10, state='readonly')
 
         self.ent_frq1.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5)
@@ -221,7 +223,7 @@ class FreeAdditionPureTones(tk.Frame):
     def pianoKeyboard(self):
         self.piano = tk.Toplevel()
         self.piano.title("Piano")
-        self.piano.geometry('{}x200'.format(300))
+        # self.piano.geometry('{}x200'.format(300))
 
         white_keys = 7
         black = [1, 1, 0, 1, 1, 1, 0]
@@ -242,3 +244,18 @@ class FreeAdditionPureTones(tk.Frame):
 
         for i in range(2):
             self.piano.rowconfigure(i, weight=1)
+
+        # Position the piano window in the middle of the screen
+        w = 300 # width for the Tk root
+        h = 200 # height for the Tk root
+
+        # get screen width and height
+        ws = self.piano.winfo_screenwidth() # width of the screen
+        hs = self.piano.winfo_screenheight() # height of the screen
+
+        # calculate x and y coordinates for the self.piano window
+        x = (ws/2) - (w/2)
+        y = (hs/2) - (h/2)
+
+        # set the dimensions of the screen and where it is placed
+        self.piano.geometry('%dx%d+%d+%d' % (w, h, x, y))

@@ -4,7 +4,7 @@ import numpy as np
 import unicodedata
 import sounddevice as sd
 from tkinter import ttk
-from matplotlib.widgets import Button, SpanSelector
+from matplotlib.widgets import Button, SpanSelector, RadioButtons
 
 from controlMenu import ControlMenu
 
@@ -20,7 +20,6 @@ class PureTone(tk.Frame):
         self.fig, self.ax = plt.subplots()
         self.ptFrag = np.empty(1)
         self.cm = ControlMenu()
-        self.fs = 48000
         self.toneMenu()
 
     def toneMenu(self):
@@ -29,7 +28,7 @@ class PureTone(tk.Frame):
         tm.title('Generate pure tone')
         # tm.iconbitmap('icon.ico')
         tm.wm_transient(self) # Place the toplevel window at the top
-        self.cm.windowGeometry(tm, 815, 445)
+        self.cm.windowGeometry(tm, 850, 475)
 
         # Adapt the window to different sizes
         for i in range(4):
@@ -52,7 +51,7 @@ class PureTone(tk.Frame):
         self.sca_dura = tk.Scale(tm, from_=0.01, to=30, variable=tm.var_dura, length=500, orient='horizontal', resolution=0.01)
         self.sca_offs = tk.Scale(tm, from_=-1, to=1, variable=tm.var_offs, length=500, orient='horizontal', tickinterval=1, command=updateExpression, resolution=0.01)
         self.sca_ampl = tk.Scale(tm, from_=0, to=1, variable=tm.var_ampl, length=500, orient='horizontal', tickinterval=0.1, command=updateExpression, resolution=0.01)
-        self.sca_freq = tk.Scale(tm, from_=0, to=self.fs/2, variable=tm.var_freq, length=500, orient='horizontal', tickinterval=10000, command=updateExpression)
+        self.sca_freq = tk.Scale(tm, from_=0, to=48000/2, variable=tm.var_freq, length=500, orient='horizontal', tickinterval=10000, command=updateExpression)
         self.sca_phas = tk.Scale(tm, from_=-1, to=1, variable=tm.var_phas, length=500, orient='horizontal', tickinterval=1, command=updateExpression, resolution=0.01)
         
         self.sca_dura.grid(column=1, row=0, sticky=tk.EW, padx=5, pady=5, columnspan=3)
@@ -62,18 +61,30 @@ class PureTone(tk.Frame):
         self.sca_phas.grid(column=1, row=4, sticky=tk.EW, padx=5, pady=5, columnspan=3)
 
         # ENTRYS
-        tm.var_fs = tk.IntVar(value=self.fs)
-        self.ent_dura = ttk.Entry(tm, textvariable=tm.var_dura, validate='key')
-        self.ent_offs = ttk.Entry(tm, textvariable=tm.var_offs, validate='key')
-        self.ent_ampl = ttk.Entry(tm, textvariable=tm.var_ampl, validate='key')
-        self.ent_freq = ttk.Entry(tm, textvariable=tm.var_freq, validate='key')
-        self.ent_phas = ttk.Entry(tm, textvariable=tm.var_phas, validate='key')
-        self.ent_fs = ttk.Entry(tm, textvariable=tm.var_fs, validate='key')
+        tm.var_fs = tk.IntVar(value=48000)
+        vcmd = (tm.register(self.cm.onValidate), '%s', '%S')
+        vcfs = (tm.register(self.onValidateFs), '%S')
+
+        self.ent_dura = ttk.Entry(tm, textvariable=tm.var_dura, validate='key', validatecommand=vcmd)
+        self.ent_offs = ttk.Entry(tm, textvariable=tm.var_offs, validate='key', validatecommand=vcmd)
+        self.ent_ampl = ttk.Entry(tm, textvariable=tm.var_ampl, validate='key', validatecommand=vcmd)
+        self.ent_freq = ttk.Entry(tm, textvariable=tm.var_freq, validate='key', validatecommand=vcmd)
+        self.ent_phas = ttk.Entry(tm, textvariable=tm.var_phas, validate='key', validatecommand=vcmd)
+        self.ent_fs = ttk.Entry(tm, textvariable=tm.var_fs, validate='key', validatecommand=vcfs)
+
+        def fsEntry(event):
+            fs = int(self.ent_fs.get())
+            if fs > 48000:
+                tm.var_fs.set('48000')
+                text = 'The sample frequency cannot be greater than 48000 Hz.'
+                tk.messagebox.showerror(parent=tm, title='Wrong sample frequency value', message=text)
+            else: return True
 
         self.ent_offs.bind('<Return>', updateExpression)
         self.ent_ampl.bind('<Return>', updateExpression)
         self.ent_freq.bind('<Return>', updateExpression)
         self.ent_phas.bind('<Return>', updateExpression)
+        self.ent_fs.bind('<Return>', fsEntry)
 
         self.ent_dura.grid(column=4, row=0, sticky=tk.EW, padx=5, pady=5)
         self.ent_offs.grid(column=4, row=1, sticky=tk.EW, padx=5, pady=5)
@@ -103,8 +114,20 @@ class PureTone(tk.Frame):
         lab_fs.grid(column=3, row=5, sticky=tk.E)
         
         # BUTTONS
-        self.but_gene = ttk.Button(tm, text='Generate', command=lambda: self.generatePureTone(tm, lab_sign))
+        def checkValues():
+            self.fs = int(self.ent_fs.get()) # sample frequency
+            if fsEntry(self.fs) != True:
+                return
+            self.generatePureTone(tm, lab_sign)
+
+        self.but_gene = ttk.Button(tm, text='Generate', command=lambda: checkValues())
         self.but_gene.grid(column=4, row=6, sticky=tk.EW, padx=5, pady=5)
+
+    # Called when inserting something in the entry of fs. Only lets the user enter numbers.
+    def onValidateFs(self, S):
+        if S.isdigit():
+            return True
+        else: return False
 
     def generatePureTone(self, tm, lab_sign):
         amplitude = float(self.ent_ampl.get())
@@ -112,16 +135,15 @@ class PureTone(tk.Frame):
         phase = float(self.ent_phas.get())
         duration = float(self.ent_dura.get())
         offset = float(self.ent_offs.get())
-        self.fs = int(self.ent_fs.get()) # sample frequency
         samples = int(duration*self.fs)
 
         # Update expression
         sign = str(self.ent_offs.get()+' + '+str(self.ent_ampl.get())+' COS(2'+unicodedata.lookup("GREEK SMALL LETTER PI")+' '+str(self.ent_freq.get())+'t + '+str(self.ent_phas.get())+unicodedata.lookup("GREEK SMALL LETTER PI")+')')
         lab_sign.configure(text=sign)
 
-        # If the frequency is greater or equal to fs/2, show a warning
+        # If the frequency is greater than or equal to fs/2, show a warning
         if frequency >= self.fs/2:
-            tk.messagebox.showwarning(title="Big frequency", message="The frequency is greater or equal to half the value of the sample frequency ("+str(self.fs/2)+" Hz).") # show warning
+            tk.messagebox.showwarning(title="Big frequency", message="The frequency is greater than or equal to half the value of the sample frequency ("+str(self.fs/2)+" Hz).") # show warning
 
         self.time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
         self.ptone = amplitude * (np.cos(2*np.pi * frequency*self.time + phase*np.pi)) + offset
@@ -139,20 +161,8 @@ class PureTone(tk.Frame):
                 tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
                 return
             if max(self.ptFrag) > 1 or min(self.ptFrag) < -1:
-                text = "The amplitude is exceeding the limits y=1 or y=-1. Do you want to continue by scaling the exceeded values? If you say 'No', they will be saturated."
-                result = tk.messagebox.askyesnocancel(title="Exceeding amplitude", message=text)
-                if result: # yes: scalate
-                    for i in range(len(self.ptFrag)):
-                        if self.ptFrag[i] > 1:
-                            self.ptFrag[i] = 1
-                        elif self.ptFrag[i] < -1:
-                            self.ptFrag[i] = -1
-                elif result == False: # no: saturate
-                    if max(self.ptFrag) > 1:
-                        self.ptFrag = self.ptFrag/max(abs(self.ptFrag))
-                    elif min(self.ptFrag) < -1:
-                        self.ptFrag = self.ptFrag/min(abs(self.ptFrag))
-                elif result == None: # cancel
+                text = "The amplitude is exceeding the limits y=1 or y=-1.\nDo you want to continue?"
+                if tk.messagebox.askokcancel(title="Exceeding amplitude", message=text) == False:
                     return
             plt.close(self.fig)
             self.span.clear()
@@ -160,9 +170,29 @@ class PureTone(tk.Frame):
             self.cm.createControlMenu(self, 'Pure tone', self.fs, self.ptFrag)
 
         # Adds a 'Load' button to the figure
-        axload = self.fig.add_axes([0.8, 0.01, 0.09, 0.05])
+        axload = self.fig.add_axes([0.8, 0.01, 0.09, 0.05]) # left, bottom, width, height
         self.but_load = Button(axload, 'Load')
         self.but_load.on_clicked(load)
+
+        # Add scale/saturate radio buttons
+        def exceed(label):
+            options = {'scale': 0, 'saturate': 1}
+            option = options[label]
+            if option == 0:
+                for i in range(len(self.ptFrag)):
+                    if self.ptFrag[i] > 1:
+                        self.ptFrag[i] = 1
+                    elif self.ptFrag[i] < -1:
+                        self.ptFrag[i] = -1
+            elif option == 1:
+                if max(self.ptFrag) > 1:
+                    self.ptFrag = self.ptFrag/max(abs(self.ptFrag))
+                elif min(self.ptFrag) < -1:
+                    self.ptFrag = self.ptFrag/min(abs(self.ptFrag))
+
+        rax = self.fig.add_axes([0.75, 0.9, 0.15, 0.1])
+        radio = RadioButtons(rax, ('scale', 'saturate'))
+        radio.on_clicked(exceed)
         
         # Plot the pure tone
         limite = max(abs(self.ptone))*1.1

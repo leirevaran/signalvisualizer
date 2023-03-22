@@ -28,7 +28,7 @@ class Noise(tk.Frame):
         nm.title('Generate noise')
         # nm.iconbitmap('icon.ico')
         nm.wm_transient(self) # Place the toplevel window at the top
-        self.cm.windowGeometry(nm, 815, 200)
+        self.cm.windowGeometry(nm, 850, 250)
 
         # Adapt the window to different sizes
         for i in range(4):
@@ -47,9 +47,23 @@ class Noise(tk.Frame):
 
         # ENTRYS
         nm.var_fs = tk.IntVar(value=48000)
-        self.ent_ampl = ttk.Entry(nm, textvariable=nm.var_ampl, validate='key')
-        self.ent_dura = ttk.Entry(nm, textvariable=nm.var_dura, validate='key')
-        self.ent_fs = ttk.Entry(nm, textvariable=nm.var_fs, validate='key')
+        vcmd = (nm.register(self.cm.onValidate), '%s', '%S')
+        vcfs = (nm.register(self.onValidateFs), '%S')
+        
+        self.ent_ampl = ttk.Entry(nm, textvariable=nm.var_ampl, validate='key', validatecommand=vcmd)
+        self.ent_dura = ttk.Entry(nm, textvariable=nm.var_dura, validate='key', validatecommand=vcmd)
+        self.ent_fs = ttk.Entry(nm, textvariable=nm.var_fs, validate='key', validatecommand=vcfs)
+        
+        def fsEntry(event):
+            fs = int(self.ent_fs.get())
+            if fs > 48000:
+                nm.var_fs.set('48000')
+                text = 'The sample frequency cannot be greater than 48000 Hz.'
+                tk.messagebox.showerror(parent=nm, title='Wrong sample frequency value', message=text)
+            else: return True
+
+        self.ent_fs.bind('<Return>', fsEntry)
+        
         self.ent_ampl.grid(column=4, row=1, sticky=tk.EW, padx=5, pady=5)
         self.ent_dura.grid(column=4, row=2, sticky=tk.EW, padx=5, pady=5)
         self.ent_fs.grid(column=1, row=4, sticky=tk.EW, padx=5, pady=5)
@@ -65,7 +79,13 @@ class Noise(tk.Frame):
         lab_fs.grid(column=0, row=4, sticky=tk.E)
         
         # BUTTONS
-        self.but_gene = ttk.Button(nm, text='Generate', command=lambda: self.generateNoise(nm))
+        def checkValues():
+            self.fs = int(self.ent_fs.get()) # sample frequency
+            if fsEntry(self.fs) != True:
+                return
+            self.generateNoise(nm)
+
+        self.but_gene = ttk.Button(nm, text='Generate', command=lambda: checkValues())
         self.but_gene.grid(column=4, row=4, sticky=tk.EW, padx=5, pady=5)
 
         # OPTION MENUS
@@ -74,6 +94,12 @@ class Noise(tk.Frame):
         self.dd_opts = ttk.OptionMenu(nm, nm.var_opts, nm.options[0], *nm.options)
         self.dd_opts.config(width=11)
         self.dd_opts.grid(column=1, row=0, sticky=tk.W, padx=5)
+
+    # Called when inserting something in the entry of fs. Only lets the user enter numbers.
+    def onValidateFs(self, S):
+        if S.isdigit():
+            return True
+        else: return False
 
     def generateNoise(self, nm):
         self.choice = nm.var_opts.get()

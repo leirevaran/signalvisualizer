@@ -1,4 +1,5 @@
 import tkinter as tk
+import matplotlib.pyplot as plt
 from matplotlib import backend_bases
 
 from controlMenu import ControlMenu
@@ -72,8 +73,13 @@ class SignalVisualizer(tk.Frame):
         self.controller.title('Signal Visualizer')
         # self.controller.iconbitmap('icon.ico')
         self.cm = ControlMenu()
-        self.cm.windowGeometry(self.controller, 710, 420)
-        # self.controller.geometry('710x420') # size of the window
+        self.cm.windowGeometry(self.controller, 750, 450)
+
+        def on_closing():
+            if tk.messagebox.askokcancel("Quit", "Do you want to quit?"):
+                plt.close('all') # closes all matplotlib figures
+                self.controller.destroy()
+        self.controller.protocol("WM_DELETE_WINDOW", on_closing)
 
     def menubar(self, root):
         # the menu bar will be at the top of the window

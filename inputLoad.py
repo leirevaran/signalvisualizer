@@ -6,6 +6,7 @@ import soundfile as sf
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, SpanSelector
 from pathlib import Path
+from scipy.io import wavfile
 
 from controlMenu import ControlMenu
 
@@ -28,9 +29,19 @@ class Load(tk.Frame):
             return
 
         # Variables of the wav file
-        wav = wave.open(file, 'r')
         self.audio, self.audiofs = sf.read(file, dtype='float32')
         self.audiotime = np.arange(0, len(self.audio)/self.audiofs, 1/self.audiofs) # Time axis
+        # write(file, self.audiofs, self.audio.astype(np.int16)) # to avoid "wave.Error: unknown format: 3"
+        wav = wave.open(file, 'rb')
+
+        # sig = np.asarray(sig)
+        # dtype = np.dtype(dtype)
+        # def float2pcm(sig, dtype='int16'):
+        #     i = np.iinfo(dtype)
+        #     abs_max = 2 ** (i.bits - 1)
+        #     offset = i.min + abs_max
+        #     return (sig * abs_max + offset).clip(i.min, i.max).astype(dtype)
+        # float2pcm(self.audio)
 
         # Convert from stereo to mono
         if wav.getnchannels() > 1:
