@@ -120,7 +120,7 @@ class ControlMenu():
         cm.var_cut2 = tk.IntVar()
         cm.var_beta = tk.IntVar()
 
-        vcmd = (cm.register(self.onValidate), '%s', '%S')
+        vcmd = (cm.register(self.onValidateFloat), '%s', '%S')
         
         self.ent_size = ttk.Entry(cm, textvariable=cm.var_size, state='disabled', validate='key', validatecommand=vcmd)
         self.ent_over = ttk.Entry(cm, textvariable=cm.var_over, state='disabled', validate='key', validatecommand=vcmd)
@@ -466,8 +466,14 @@ class ControlMenu():
         var.set(opt[0])
 
     # Called when inserting something in an entry. Only lets the user enter numbers or '.'
-    def onValidate(self, s, S):
+    def onValidateFloat(self, s, S):
         if S.isdigit() or (S == '.' and s.isdigit()): # Before '.' always a number
+            return True
+        else: return False
+
+    # Called when inserting something in an entry. Only lets the user enter numbers
+    def onValidateInt(self, S):
+        if S.isdigit():
             return True
         else: return False
 
@@ -1007,7 +1013,7 @@ class ControlMenu():
 
         adse.var_cand = tk.IntVar(value=self.maxcand)
 
-        vcmd = (adse.register(self.onValidate), '%s', '%S')
+        vcmd = (adse.register(self.onValidateFloat), '%s', '%S')
 
         ent_sith = ttk.Entry(adse, textvariable=adse.var_sith, validate='key', validatecommand=vcmd)
         ent_voth = ttk.Entry(adse, textvariable=adse.var_voth, validate='key', validatecommand=vcmd)

@@ -47,7 +47,7 @@ class Noise(tk.Frame):
 
         # ENTRYS
         nm.var_fs = tk.IntVar(value=48000)
-        vcmd = (nm.register(self.cm.onValidate), '%s', '%S')
+        vcmd = (nm.register(self.cm.onValidateFloat), '%s', '%S')
         vcfs = (nm.register(self.onValidateFs), '%S')
         
         self.ent_ampl = ttk.Entry(nm, textvariable=nm.var_ampl, validate='key', validatecommand=vcmd)

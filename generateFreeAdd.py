@@ -46,12 +46,12 @@ class FreeAdditionPureTones(tk.Frame):
         fam.var_amp6 = tk.DoubleVar(value=0)
         fam.var_dura = tk.IntVar(value=1)
 
-        self.sca_amp1 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp1, length=300, orient='vertical', tickinterval=0.1, resolution=0.01)
-        self.sca_amp2 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp2, length=300, orient='vertical', tickinterval=0.1, resolution=0.01)
-        self.sca_amp3 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp3, length=300, orient='vertical', tickinterval=0.1, resolution=0.01)
-        self.sca_amp4 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp4, length=300, orient='vertical', tickinterval=0.1, resolution=0.01)
-        self.sca_amp5 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp5, length=300, orient='vertical', tickinterval=0.1, resolution=0.01)
-        self.sca_amp6 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp6, length=300, orient='vertical', tickinterval=0.1, resolution=0.01)
+        self.sca_amp1 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp1, length=300, orient='vertical', resolution=0.01)
+        self.sca_amp2 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp2, length=300, orient='vertical', resolution=0.01)
+        self.sca_amp3 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp3, length=300, orient='vertical', resolution=0.01)
+        self.sca_amp4 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp4, length=300, orient='vertical', resolution=0.01)
+        self.sca_amp5 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp5, length=300, orient='vertical', resolution=0.01)
+        self.sca_amp6 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp6, length=300, orient='vertical', resolution=0.01)
         self.sca_dura = tk.Scale(fam, from_=1, to=30, variable=fam.var_dura, length=500, orient='horizontal')
 
         self.sca_amp1.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5)
@@ -71,7 +71,7 @@ class FreeAdditionPureTones(tk.Frame):
         fam.var_frq6 = tk.DoubleVar(value=0)
         fam.var_octv = tk.IntVar(value=1)
 
-        vcmd = (fam.register(self.cm.onValidate), '%s', '%S')
+        vcmd = (fam.register(self.cm.onValidateFloat), '%s', '%S')
 
         self.ent_frq1 = ttk.Spinbox(fam, from_=0, to=20000, textvariable=fam.var_frq1, validate='key', width=10)
         self.ent_frq2 = ttk.Spinbox(fam, from_=0, to=20000, textvariable=fam.var_frq2, validate='key', width=10)

@@ -7,6 +7,9 @@ from inputLoad import Load
 from generateNoise import Noise
 from generatePureTone import PureTone
 from generateFreeAdd import FreeAdditionPureTones
+from generateSquareWave import SquareWave
+from generateSawtoothWave import SawtoothWave
+from generateRosenbergPulse import RosenbergPulse
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -56,6 +59,18 @@ class Start(tk.Tk):
             self.frames['FreeAdditionPureTones'] = FreeAdditionPureTones(master=self.container, controller=self)
             self.frames['FreeAdditionPureTones'].grid(row=0, column=0, sticky="nsew")
             self.show_frame('FreeAdditionPureTones')
+        elif page_name == 'SquareWave':
+            self.frames['SquareWave'] = SquareWave(master=self.container, controller=self)
+            self.frames['SquareWave'].grid(row=0, column=0, sticky="nsew")
+            self.show_frame('SquareWave')
+        elif page_name == 'SawtoothWave':
+            self.frames['SawtoothWave'] = SawtoothWave(master=self.container, controller=self)
+            self.frames['SawtoothWave'].grid(row=0, column=0, sticky="nsew")
+            self.show_frame('SawtoothWave')
+        elif page_name == 'RosenbergPulse':
+            self.frames['RosenbergPulse'] = RosenbergPulse(master=self.container, controller=self)
+            self.frames['RosenbergPulse'].grid(row=0, column=0, sticky="nsew")
+            self.show_frame('RosenbergPulse')
 
     def show_frame(self, page_name):
         '''Show a frame for the given page name'''
@@ -96,9 +111,9 @@ class SignalVisualizer(tk.Frame):
         generatemenu.add_command(label="Noise", command=lambda: self.controller.initialize_frame('Noise'))
 
         knownmenu = tk.Menu(generatemenu, tearoff=0)
-        knownmenu.add_command(label="Square wave")
-        knownmenu.add_command(label="Sawtooth wave")
-        knownmenu.add_command(label="Rosenberg pulse")
+        knownmenu.add_command(label="Square wave", command=lambda: self.controller.initialize_frame('SquareWave'))
+        knownmenu.add_command(label="Sawtooth wave", command=lambda: self.controller.initialize_frame('SawtoothWave'))
+        knownmenu.add_command(label="Rosenberg pulse", command=lambda: self.controller.initialize_frame('RosenbergPulse'))
 
         inputmenu = tk.Menu(menubar, tearoff=0)
         inputmenu.add_command(label="Load", command=lambda: self.controller.initialize_frame('Load'))
