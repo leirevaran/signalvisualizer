@@ -138,8 +138,7 @@ class SquareWave(tk.Frame):
             tk.messagebox.showwarning(title="Big frequency", message="The frequency is greater than or equal to half the value of the sample frequency ("+str(self.fs/2)+" Hz).") # show warning
 
         self.time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
-        self.square = amplitude * (signal.square(2*np.pi*frequency*self.time + phase*np.pi, duty=cycle) / 2) + offset * np.ones(len(self.time))
-        print(self.square)
+        self.square = amplitude * (signal.square(2*np.pi*frequency*self.time + phase*np.pi, duty=cycle/100) / 2) + offset * np.ones(len(self.time))
 
         # If the window has been closed, create it again
         if plt.fignum_exists(self.fig.number):
@@ -188,11 +187,11 @@ class SquareWave(tk.Frame):
         radio.on_clicked(exceed)
         
         # Plot the square wave
-        # limite = max(abs(self.squarew))*1.1
+        limite = max(abs(self.square))*1.1
         self.ax.clear()
         self.ax.plot(self.time, self.square)
         self.fig.canvas.manager.set_window_title('Square wave')
-        # self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
+        self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
         self.ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         self.ax.axhline(y=1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=1.0
         self.ax.axhline(y=-1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=-1.0

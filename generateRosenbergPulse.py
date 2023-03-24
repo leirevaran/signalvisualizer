@@ -163,37 +163,13 @@ class RosenbergPulse(tk.Frame):
         self.but_load = Button(axload, 'Load')
         self.but_load.on_clicked(load)
 
-        # Add scale/saturate radio buttons
-        def exceed(label):
-            options = {'scale': 0, 'saturate': 1}
-            option = options[label]
-            if option == 0:
-                for i in range(len(self.rpFrag)):
-                    if self.rpFrag[i] > 1:
-                        self.rpFrag[i] = 1
-                    elif self.rpFrag[i] < -1:
-                        self.rpFrag[i] = -1
-            elif option == 1:
-                if max(self.rpFrag) > 1:
-                    self.rpFrag = self.rpFrag/max(abs(self.rpFrag))
-                elif min(self.rpFrag) < -1:
-                    self.rpFrag = self.rpFrag/min(abs(self.rpFrag))
-
-        rax = self.fig.add_axes([0.75, 0.9, 0.15, 0.1])
-        radio = RadioButtons(rax, ('scale', 'saturate'))
-        radio.on_clicked(exceed)
-        
-        # Plot the pure tone
+        # Plot the Rosenberg pulse
         limite = max(abs(self.rosenberg))*1.1
         self.ax.clear()
         self.ax.plot(self.time, self.rosenberg)
         self.fig.canvas.manager.set_window_title('Rosenberg pulse')
         self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
         self.ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        self.ax.axhline(y=1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=1.0
-        self.ax.axhline(y=-1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=-1.0
-        self.ax.axhline(y=offset, color='blue', linewidth='1', label="offset") # draw an horizontal line in y=offset
-        self.ax.legend(loc="upper right")
 
         self.span = SpanSelector(self.ax, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
         
