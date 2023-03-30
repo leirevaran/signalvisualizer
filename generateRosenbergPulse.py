@@ -37,7 +37,7 @@ class RosenbergPulse(tk.Frame):
         for i in range(6):
             rm.rowconfigure(i, weight=1)
 
-        # SCALERS
+        # SCALES
         rm.var_dura = tk.IntVar(value=1)
         rm.var_ampl = tk.DoubleVar(value=0.5)
         rm.var_freq = tk.IntVar(value=1)
@@ -165,7 +165,6 @@ class RosenbergPulse(tk.Frame):
 
         # Plot the Rosenberg pulse
         limite = max(abs(self.rosenberg))*1.1
-        self.ax.clear()
         self.ax.plot(self.time, self.rosenberg)
         self.fig.canvas.manager.set_window_title('Rosenberg pulse')
         self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')

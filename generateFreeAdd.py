@@ -20,6 +20,7 @@ class FreeAdditionPureTones(tk.Frame):
         self.fs = 48000 # sample frequency
         self.faptFrag = np.empty(1)
         self.cm = ControlMenu()
+        self.pianoExists = False
         self.freeAddMenu()
 
     def freeAddMenu(self):
@@ -37,7 +38,7 @@ class FreeAdditionPureTones(tk.Frame):
         for i in range(4):
             fam.rowconfigure(i, weight=1)
 
-        # SCALERS
+        # SCALES
         fam.var_amp1 = tk.DoubleVar(value=0.5)
         fam.var_amp2 = tk.DoubleVar(value=0)
         fam.var_amp3 = tk.DoubleVar(value=0)
@@ -46,12 +47,12 @@ class FreeAdditionPureTones(tk.Frame):
         fam.var_amp6 = tk.DoubleVar(value=0)
         fam.var_dura = tk.IntVar(value=1)
 
-        self.sca_amp1 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp1, length=300, orient='vertical', resolution=0.01)
-        self.sca_amp2 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp2, length=300, orient='vertical', resolution=0.01)
-        self.sca_amp3 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp3, length=300, orient='vertical', resolution=0.01)
-        self.sca_amp4 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp4, length=300, orient='vertical', resolution=0.01)
-        self.sca_amp5 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp5, length=300, orient='vertical', resolution=0.01)
-        self.sca_amp6 = tk.Scale(fam, from_=0, to=1, variable=fam.var_amp6, length=300, orient='vertical', resolution=0.01)
+        self.sca_amp1 = tk.Scale(fam, from_=1, to=0, variable=fam.var_amp1, length=300, orient='vertical', resolution=0.01)
+        self.sca_amp2 = tk.Scale(fam, from_=1, to=0, variable=fam.var_amp2, length=300, orient='vertical', resolution=0.01)
+        self.sca_amp3 = tk.Scale(fam, from_=1, to=0, variable=fam.var_amp3, length=300, orient='vertical', resolution=0.01)
+        self.sca_amp4 = tk.Scale(fam, from_=1, to=0, variable=fam.var_amp4, length=300, orient='vertical', resolution=0.01)
+        self.sca_amp5 = tk.Scale(fam, from_=1, to=0, variable=fam.var_amp5, length=300, orient='vertical', resolution=0.01)
+        self.sca_amp6 = tk.Scale(fam, from_=1, to=0, variable=fam.var_amp6, length=300, orient='vertical', resolution=0.01)
         self.sca_dura = tk.Scale(fam, from_=1, to=30, variable=fam.var_dura, length=500, orient='horizontal')
 
         self.sca_amp1.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5)
@@ -160,7 +161,7 @@ class FreeAdditionPureTones(tk.Frame):
             plt.close(self.fig)
             self.span.clear()
             fam.destroy()
-            self.piano.destroy()
+            if self.pianoExists: self.piano.destroy()
             self.cm.createControlMenu(self, 'Free addition of pure tones', self.fs, self.faptFrag)
 
         # Adds a 'Load' button to the figure
@@ -170,7 +171,6 @@ class FreeAdditionPureTones(tk.Frame):
 
         # Plot free addition of pure tones
         limite = max(abs(self.fapt))*1.1
-        self.ax.clear()
         self.ax.plot(self.time, self.fapt)
         self.fig.canvas.manager.set_window_title('Free addition of pure tones')
         self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
@@ -224,6 +224,7 @@ class FreeAdditionPureTones(tk.Frame):
         self.piano = tk.Toplevel()
         self.piano.title("Piano")
         # self.piano.geometry('{}x200'.format(300))
+        self.pianoExists = True
 
         white_keys = 7
         black = [1, 1, 0, 1, 1, 1, 0]

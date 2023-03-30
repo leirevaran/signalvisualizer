@@ -4,6 +4,7 @@ from matplotlib import backend_bases
 
 from controlMenu import ControlMenu
 from inputLoad import Load
+from inputRecord import Record
 from generateNoise import Noise
 from generatePureTone import PureTone
 from generateFreeAdd import FreeAdditionPureTones
@@ -47,6 +48,10 @@ class Start(tk.Tk):
             self.frames['Load'] = Load(master=self.container, controller=self)
             self.frames['Load'].grid(row=0, column=0, sticky="nsew")
             self.show_frame('Load')
+        elif page_name == 'Record':
+            self.frames['Record'] = Record(master=self.container, controller=self)
+            self.frames['Record'].grid(row=0, column=0, sticky="nsew")
+            self.show_frame('Record')
         elif page_name == 'Noise':
             self.frames['Noise'] = Noise(master=self.container, controller=self)
             self.frames['Noise'].grid(row=0, column=0, sticky="nsew")
@@ -117,7 +122,7 @@ class SignalVisualizer(tk.Frame):
 
         inputmenu = tk.Menu(menubar, tearoff=0)
         inputmenu.add_command(label="Load", command=lambda: self.controller.initialize_frame('Load'))
-        inputmenu.add_command(label="Record")
+        inputmenu.add_command(label="Record", command=lambda: self.controller.initialize_frame('Record'))
 
         optionsmenu = tk.Menu(menubar, tearoff=0)
         optionsmenu.add_command(label="General")

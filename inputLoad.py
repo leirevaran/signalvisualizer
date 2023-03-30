@@ -1,12 +1,12 @@
 import tkinter as tk, tkinter.filedialog
 import wave
+import struct
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, SpanSelector
 from pathlib import Path
-from scipy.io import wavfile
 
 from controlMenu import ControlMenu
 
@@ -23,33 +23,26 @@ class Load(tk.Frame):
         self.loadAudioFile()
 
     def loadAudioFile(self):
-        # Load audio file
-        file = tk.filedialog.askopenfilename(title = "Open file",filetypes = (("wav files","*.wav"),)) # select audio file
+        # Ask the user to select a .wav file
+        file = tk.filedialog.askopenfilename(title="Open file", filetypes=(("wav files","*.wav"),)) # select audio file
         if file == '': # if no file has been selected
             return
 
         # Variables of the wav file
         self.audio, self.audiofs = sf.read(file, dtype='float32')
         self.audiotime = np.arange(0, len(self.audio)/self.audiofs, 1/self.audiofs) # Time axis
-        # write(file, self.audiofs, self.audio.astype(np.int16)) # to avoid "wave.Error: unknown format: 3"
-        wav = wave.open(file, 'rb')
 
-        # sig = np.asarray(sig)
-        # dtype = np.dtype(dtype)
-        # def float2pcm(sig, dtype='int16'):
-        #     i = np.iinfo(dtype)
-        #     abs_max = 2 ** (i.bits - 1)
-        #     offset = i.min + abs_max
-        #     return (sig * abs_max + offset).clip(i.min, i.max).astype(dtype)
-        # float2pcm(self.audio)
+        # If the file is stereo (2 channels), convert it to mono (1 channel)
+        # We are not using wave.open(file, 'rb') because it gives "wave.Error: unknown format: 3" with some wav files
+        with open(file, 'rb') as wav:
+            header_beginning = wav.read(0x18)
+            wavChannels, = struct.unpack_from('<H', header_beginning, 0x16)
+            if wavChannels > 1:
+                tk.messagebox.showwarning(title="Stereo file", message="This file is in stereo mode. It will be converted into a mono file.") # show warning
+                ampMax = np.ndarray.max(abs(self.audio)) # max amplitude
+                self.audio = np.sum(self.audio, axis=1) # from stereo to mono
+                self.audio = self.audio * ampMax / np.ndarray.max(abs(self.audio)) # normalize and leave with the max amplitude
 
-        # Convert from stereo to mono
-        if wav.getnchannels() > 1:
-            tk.messagebox.showwarning(title="Stereo file", message="This file is in stereo mode. It will be converted into a mono file.") # show warning
-            ampMax = np.ndarray.max(abs(self.audio)) # max amplitude
-            self.audio = np.sum(self.audio, axis=1) # from stereo to mono
-            self.audio = self.audio * ampMax / np.ndarray.max(abs(self.audio)) # normalize and leave with the max amplitude
-        
         # Plot the audio file
         figFile, axFile = plt.subplots(figsize=(12,5))
         axFile.plot(self.audiotime, self.audio)

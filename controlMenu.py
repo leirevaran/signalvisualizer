@@ -7,6 +7,7 @@ import numpy as np
 import sounddevice as sd
 import matplotlib.pyplot as plt
 from tkinter import ttk
+from pathlib import Path
 from matplotlib.widgets import Button, Cursor, SpanSelector, MultiCursor
 from matplotlib.backend_bases import MouseButton
 from matplotlib.patches import Rectangle
@@ -17,16 +18,6 @@ from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
 
 class ControlMenu():
-
-    # Calculates the width and height of the window depending on the screen size of the computer
-    def windowGeometry(self, window, x, y):
-        normal_w = 1920
-        normal_h = 1080
-        w, h = window.winfo_screenwidth(), window.winfo_screenheight()
-        window_w = int(w * x / normal_w)
-        window_h = int(h * y / normal_h)
-        # window.geometry(str(window_w)+'x'+str(window_h))
-        window.geometry('%dx%d' % (window_w, window_h))
 
     def createControlMenu(self, root, fileName, fs, audioFrag):
         self.audiofs = fs
@@ -52,7 +43,7 @@ class ControlMenu():
 
         for i in range(14):
             cm.rowconfigure(i, weight=1)
-        
+
         # LABELS
         # Labels of OptionMenus
         lab_opts = tk.Label(cm, text='Choose an option', bd=6, font=('TkDefaultFont', 10, 'bold'))
@@ -457,6 +448,15 @@ class ControlMenu():
         self.dd_filt.grid(column=3, row=6, sticky=tk.EW, padx=5)
 
     # METHODS
+    # Calculates the width and height of the window depending on the screen size of the computer
+    def windowGeometry(self, window, x, y):
+        normal_w = 1920
+        normal_h = 1080
+        w, h = window.winfo_screenwidth(), window.winfo_screenheight()
+        window_w = int(w * x / normal_w)
+        window_h = int(h * y / normal_h)
+        window.geometry('%dx%d' % (window_w, window_h))
+
     # Updates the OptionMenu 'om' with the option list 'opt' and variable 'var' passed as a parameter
     def updateOptionMenu(self, om, var, opt):
         menu = om["menu"]
@@ -507,6 +507,16 @@ class ControlMenu():
         sub_ax = plt.axes([0.91, 0.12, 0.02, x]) # add a small custom axis (left, bottom, width, height)
         fig.colorbar(img, cax=sub_ax, format='%+2.0f dB')
 
+    # Convert the numpy array containing the audio into a wav file
+    def saveAudioFrag(self, audio, fs):
+        scaled = np.int16(audio/np.max(np.abs(audio)) * 32767)
+        file = tk.filedialog.asksaveasfilename(title='Save file', defaultextension=".wav", filetypes=(("wav files","*.wav"),))
+        if file is None:
+            return
+        fileName = Path(file).stem # take only the name of the file without the '.wav' and the path
+        write(fileName, fs, scaled) # generates a wav file in the selected folder
+        return fileName
+
     def calculateSTFT(self, audioFragWindow, nfft):
         stft = np.fft.fft(audioFragWindow, nfft)
         return stft[range(int(nfft/2))]
@@ -521,137 +531,7 @@ class ControlMenu():
         window1 = scipy.signal.get_window(win, windSizeSampInt)
         window = window1 / len(window1)
         return scipy.signal.convolve(signal**2, window**2, mode='same')
-
-    # Called when pressing the 'Plot' button
-    def plotFigure(self, cm):
-        ## VALUES GIVEN BY THE USER (that were not created in checkValues())
-        choice = cm.var_opts.get()
-        self.windType = cm.var_wind.get()
-        self.nfftUser = cm.var_nfft.get()
-        self.formants = cm.var_form.get() # returns 1 if activated, 0 if not
-        self.draw = cm.var_draw.get()
-
-        self.windSizeSamp = self.windSize * self.audiofs # window size in samples
-        self.windSizeSampInt = int(self.windSizeSamp)
-        self.overlapSamp = int(self.overlap * self.audiofs) # overlap in samples (int)
-        self.hopSize = self.windSizeSampInt-self.overlapSamp
-
-        # Apply the window type to the window
-        if self.windType == 'Bartlett':
-            self.window = np.bartlett(self.windSizeSampInt)
-            self.windType1 = 'bartlett' # used in STE
-        elif self.windType == 'Blackman':
-            self.window = np.blackman(self.windSizeSampInt)
-            self.windType1 = 'blackman' # used in STE
-        elif self.windType == 'Hamming':
-            self.window = np.hamming(self.windSizeSampInt)
-            self.windType1 = 'hamming' # used in STE
-        elif self.windType == 'Hanning':
-            self.window = np.hanning(self.windSizeSampInt)
-            self.windType1 = 'hann' # used in STE
-        elif self.windType == 'Kaiser':
-            self.window = np.kaiser(self.windSizeSampInt, self.beta) # np.kaiser(windSizeSampInt, float:shape parameter for window)
-            self.windType1 = ('kaiser', self.beta) # used in STE
-
-        if choice == 'FT':
-            if plt.fignum_exists(self.figFragFT.number):
-                plt.close(self.figFragFT.number) # close the figure of the FT
-            self.plotFT() # create the figure of the FT (again)
-
-        elif choice == 'STFT' or choice == 'STFT + Spect' or choice == 'Spectral Centroid':
-            # The window is in the middle of the waveform by default
-            midPoint_idx = int(self.audioFragLen/2) # index of the middle point in the waveform
-            midPoint = self.audiotimeFrag[midPoint_idx] # value of the middle point
-
-            # Define initial and end points of the window
-            ini_idx = midPoint_idx - int(self.windSizeSamp/2) # index of the initial point
-            end_idx = midPoint_idx + int(self.windSizeSamp/2) # index of the end point
-            if ini_idx < 1: ini_idx = 0
-            if end_idx > self.audioFragLen: end_idx = self.audioFragLen-1
-            ini = self.audiotimeFrag[ini_idx] # value of the initial point
-            end = self.audiotimeFrag[end_idx] # value of the end point
-
-            audioFragWind = self.audioFrag[ini_idx:end_idx]
-            audioFragWind2 = audioFragWind * self.window
-
-            # Calculate the STFT
-            stft = self.calculateSTFT(audioFragWind2, self.nfftUser)
-            values = np.arange(int(self.nfftUser/2))
-            frequencies = values * self.audiofs / self.nfftUser
-
-            # Draw the window in the waveform as a rectangle
-            rectangle = Rectangle(xy=(ini,min(self.audioFrag)), width=end-ini, height=max(20*np.log10(abs(stft))), color='silver')
-
-            if choice == 'STFT':
-                midLine, axFragSTFT = self.plotSTFT(midPoint, rectangle, stft, frequencies)
-            elif choice == 'STFT + Spect':
-                midLineWavef, midLineSpect, axFragSTFTSpect = self.plotSTFTspect(midPoint, rectangle, stft, frequencies)
-            elif choice == 'Spectral Centroid':
-                midLineWavefSC, midLineSpectSC, axFragSC = self.plotSC(midPoint, rectangle, audioFragWind2)
-            
-            # If the user changes the position of the window, recalculate the STFT/FFT
-            def on_click(event):
-                # if the user does left click in the waveform
-                if event.button is MouseButton.LEFT and (choice == 'STFT' and event.inaxes == axFragSTFT[0]) or (choice == 'STFT + Spect' and event.inaxes == axFragSTFTSpect[0]) or (choice == 'Spectral Centroid' and event.inaxes == axFragSC[0]):
-                    # Define the new initial and end points of the window
-                    new_midPoint = event.xdata
-                    new_midPoint_idx = midPoint_idx
-                    for i in range(self.audioFragLen-1):
-                        if self.audiotimeFrag[i] == new_midPoint or (self.audiotimeFrag[i] < new_midPoint and self.audiotimeFrag[i+1] > new_midPoint):
-                            new_midPoint_idx = i
-                            break
-                    new_ini_idx = new_midPoint_idx - int(self.windSizeSamp/2)
-                    new_end_idx = new_midPoint_idx + int(self.windSizeSamp/2)
-                    if new_ini_idx < 1 or new_end_idx > self.audioFragLen: 
-                        text = "At that point the window gets out of index."
-                        tk.messagebox.showerror(parent=cm, title="Window out of index", message=text) # show error
-                        return
-
-                    new_audioFragWind = self.audioFrag[new_ini_idx:new_end_idx]
-                    new_audioFragWind2 = new_audioFragWind * self.window
-                    if choice == 'Spectral Centroid':
-                        # recalculate FFT
-                        axFragSC[1].clear()
-                        new_spectralC = self.calculateSC(new_audioFragWind2)
-                        new_scValue = str(round(new_spectralC, 2)) # take only two decimals
-                        new_psd, new_freqs = axFragSC[1].psd(new_audioFragWind2, NFFT=self.windSizeSampInt, pad_to=self.nfftUser, Fs=self.audiofs, window=self.window, noverlap=self.overlapSamp)
-                        axFragSC[1].axvline(x=new_spectralC, color='r', linewidth='1') # draw a vertical line in x=value of the spectral centroid
-                        axFragSC[1].set(xlim=[0, max(new_freqs)], xlabel='Frequency (Hz)', ylabel='Power spectral density (dB/Hz)', title='Power spectral density using fft, spectral centroid value is '+ new_scValue)
-                    else: # recalculate STFT
-                        new_stft = self.calculateSTFT(new_audioFragWind2, self.nfftUser)
-                        self.line1.set_ydata(20*np.log10(abs(new_stft)))
-
-                    # Move the window and rescale 'y' axis
-                    if choice == 'STFT':
-                        midLine.set_xdata(new_midPoint)
-                        axFragSTFT[1].relim()
-                        axFragSTFT[1].autoscale_view()
-                    elif choice == 'STFT + Spect':
-                        midLineWavef.set_xdata(new_midPoint)
-                        midLineSpect.set_xdata(new_midPoint)
-                        axFragSTFTSpect[1].relim()
-                        axFragSTFTSpect[1].autoscale_view()
-                    else: # choice == 'Spectral Centroid'
-                        midLineWavefSC.set_xdata(new_midPoint)
-                        midLineSpectSC.set_xdata(new_midPoint)
-                        axFragSC[1].relim()
-                        axFragSC[1].autoscale_view()
-                    rectangle.set_x(self.audiotimeFrag[new_ini_idx])
-
-                    plt.show() # update the figure
-                
-            plt.connect('button_press_event', on_click) # when the mouse button is pressed, call on_click function
-            plt.show() # show the figure
-
-        elif choice == 'Spectrogram':
-            self.plotSpectrogram()
-        elif choice == 'Short-Time-Energy':
-            self.plotSTE()
-        elif choice == 'Pitch':
-            self.plotPitch(cm)
-        elif choice == 'Filtering':
-            self.plotFiltering(cm)
-
+    
     # Plots the waveform and the Fast Fourier Transform (FFT) of the fragment
     def plotFT(self):
         self.figFragFT, self.axFragFT = plt.subplots(2, figsize=(12,6))
@@ -850,15 +730,13 @@ class ControlMenu():
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
         figFragPitch.canvas.manager.set_window_title('Pitch - Method: '+ str(method) +'; Pitch floor: '+ str(self.minpitch) + 'Hz, Pitch ceiling: '+ str(self.maxpitch) + 'Hz.') # set title to the figure window
 
-        # Convert the numpy array containing the audio fragment into a wav file
-        scaled = np.int16(self.audioFrag/np.max(np.abs(self.audioFrag)) * 32767) 
-        write('frag.wav', self.audiofs, scaled) # generates a wav file in the current folder
-
         if accurate == 1: accurate_bool = True
         else: accurate_bool = False
 
+        wavFile = self.saveAudioFrag(self.audioFrag, self.audiofs)
+
         # Calculate the pitch of the generated wav file using parselmouth
-        snd = parselmouth.Sound('frag.wav')
+        snd = parselmouth.Sound(wavFile)
         if method == 'Autocorrelation':
             pitch = snd.to_pitch_ac(pitch_floor=self.minpitch,
                                     max_number_of_candidates=maxCandidates,
@@ -932,6 +810,136 @@ class ControlMenu():
 
         self.span = self.createSpanSelector(axFragFilt[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
+
+    # Called when pressing the 'Plot' button
+    def plotFigure(self, cm):
+        ## VALUES GIVEN BY THE USER (that were not created in checkValues())
+        choice = cm.var_opts.get()
+        self.windType = cm.var_wind.get()
+        self.nfftUser = cm.var_nfft.get()
+        self.formants = cm.var_form.get() # returns 1 if activated, 0 if not
+        self.draw = cm.var_draw.get()
+
+        self.windSizeSamp = self.windSize * self.audiofs # window size in samples
+        self.windSizeSampInt = int(self.windSizeSamp)
+        self.overlapSamp = int(self.overlap * self.audiofs) # overlap in samples (int)
+        self.hopSize = self.windSizeSampInt-self.overlapSamp
+
+        # Apply the window type to the window
+        if self.windType == 'Bartlett':
+            self.window = np.bartlett(self.windSizeSampInt)
+            self.windType1 = 'bartlett' # used in STE
+        elif self.windType == 'Blackman':
+            self.window = np.blackman(self.windSizeSampInt)
+            self.windType1 = 'blackman' # used in STE
+        elif self.windType == 'Hamming':
+            self.window = np.hamming(self.windSizeSampInt)
+            self.windType1 = 'hamming' # used in STE
+        elif self.windType == 'Hanning':
+            self.window = np.hanning(self.windSizeSampInt)
+            self.windType1 = 'hann' # used in STE
+        elif self.windType == 'Kaiser':
+            self.window = np.kaiser(self.windSizeSampInt, self.beta) # np.kaiser(windSizeSampInt, float:shape parameter for window)
+            self.windType1 = ('kaiser', self.beta) # used in STE
+
+        if choice == 'FT':
+            if plt.fignum_exists(self.figFragFT.number):
+                plt.close(self.figFragFT.number) # close the figure of the FT
+            self.plotFT() # create the figure of the FT (again)
+
+        elif choice == 'STFT' or choice == 'STFT + Spect' or choice == 'Spectral Centroid':
+            # The window is in the middle of the waveform by default
+            midPoint_idx = int(self.audioFragLen/2) # index of the middle point in the waveform
+            midPoint = self.audiotimeFrag[midPoint_idx] # value of the middle point
+
+            # Define initial and end points of the window
+            ini_idx = midPoint_idx - int(self.windSizeSamp/2) # index of the initial point
+            end_idx = midPoint_idx + int(self.windSizeSamp/2) # index of the end point
+            if ini_idx < 1: ini_idx = 0
+            if end_idx > self.audioFragLen: end_idx = self.audioFragLen-1
+            ini = self.audiotimeFrag[ini_idx] # value of the initial point
+            end = self.audiotimeFrag[end_idx] # value of the end point
+
+            audioFragWind = self.audioFrag[ini_idx:end_idx]
+            audioFragWind2 = audioFragWind * self.window
+
+            # Calculate the STFT
+            stft = self.calculateSTFT(audioFragWind2, self.nfftUser)
+            values = np.arange(int(self.nfftUser/2))
+            frequencies = values * self.audiofs / self.nfftUser
+
+            # Draw the window in the waveform as a rectangle
+            rectangle = Rectangle(xy=(ini,min(self.audioFrag)), width=end-ini, height=max(20*np.log10(abs(stft))), color='silver')
+
+            if choice == 'STFT':
+                midLine, axFragSTFT = self.plotSTFT(midPoint, rectangle, stft, frequencies)
+            elif choice == 'STFT + Spect':
+                midLineWavef, midLineSpect, axFragSTFTSpect = self.plotSTFTspect(midPoint, rectangle, stft, frequencies)
+            elif choice == 'Spectral Centroid':
+                midLineWavefSC, midLineSpectSC, axFragSC = self.plotSC(midPoint, rectangle, audioFragWind2)
+            
+            # If the user changes the position of the window, recalculate the STFT/FFT
+            def on_click(event):
+                # if the user does left click in the waveform
+                if event.button is MouseButton.LEFT and (choice == 'STFT' and event.inaxes == axFragSTFT[0]) or (choice == 'STFT + Spect' and event.inaxes == axFragSTFTSpect[0]) or (choice == 'Spectral Centroid' and event.inaxes == axFragSC[0]):
+                    # Define the new initial and end points of the window
+                    new_midPoint = event.xdata
+                    new_midPoint_idx = midPoint_idx
+                    for i in range(self.audioFragLen-1):
+                        if self.audiotimeFrag[i] == new_midPoint or (self.audiotimeFrag[i] < new_midPoint and self.audiotimeFrag[i+1] > new_midPoint):
+                            new_midPoint_idx = i
+                            break
+                    new_ini_idx = new_midPoint_idx - int(self.windSizeSamp/2)
+                    new_end_idx = new_midPoint_idx + int(self.windSizeSamp/2)
+                    if new_ini_idx < 1 or new_end_idx > self.audioFragLen: 
+                        text = "At that point the window gets out of index."
+                        tk.messagebox.showerror(parent=cm, title="Window out of index", message=text) # show error
+                        return
+
+                    new_audioFragWind = self.audioFrag[new_ini_idx:new_end_idx]
+                    new_audioFragWind2 = new_audioFragWind * self.window
+                    if choice == 'Spectral Centroid':
+                        # recalculate FFT
+                        axFragSC[1].clear()
+                        new_spectralC = self.calculateSC(new_audioFragWind2)
+                        new_scValue = str(round(new_spectralC, 2)) # take only two decimals
+                        new_psd, new_freqs = axFragSC[1].psd(new_audioFragWind2, NFFT=self.windSizeSampInt, pad_to=self.nfftUser, Fs=self.audiofs, window=self.window, noverlap=self.overlapSamp)
+                        axFragSC[1].axvline(x=new_spectralC, color='r', linewidth='1') # draw a vertical line in x=value of the spectral centroid
+                        axFragSC[1].set(xlim=[0, max(new_freqs)], xlabel='Frequency (Hz)', ylabel='Power spectral density (dB/Hz)', title='Power spectral density using fft, spectral centroid value is '+ new_scValue)
+                    else: # recalculate STFT
+                        new_stft = self.calculateSTFT(new_audioFragWind2, self.nfftUser)
+                        self.line1.set_ydata(20*np.log10(abs(new_stft)))
+
+                    # Move the window and rescale 'y' axis
+                    if choice == 'STFT':
+                        midLine.set_xdata(new_midPoint)
+                        axFragSTFT[1].relim()
+                        axFragSTFT[1].autoscale_view()
+                    elif choice == 'STFT + Spect':
+                        midLineWavef.set_xdata(new_midPoint)
+                        midLineSpect.set_xdata(new_midPoint)
+                        axFragSTFTSpect[1].relim()
+                        axFragSTFTSpect[1].autoscale_view()
+                    else: # choice == 'Spectral Centroid'
+                        midLineWavefSC.set_xdata(new_midPoint)
+                        midLineSpectSC.set_xdata(new_midPoint)
+                        axFragSC[1].relim()
+                        axFragSC[1].autoscale_view()
+                    rectangle.set_x(self.audiotimeFrag[new_ini_idx])
+
+                    plt.show() # update the figure
+                
+            plt.connect('button_press_event', on_click) # when the mouse button is pressed, call on_click function
+            plt.show() # show the figure
+
+        elif choice == 'Spectrogram':
+            self.plotSpectrogram()
+        elif choice == 'Short-Time-Energy':
+            self.plotSTE()
+        elif choice == 'Pitch':
+            self.plotPitch(cm)
+        elif choice == 'Filtering':
+            self.plotFiltering(cm)
 
     # PITCH - ADVANCED SETTINGS WINDOW
     def advancedSettings(self):

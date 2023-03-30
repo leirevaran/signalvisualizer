@@ -38,7 +38,7 @@ class SquareWave(tk.Frame):
         for i in range(7):
             sm.rowconfigure(i, weight=1)
 
-        # SCALERS
+        # SCALES
         sm.var_dura = tk.IntVar(value=1)
         sm.var_offs = tk.DoubleVar(value=0)
         sm.var_ampl = tk.DoubleVar(value=0.5)
@@ -188,7 +188,6 @@ class SquareWave(tk.Frame):
         
         # Plot the square wave
         limite = max(abs(self.square))*1.1
-        self.ax.clear()
         self.ax.plot(self.time, self.square)
         self.fig.canvas.manager.set_window_title('Square wave')
         self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')

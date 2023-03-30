@@ -132,7 +132,6 @@ class Noise(tk.Frame):
 
         # Takes the selected fragment and opens the control menu when clicked
         def load(event):
-            print('entra en load')
             if self.noiseFrag.shape == (1,): 
                 text = "First select a fragment with the left button of the cursor."
                 tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error

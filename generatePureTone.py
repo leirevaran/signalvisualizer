@@ -37,7 +37,7 @@ class PureTone(tk.Frame):
         for i in range(6):
             tm.rowconfigure(i, weight=1)
 
-        # SCALERS
+        # SCALES
         tm.var_dura = tk.IntVar(value=1)
         tm.var_offs = tk.DoubleVar(value=0)
         tm.var_ampl = tk.DoubleVar(value=0.5)
@@ -164,7 +164,8 @@ class PureTone(tk.Frame):
                 text = "The amplitude is exceeding the limits y=1 or y=-1.\nDo you want to continue?"
                 if tk.messagebox.askokcancel(title="Exceeding amplitude", message=text) == False:
                     return
-            plt.close(self.fig)
+            # plt.close(self.fig)
+            tm.protocol("WM_DELETE_WINDOW", tm.quit) # close figure window
             self.span.clear()
             tm.destroy()
             self.cm.createControlMenu(self, 'Pure tone', self.fs, self.ptFrag)
@@ -196,7 +197,6 @@ class PureTone(tk.Frame):
         
         # Plot the pure tone
         limite = max(abs(self.ptone))*1.1
-        self.ax.clear()
         self.ax.plot(self.time, self.ptone)
         self.fig.canvas.manager.set_window_title('Pure tone')
         self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')

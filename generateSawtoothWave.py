@@ -38,7 +38,7 @@ class SawtoothWave(tk.Frame):
         for i in range(7):
             stm.rowconfigure(i, weight=1)
 
-        # SCALERS
+        # SCALES
         stm.var_dura = tk.IntVar(value=1)
         stm.var_offs = tk.DoubleVar(value=0)
         stm.var_ampl = tk.DoubleVar(value=0.5)
@@ -189,7 +189,6 @@ class SawtoothWave(tk.Frame):
         
         # Plot the pure tone
         limite = max(abs(self.sawtooth))*1.1
-        self.ax.clear()
         self.ax.plot(self.time, self.sawtooth)
         self.fig.canvas.manager.set_window_title('Sawtooth signal')
         self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
