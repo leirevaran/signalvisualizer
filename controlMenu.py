@@ -8,7 +8,7 @@ import sounddevice as sd
 import matplotlib.pyplot as plt
 from tkinter import ttk
 from pathlib import Path
-from matplotlib.widgets import Button, Cursor, SpanSelector, MultiCursor
+from matplotlib.widgets import Button, Cursor, SpanSelector, MultiCursor, RadioButtons
 from matplotlib.backend_bases import MouseButton
 from matplotlib.patches import Rectangle
 from scipy.io.wavfile import write
@@ -18,6 +18,10 @@ from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
 
 class ControlMenu():
+
+    def __init__(self):
+        self.rbCreated = False
+        self.radio = 1
 
     def createControlMenu(self, root, fileName, fs, audioFrag):
         self.audiofs = fs
@@ -301,6 +305,7 @@ class ControlMenu():
         self.but_freq = ttk.Button(cm, text='Filter Frequency Response', state='disabled')
         self.but_rese = ttk.Button(cm, text='Reset Signal', state='disabled')
         self.but_fisi = ttk.Button(cm, text='Filter Signal', state='disabled')
+        self.but_save = ttk.Button(cm, text='Save audio', command=lambda: self.saveAudioFrag(self.audioFrag, self.audiofs))
         self.but_plot = ttk.Button(cm, text='Plot', command=lambda: checkValues())
 
         # positioning Buttons
@@ -308,6 +313,7 @@ class ControlMenu():
         self.but_freq.grid(column=3, row=7, sticky=tk.EW, padx=5, pady=5)
         self.but_rese.grid(column=3, row=8, sticky=tk.EW, padx=5, pady=5)
         self.but_fisi.grid(column=3, row=9, sticky=tk.EW, padx=5, pady=5)
+        self.but_save.grid(column=2, row=14, sticky=tk.EW, padx=5, pady=5)
         self.but_plot.grid(column=3, row=14, sticky=tk.EW, padx=5, pady=5)
 
         # OPTION MENUS
@@ -477,16 +483,6 @@ class ControlMenu():
             return True
         else: return False
 
-    # Plays the audio of the selected fragment of the fragment
-    def listenFragFrag(self, xmin, xmax):
-        ini, end = np.searchsorted(self.audiotimeFrag, (xmin, xmax))
-        audio = self.audioFrag[ini:end+1]
-        sd.play(audio, self.audiofs)
-
-    def createSpanSelector(self, ax):
-        span = SpanSelector(ax, self.listenFragFrag, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
-        return span
-    
     # Called when clicking the 'Formants' checkbox
     def showFormants(self):
         pass
@@ -513,9 +509,80 @@ class ControlMenu():
         file = tk.filedialog.asksaveasfilename(title='Save file', defaultextension=".wav", filetypes=(("wav files","*.wav"),))
         if file is None:
             return
-        fileName = Path(file).stem # take only the name of the file without the '.wav' and the path
-        write(fileName, fs, scaled) # generates a wav file in the selected folder
-        return fileName
+        write(file, fs, scaled) # generates a wav file in the selected folder
+        return file
+    
+    # Plays the audio of the selected fragment of the fragment
+    def listenFragFrag(self, xmin, xmax):
+        ini, end = np.searchsorted(self.audiotimeFrag, (xmin, xmax))
+        self.selectedAudio = self.audioFrag[ini:end+1]
+        sd.play(self.selectedAudio, self.audiofs)
+
+    def createSpanSelector(self, ax):
+        span = SpanSelector(ax, self.listenFragFrag, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
+        return span
+    
+    def generateWindow(self, root, fig, ax, fs, time, audio, menu, name):
+        # If the window has been closed, create it again
+        if plt.fignum_exists(fig.number):
+            ax.clear() # delete the previous plot
+        else:
+            fig, ax = plt.subplots() # create the window
+
+        self.selectedAudio = np.empty(1) # in case no fragment has been selected
+
+        # Takes the selected fragment and opens the control menu when clicked
+        def load(event):
+            if self.selectedAudio.shape == (1,): 
+                text = "First select a fragment with the left button of the cursor."
+                tk.messagebox.showerror(parent=root, title="No fragment selected", message=text) # show error
+                return
+            plt.close(fig)
+            span.clear()
+            menu.destroy()
+            self.createControlMenu(root, name, fs, self.selectedAudio)
+            axload._but_load = but_load # reference to the Button (otherwise the button does nothing)
+
+        # Adds a 'Load' button to the figure
+        axload = fig.add_axes([0.8, 0.01, 0.09, 0.05])
+        but_load = Button(axload, 'Load')
+        but_load.on_clicked(load)
+
+        # Adds scale/saturate radio buttons to the figure
+        if name == 'Pure tone' or name == 'Square signal' or name == 'Sawtooth wave':
+        # if offset > 0.5 or offset < -0.5:
+            def exceed(label):
+                options = {'scale': 0, 'saturate': 1}
+                option = options[label]
+                if option == 0:
+                    for i in range(len(self.selectedAudio)):
+                        if self.selectedAudio[i] > 1:
+                            self.selectedAudio[i] = 1
+                        elif self.selectedAudio[i] < -1:
+                            self.selectedAudio[i] = -1
+                elif option == 1:
+                    if max(self.selectedAudio) > 1:
+                        self.selectedAudio = self.selectedAudio/max(abs(self.selectedAudio))
+                    elif min(self.selectedAudio) < -1:
+                        self.selectedAudio = self.selectedAudio/min(abs(self.selectedAudio))
+                rax._radio = radio # reference to the Button (otherwise the button does nothing)
+
+            rax = fig.add_axes([0.75, 0.9, 0.15, 0.1])
+            radio = RadioButtons(rax, ('scale', 'saturate'))
+            radio.on_clicked(exceed)
+
+        # Make the variables global for the 'listenFragFrag' function
+        self.audioFrag = audio
+        self.audiotimeFrag = time
+        self.audiofs = fs
+        span = self.createSpanSelector(ax)
+
+        return fig, ax
+    
+    # Shows a warning if the frequency is greater than or equal to fs/2
+    def bigFrequency(self, freq, fs):
+        if freq >= fs/2:
+            tk.messagebox.showwarning(title="Big frequency", message="The frequency is greater than or equal to half the value of the sample frequency ("+str(fs/2)+" Hz).") # show warning
 
     def calculateSTFT(self, audioFragWindow, nfft):
         stft = np.fft.fft(audioFragWindow, nfft)

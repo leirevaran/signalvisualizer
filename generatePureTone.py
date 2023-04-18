@@ -2,9 +2,7 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 import numpy as np
 import unicodedata
-import sounddevice as sd
 from tkinter import ttk
-from matplotlib.widgets import Button, SpanSelector, RadioButtons
 
 from controlMenu import ControlMenu
 
@@ -18,7 +16,6 @@ class PureTone(tk.Frame):
         self.controller = controller
         self.master = master
         self.fig, self.ax = plt.subplots()
-        self.ptFrag = np.empty(1)
         self.cm = ControlMenu()
         self.toneMenu()
 
@@ -141,63 +138,17 @@ class PureTone(tk.Frame):
         sign = str(self.ent_offs.get()+' + '+str(self.ent_ampl.get())+' COS(2'+unicodedata.lookup("GREEK SMALL LETTER PI")+' '+str(self.ent_freq.get())+'t + '+str(self.ent_phas.get())+unicodedata.lookup("GREEK SMALL LETTER PI")+')')
         lab_sign.configure(text=sign)
 
-        # If the frequency is greater than or equal to fs/2, show a warning
-        if frequency >= self.fs/2:
-            tk.messagebox.showwarning(title="Big frequency", message="The frequency is greater than or equal to half the value of the sample frequency ("+str(self.fs/2)+" Hz).") # show warning
+        # Check if the frequency is smaller than self.fs/2
+        self.cm.bigFrequency(frequency, self.fs)
 
-        self.time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
-        self.ptone = amplitude * (np.cos(2*np.pi * frequency*self.time + phase*np.pi)) + offset
+        time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
+        ptone = amplitude * (np.cos(2*np.pi * frequency*time + phase*np.pi)) + offset
 
-        # If the window has been closed, create it again
-        if plt.fignum_exists(self.fig.number):
-            self.ax.clear() # delete the previous plot
-        else:
-            self.fig, self.ax = plt.subplots() # create the window
+        self.fig, self.ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, ptone, tm, 'Pure tone')
 
-        # Takes the selected fragment and opens the control menu when clicked
-        def load(event):
-            if self.ptFrag.shape == (1,): 
-                text = "First select a fragment with the left button of the cursor."
-                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
-                return
-            if max(self.ptFrag) > 1 or min(self.ptFrag) < -1:
-                text = "The amplitude is exceeding the limits y=1 or y=-1.\nDo you want to continue?"
-                if tk.messagebox.askokcancel(title="Exceeding amplitude", message=text) == False:
-                    return
-            # plt.close(self.fig)
-            tm.protocol("WM_DELETE_WINDOW", tm.quit) # close figure window
-            self.span.clear()
-            tm.destroy()
-            self.cm.createControlMenu(self, 'Pure tone', self.fs, self.ptFrag)
-
-        # Adds a 'Load' button to the figure
-        axload = self.fig.add_axes([0.8, 0.01, 0.09, 0.05]) # left, bottom, width, height
-        self.but_load = Button(axload, 'Load')
-        self.but_load.on_clicked(load)
-
-        # Add scale/saturate radio buttons
-        def exceed(label):
-            options = {'scale': 0, 'saturate': 1}
-            option = options[label]
-            if option == 0:
-                for i in range(len(self.ptFrag)):
-                    if self.ptFrag[i] > 1:
-                        self.ptFrag[i] = 1
-                    elif self.ptFrag[i] < -1:
-                        self.ptFrag[i] = -1
-            elif option == 1:
-                if max(self.ptFrag) > 1:
-                    self.ptFrag = self.ptFrag/max(abs(self.ptFrag))
-                elif min(self.ptFrag) < -1:
-                    self.ptFrag = self.ptFrag/min(abs(self.ptFrag))
-
-        rax = self.fig.add_axes([0.75, 0.9, 0.15, 0.1])
-        radio = RadioButtons(rax, ('scale', 'saturate'))
-        radio.on_clicked(exceed)
-        
         # Plot the pure tone
-        limite = max(abs(self.ptone))*1.1
-        self.ax.plot(self.time, self.ptone)
+        limite = max(abs(ptone))*1.1
+        self.ax.plot(time, ptone)
         self.fig.canvas.manager.set_window_title('Pure tone')
         self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
         self.ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
@@ -206,11 +157,4 @@ class PureTone(tk.Frame):
         self.ax.axhline(y=offset, color='blue', linewidth='1', label="offset") # draw an horizontal line in y=offset
         self.ax.legend(loc="upper right")
 
-        self.span = SpanSelector(self.ax, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
-        
         plt.show()
-
-    def listenFragment(self, xmin, xmax):
-        ini, end = np.searchsorted(self.time, (xmin, xmax))
-        self.ptFrag = self.ptone[ini:end+1]
-        sd.play(self.ptFrag, self.fs)

@@ -2,9 +2,7 @@ import tkinter as tk
 import colorednoise as cn
 import matplotlib.pyplot as plt
 import numpy as np
-import sounddevice as sd
 from tkinter import ttk
-from matplotlib.widgets import Button, SpanSelector
 
 from controlMenu import ControlMenu
 
@@ -18,7 +16,6 @@ class Noise(tk.Frame):
         self.controller = controller
         self.master = master
         self.fig, self.ax = plt.subplots()
-        self.noiseFrag = np.empty(1)
         self.cm = ControlMenu()
         self.noiseMenu()
 
@@ -102,61 +99,34 @@ class Noise(tk.Frame):
         else: return False
 
     def generateNoise(self, nm):
-        self.choice = nm.var_opts.get()
+        choice = nm.var_opts.get()
         amplitude = float(self.sca_ampl.get())
         duration = self.sca_dura.get()
         self.fs = int(self.ent_fs.get()) # sample frequency
         samples = int(duration*self.fs)
 
-        if self.choice == 'White noise':
+        if choice == 'White noise':
             beta = 0
-        elif self.choice == 'Pink noise':
+        elif choice == 'Pink noise':
             beta = 1
-        elif self.choice == 'Brown noise':
+        elif choice == 'Brown noise':
             beta = 2
 
-        self.time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
+        time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
         noiseGaussian = cn.powerlaw_psd_gaussian(beta, samples)
-        self.noise = amplitude * noiseGaussian / max(abs(noiseGaussian))
+        noise = amplitude * noiseGaussian / max(abs(noiseGaussian))
 
         # noisePower = noise*np.sqrt(power) # con control de potencia (power = amplitude)
         # # Para calcular la potencia
         # L2 = [x**2 for x in noise]
         # suma = sum(L2)/np.size(noise)
 
-        # If the window has been closed, create it again
-        if plt.fignum_exists(self.fig.number):
-            self.ax.clear() # delete the previous plot
-        else:
-            self.fig, self.ax = plt.subplots() # create the window
-
-        # Takes the selected fragment and opens the control menu when clicked
-        def load(event):
-            if self.noiseFrag.shape == (1,): 
-                text = "First select a fragment with the left button of the cursor."
-                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
-                return
-            plt.close(self.fig)
-            self.span.clear()
-            nm.destroy()
-            self.cm.createControlMenu(self, self.choice, self.fs, self.noiseFrag)
-
-        # Adds a 'Load' button to the figure
-        axload = self.fig.add_axes([0.8, 0.01, 0.09, 0.05])
-        self.but_load = Button(axload, 'Load')
-        self.but_load.on_clicked(load)
+        self.fig, self.ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, noise, nm, choice)
 
         # Plot the noise
-        self.ax.plot(self.time, self.noise)
-        self.fig.canvas.manager.set_window_title(self.choice)
+        self.ax.plot(time, noise)
+        self.fig.canvas.manager.set_window_title(choice)
         self.ax.set(xlim=[0, duration], xlabel='Time (s)', ylabel='Amplitude')
         self.ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
 
-        self.span = SpanSelector(self.ax, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
-
         plt.show()
-
-    def listenFragment(self, xmin, xmax):
-        ini, end = np.searchsorted(self.time, (xmin, xmax))
-        self.noiseFrag = self.noise[ini:end+1]
-        sd.play(self.noiseFrag, self.fs)

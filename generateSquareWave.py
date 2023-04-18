@@ -2,10 +2,8 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 import numpy as np
 import unicodedata
-import sounddevice as sd
 from tkinter import ttk
 from scipy import signal
-from matplotlib.widgets import Button, SpanSelector, RadioButtons
 
 from controlMenu import ControlMenu
 
@@ -19,7 +17,6 @@ class SquareWave(tk.Frame):
         self.controller = controller
         self.master = master
         self.fig, self.ax = plt.subplots()
-        self.swFrag = np.empty(1)
         self.cm = ControlMenu()
         self.squareMenu()
 
@@ -133,62 +130,17 @@ class SquareWave(tk.Frame):
         offset = float(self.ent_offs.get())
         samples = int(duration*self.fs)
 
-        # If the frequency is greater than or equal to fs/2, show a warning
-        if frequency >= self.fs/2:
-            tk.messagebox.showwarning(title="Big frequency", message="The frequency is greater than or equal to half the value of the sample frequency ("+str(self.fs/2)+" Hz).") # show warning
+        # Check if the frequency is smaller than self.fs/2
+        self.cm.bigFrequency(frequency, self.fs)
 
-        self.time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
-        self.square = amplitude * (signal.square(2*np.pi*frequency*self.time + phase*np.pi, duty=cycle/100) / 2) + offset * np.ones(len(self.time))
+        time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
+        square = amplitude * (signal.square(2*np.pi*frequency*time + phase*np.pi, duty=cycle/100) / 2) + offset * np.ones(len(time))
 
-        # If the window has been closed, create it again
-        if plt.fignum_exists(self.fig.number):
-            self.ax.clear() # delete the previous plot
-        else:
-            self.fig, self.ax = plt.subplots() # create the window
-
-        # Takes the selected fragment and opens the control menu when clicked
-        def load(event):
-            if self.swFrag.shape == (1,): 
-                text = "First select a fragment with the left button of the cursor."
-                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
-                return
-            if max(self.swFrag) > 1 or min(self.swFrag) < -1:
-                text = "The amplitude is exceeding the limits y=1 or y=-1.\nDo you want to continue?"
-                if tk.messagebox.askokcancel(title="Exceeding amplitude", message=text) == False:
-                    return
-            plt.close(self.fig)
-            self.span.clear()
-            sm.destroy()
-            self.cm.createControlMenu(self, 'Square signal', self.fs, self.swFrag)
-
-        # Adds a 'Load' button to the figure
-        axload = self.fig.add_axes([0.8, 0.01, 0.09, 0.05]) # left, bottom, width, height
-        self.but_load = Button(axload, 'Load')
-        self.but_load.on_clicked(load)
-
-        # Add scale/saturate radio buttons
-        def exceed(label):
-            options = {'scale': 0, 'saturate': 1}
-            option = options[label]
-            if option == 0:
-                for i in range(len(self.swFrag)):
-                    if self.swFrag[i] > 1:
-                        self.swFrag[i] = 1
-                    elif self.swFrag[i] < -1:
-                        self.swFrag[i] = -1
-            elif option == 1:
-                if max(self.swFrag) > 1:
-                    self.swFrag = self.swFrag/max(abs(self.swFrag))
-                elif min(self.swFrag) < -1:
-                    self.swFrag = self.swFrag/min(abs(self.swFrag))
-
-        rax = self.fig.add_axes([0.75, 0.9, 0.15, 0.1])
-        radio = RadioButtons(rax, ('scale', 'saturate'))
-        radio.on_clicked(exceed)
+        self.fig, self.ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, square, sm, 'Square signal')
         
         # Plot the square wave
-        limite = max(abs(self.square))*1.1
-        self.ax.plot(self.time, self.square)
+        limite = max(abs(square))*1.1
+        self.ax.plot(time, square)
         self.fig.canvas.manager.set_window_title('Square wave')
         self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
         self.ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
@@ -197,11 +149,4 @@ class SquareWave(tk.Frame):
         self.ax.axhline(y=offset, color='blue', linewidth='1', label="offset") # draw an horizontal line in y=offset
         self.ax.legend(loc="upper right")
 
-        self.span = SpanSelector(self.ax, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
-        
         plt.show()
-
-    def listenFragment(self, xmin, xmax):
-        ini, end = np.searchsorted(self.time, (xmin, xmax))
-        self.swFrag = self.square[ini:end+1]
-        sd.play(self.swFrag, self.fs)

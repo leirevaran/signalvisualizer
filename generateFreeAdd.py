@@ -1,9 +1,7 @@
 import tkinter as tk
 import matplotlib.pyplot as plt
 import numpy as np
-import sounddevice as sd
 from tkinter import ttk
-from matplotlib.widgets import Button, SpanSelector
 
 from controlMenu import ControlMenu
 
@@ -18,7 +16,6 @@ class FreeAdditionPureTones(tk.Frame):
         self.master = master
         self.fig, self.ax = plt.subplots()
         self.fs = 48000 # sample frequency
-        self.faptFrag = np.empty(1)
         self.cm = ControlMenu()
         self.pianoExists = False
         self.freeAddMenu()
@@ -137,54 +134,26 @@ class FreeAdditionPureTones(tk.Frame):
         duration = float(self.ent_dura.get())
         samples = int(duration*self.fs)
 
-        self.time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
-        fapt1 = amp1 * (np.sin(2*np.pi * frq1*self.time))
-        fapt2 = amp2 * (np.sin(2*np.pi * frq2*self.time))
-        fapt3 = amp3 * (np.sin(2*np.pi * frq3*self.time))
-        fapt4 = amp4 * (np.sin(2*np.pi * frq4*self.time))
-        fapt5 = amp5 * (np.sin(2*np.pi * frq5*self.time))
-        fapt6 = amp6 * (np.sin(2*np.pi * frq6*self.time))
-        self.fapt = fapt1+fapt2+fapt3+fapt4+fapt5+fapt6
+        time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
+        fapt1 = amp1 * (np.sin(2*np.pi * frq1*time))
+        fapt2 = amp2 * (np.sin(2*np.pi * frq2*time))
+        fapt3 = amp3 * (np.sin(2*np.pi * frq3*time))
+        fapt4 = amp4 * (np.sin(2*np.pi * frq4*time))
+        fapt5 = amp5 * (np.sin(2*np.pi * frq5*time))
+        fapt6 = amp6 * (np.sin(2*np.pi * frq6*time))
+        fapt = fapt1+fapt2+fapt3+fapt4+fapt5+fapt6
 
-        # If the window has been closed, create it again
-        if plt.fignum_exists(self.fig.number):
-            self.ax.clear() # delete the previous plot
-        else:
-            self.fig, self.ax = plt.subplots() # create the window
-
-        # Takes the selected fragment and opens the control menu when clicked
-        def load(event):
-            if self.faptFrag.shape == (1,): 
-                text = "First select a fragment with the left button of the cursor."
-                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
-                return
-            plt.close(self.fig)
-            self.span.clear()
-            fam.destroy()
-            if self.pianoExists: self.piano.destroy()
-            self.cm.createControlMenu(self, 'Free addition of pure tones', self.fs, self.faptFrag)
-
-        # Adds a 'Load' button to the figure
-        axload = self.fig.add_axes([0.8, 0.01, 0.09, 0.05])
-        self.but_load = Button(axload, 'Load')
-        self.but_load.on_clicked(load)
+        self.fig, self.ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, fapt, fam, 'Free addition of pure tones')
 
         # Plot free addition of pure tones
-        limite = max(abs(self.fapt))*1.1
-        self.ax.plot(self.time, self.fapt)
+        limite = max(abs(fapt))*1.1
+        self.ax.plot(time, fapt)
         self.fig.canvas.manager.set_window_title('Free addition of pure tones')
         self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
         self.ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         self.ax.grid() # add grid lines
 
-        self.span = SpanSelector(self.ax, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
-        
         plt.show()
-
-    def listenFragment(self, xmin, xmax):
-        ini, end = np.searchsorted(self.time, (xmin, xmax))
-        self.faptFrag = self.fapt[ini:end+1]
-        sd.play(self.faptFrag, self.fs)
 
     def notesHarmonics(self, note):
         # Calculate fundamental frequency of the note
