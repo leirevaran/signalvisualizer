@@ -56,13 +56,12 @@ class Load(tk.Frame):
 
         # Add a 'Load' button that takes the selected fragment and opens the control menu when clicked
         def load(event):
-            if self.audioFrag.shape == (1,): # if no fragment has been selected
-                text = "First select a fragment with the left button of the cursor."
-                tk.messagebox.showerror(parent=self, title="No fragment selected", message=text) # show error
-                return
+            if self.audioFrag.shape == (1,): # if no fragment has been selected, load the whole signal
+                self.cm.createControlMenu(self, fileName, self.audiofs, self.audio)
+            else:
+                span.clear()
+                self.cm.createControlMenu(self, fileName, self.audiofs, self.audioFrag)
             plt.close(figFile) # close the figure of the waveform
-            span.clear()
-            self.cm.createControlMenu(self, fileName, self.audiofs, self.audioFrag)
 
         axload = figFile.add_axes([0.8, 0.01, 0.09, 0.05])
         but_load = Button(axload, 'Load')

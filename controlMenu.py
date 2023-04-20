@@ -559,13 +559,12 @@ class ControlMenu():
         # Takes the selected fragment and opens the control menu when clicked
         def load(event):
             if self.selectedAudio.shape == (1,): 
-                text = "First select a fragment with the left button of the cursor."
-                tk.messagebox.showerror(parent=root, title="No fragment selected", message=text) # show error
-                return
+                self.createControlMenu(root, name, fs, audio)
+            else:
+                self.createControlMenu(root, name, fs, self.selectedAudio)
+                span.clear()
             plt.close(fig)
-            span.clear()
             menu.destroy()
-            self.createControlMenu(root, name, fs, self.selectedAudio)
             axload._but_load = but_load # reference to the Button (otherwise the button does nothing)
 
         # Adds a 'Load' button to the figure

@@ -85,7 +85,7 @@ class Record(tk.Frame):
         fig, ax = plt.subplots()
 
         myrecording = np.frombuffer(b"".join(self.frames), dtype=np.int16)
-        lenMyRecord = len(self.myrecording)
+        lenMyRecord = len(myrecording)
         duration = lenMyRecord / self.fs
         time = np.linspace(start=0, stop=duration, num=lenMyRecord)
 
