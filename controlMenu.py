@@ -20,10 +20,6 @@ windll.shcore.SetProcessDpiAwareness(1)
 
 class ControlMenu():
 
-    def __init__(self):
-        self.rbCreated = False
-        self.radio = 1
-
     def createControlMenu(self, root, fileName, fs, audioFrag):
         self.audiofs = fs
         self.fileName = fileName
@@ -551,6 +547,12 @@ class ControlMenu():
             ax.clear() # delete the previous plot
         else:
             fig, ax = plt.subplots() # create the window
+
+        # If the 'generate' menu is closed, close also the generated figure
+        def on_closing():
+            menu.destroy()
+            plt.close(fig)
+        menu.protocol("WM_DELETE_WINDOW", on_closing)
 
         self.selectedAudio = np.empty(1) # in case no fragment has been selected
 

@@ -15,12 +15,8 @@ class PureTone(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
-        self.fig, self.ax = plt.subplots()
         self.cm = ControlMenu()
         self.toneMenu()
-
-    def dummy(self):
-        print('dummy function')
 
     def toneMenu(self):
         tm = tk.Toplevel()
@@ -136,6 +132,7 @@ class PureTone(tk.Frame):
         duration = float(self.ent_dura.get())
         offset = float(self.ent_offs.get())
         samples = int(duration*self.fs)
+        fig, ax = plt.subplots()
 
         # Update expression
         sign = str(self.ent_offs.get()+' + '+str(self.ent_ampl.get())+' COS(2'+unicodedata.lookup("GREEK SMALL LETTER PI")+' '+str(self.ent_freq.get())+'t + '+str(self.ent_phas.get())+unicodedata.lookup("GREEK SMALL LETTER PI")+')')
@@ -147,17 +144,17 @@ class PureTone(tk.Frame):
         time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
         ptone = amplitude * (np.cos(2*np.pi * frequency*time + phase*np.pi)) + offset
 
-        self.fig, self.ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, ptone, tm, 'Pure tone')
+        fig, ax = self.cm.generateWindow(self, fig, ax, self.fs, time, ptone, tm, 'Pure tone')
 
         # Plot the pure tone
         limite = max(abs(ptone))*1.1
-        self.ax.plot(time, ptone)
-        self.fig.canvas.manager.set_window_title('Pure tone')
-        self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
-        self.ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        self.ax.axhline(y=1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=1.0
-        self.ax.axhline(y=-1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=-1.0
-        self.ax.axhline(y=offset, color='blue', linewidth='1', label="offset") # draw an horizontal line in y=offset
-        self.ax.legend(loc="upper right")
+        ax.plot(time, ptone)
+        fig.canvas.manager.set_window_title('Pure tone')
+        ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
+        ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
+        ax.axhline(y=1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=1.0
+        ax.axhline(y=-1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=-1.0
+        ax.axhline(y=offset, color='blue', linewidth='1', label="offset") # draw an horizontal line in y=offset
+        ax.legend(loc="upper right")
 
         plt.show()

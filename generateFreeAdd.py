@@ -14,7 +14,6 @@ class FreeAdditionPureTones(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
-        self.fig, self.ax = plt.subplots()
         self.fs = 48000 # sample frequency
         self.cm = ControlMenu()
         self.pianoExists = False
@@ -133,6 +132,7 @@ class FreeAdditionPureTones(tk.Frame):
         amp6 = self.sca_amp6.get()
         duration = float(self.ent_dura.get())
         samples = int(duration*self.fs)
+        fig, ax = plt.subplots()
 
         time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
         fapt1 = amp1 * (np.sin(2*np.pi * frq1*time))
@@ -143,15 +143,15 @@ class FreeAdditionPureTones(tk.Frame):
         fapt6 = amp6 * (np.sin(2*np.pi * frq6*time))
         fapt = fapt1+fapt2+fapt3+fapt4+fapt5+fapt6
 
-        self.fig, self.ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, fapt, fam, 'Free addition of pure tones')
+        fig, ax = self.cm.generateWindow(self, fig, ax, self.fs, time, fapt, fam, 'Free addition of pure tones')
 
         # Plot free addition of pure tones
         limite = max(abs(fapt))*1.1
-        self.ax.plot(time, fapt)
-        self.fig.canvas.manager.set_window_title('Free addition of pure tones')
-        self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
-        self.ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        self.ax.grid() # add grid lines
+        ax.plot(time, fapt)
+        fig.canvas.manager.set_window_title('Free addition of pure tones')
+        ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
+        ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
+        ax.grid() # add grid lines
 
         plt.show()
 

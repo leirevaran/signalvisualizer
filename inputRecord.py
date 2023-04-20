@@ -21,7 +21,6 @@ class Record(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
-        self.fig, self.ax = plt.subplots()
         self.isrecording = False
         self.fs = 44100
         self.cm = ControlMenu()
@@ -83,20 +82,19 @@ class Record(tk.Frame):
         audio.terminate()
 
     def plotRecording(self, rm):
-        # If the window has been closed, create it again
-        self.fig, self.ax = self.cm.generateWindow(self.fig, self.ax)
+        fig, ax = plt.subplots()
 
         myrecording = np.frombuffer(b"".join(self.frames), dtype=np.int16)
         lenMyRecord = len(self.myrecording)
         duration = lenMyRecord / self.fs
         time = np.linspace(start=0, stop=duration, num=lenMyRecord)
 
-        self.fig, self.ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, myrecording, rm, 'Record')
+        fig, ax = self.cm.generateWindow(self, fig, ax, self.fs, time, myrecording, rm, 'Record')
 
         # Plot the recording
-        self.ax.plot(time, myrecording)
-        self.fig.canvas.manager.set_window_title('Record')
-        self.ax.set(xlim=[0, duration], xlabel='Time (s)', ylabel='Amplitude')
-        self.ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
+        ax.plot(time, myrecording)
+        fig.canvas.manager.set_window_title('Record')
+        ax.set(xlim=[0, duration], xlabel='Time (s)', ylabel='Amplitude')
+        ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
 
         plt.show()

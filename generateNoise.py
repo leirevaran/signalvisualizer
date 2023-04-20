@@ -15,7 +15,6 @@ class Noise(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
-        self.fig, self.ax = plt.subplots()
         self.cm = ControlMenu()
         self.noiseMenu()
 
@@ -104,6 +103,7 @@ class Noise(tk.Frame):
         duration = self.sca_dura.get()
         self.fs = int(self.ent_fs.get()) # sample frequency
         samples = int(duration*self.fs)
+        fig, ax = plt.subplots()
 
         if choice == 'White noise':
             beta = 0
@@ -121,12 +121,12 @@ class Noise(tk.Frame):
         # L2 = [x**2 for x in noise]
         # suma = sum(L2)/np.size(noise)
 
-        self.fig, self.ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, noise, nm, choice)
+        fig, ax = self.cm.generateWindow(self, fig, ax, self.fs, time, noise, nm, choice)
 
         # Plot the noise
-        self.ax.plot(time, noise)
-        self.fig.canvas.manager.set_window_title(choice)
-        self.ax.set(xlim=[0, duration], xlabel='Time (s)', ylabel='Amplitude')
-        self.ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
+        ax.plot(time, noise)
+        fig.canvas.manager.set_window_title(choice)
+        ax.set(xlim=[0, duration], xlabel='Time (s)', ylabel='Amplitude')
+        ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
 
         plt.show()

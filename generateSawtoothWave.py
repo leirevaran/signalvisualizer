@@ -16,7 +16,6 @@ class SawtoothWave(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
-        self.fig, self.ax = plt.subplots()
         self.cm = ControlMenu()
         self.sawtoothMenu()
 
@@ -56,7 +55,6 @@ class SawtoothWave(tk.Frame):
         self.sca_freq.grid(column=1, row=3, sticky=tk.EW, padx=5, pady=5, columnspan=3)
         self.sca_phas.grid(column=1, row=4, sticky=tk.EW, padx=5, pady=5, columnspan=3)
         self.sca_maxp.grid(column=1, row=5, sticky=tk.EW, padx=5, pady=5, columnspan=3)
-
         
         # ENTRYS
         stm.var_fs = tk.IntVar(value=48000)
@@ -130,6 +128,7 @@ class SawtoothWave(tk.Frame):
         duration = float(self.ent_dura.get())
         offset = float(self.ent_offs.get())
         samples = int(duration*self.fs)
+        fig, ax = plt.subplots()
 
         # Check if the frequency is smaller than self.fs/2
         self.cm.bigFrequency(frequency, self.fs)
@@ -137,17 +136,17 @@ class SawtoothWave(tk.Frame):
         time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
         sawtooth = amplitude * signal.sawtooth(2*np.pi*frequency*time + phase*np.pi, width=maxpos) + offset * np.ones(len(time))
 
-        self.fig, self.ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, sawtooth, stm, 'Sawtooth wave')
+        fig, ax = self.cm.generateWindow(self, fig, ax, self.fs, time, sawtooth, stm, 'Sawtooth wave')
 
         # Plot the pure tone
         limite = max(abs(sawtooth))*1.1
-        self.ax.plot(time, sawtooth)
-        self.fig.canvas.manager.set_window_title('Sawtooth signal')
-        self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
-        self.ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        self.ax.axhline(y=1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=1.0
-        self.ax.axhline(y=-1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=-1.0
-        self.ax.axhline(y=offset, color='blue', linewidth='1', label="offset") # draw an horizontal line in y=offset
-        self.ax.legend(loc="upper right")
+        ax.plot(time, sawtooth)
+        fig.canvas.manager.set_window_title('Sawtooth signal')
+        ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
+        ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
+        ax.axhline(y=1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=1.0
+        ax.axhline(y=-1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=-1.0
+        ax.axhline(y=offset, color='blue', linewidth='1', label="offset") # draw an horizontal line in y=offset
+        ax.legend(loc="upper right")
 
         plt.show()

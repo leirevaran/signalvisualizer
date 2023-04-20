@@ -16,7 +16,6 @@ class SquareWave(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
-        self.fig, self.ax = plt.subplots()
         self.cm = ControlMenu()
         self.squareMenu()
 
@@ -129,6 +128,7 @@ class SquareWave(tk.Frame):
         duration = float(self.ent_dura.get())
         offset = float(self.ent_offs.get())
         samples = int(duration*self.fs)
+        fig, ax = plt.subplots()
 
         # Check if the frequency is smaller than self.fs/2
         self.cm.bigFrequency(frequency, self.fs)
@@ -136,17 +136,17 @@ class SquareWave(tk.Frame):
         time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
         square = amplitude * (signal.square(2*np.pi*frequency*time + phase*np.pi, duty=cycle/100) / 2) + offset * np.ones(len(time))
 
-        self.fig, self.ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, square, sm, 'Square signal')
+        fig, ax = self.cm.generateWindow(self, fig, ax, self.fs, time, square, sm, 'Square signal')
         
         # Plot the square wave
         limite = max(abs(square))*1.1
-        self.ax.plot(time, square)
-        self.fig.canvas.manager.set_window_title('Square wave')
-        self.ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
-        self.ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        self.ax.axhline(y=1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=1.0
-        self.ax.axhline(y=-1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=-1.0
-        self.ax.axhline(y=offset, color='blue', linewidth='1', label="offset") # draw an horizontal line in y=offset
-        self.ax.legend(loc="upper right")
+        ax.plot(time, square)
+        fig.canvas.manager.set_window_title('Square wave')
+        ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
+        ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
+        ax.axhline(y=1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=1.0
+        ax.axhline(y=-1.0, color='red', linewidth='0.8', linestyle='--') # draw an horizontal line in y=-1.0
+        ax.axhline(y=offset, color='blue', linewidth='1', label="offset") # draw an horizontal line in y=offset
+        ax.legend(loc="upper right")
 
         plt.show()
