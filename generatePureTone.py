@@ -19,6 +19,9 @@ class PureTone(tk.Frame):
         self.cm = ControlMenu()
         self.toneMenu()
 
+    def dummy(self):
+        print('dummy function')
+
     def toneMenu(self):
         tm = tk.Toplevel()
         tm.resizable(True, True)
