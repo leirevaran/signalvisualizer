@@ -16,6 +16,7 @@ class Noise(tk.Frame):
         self.controller = controller
         self.master = master
         self.cm = ControlMenu()
+        self.fig, self.ax = plt.subplots()
         self.noiseMenu()
 
     def noiseMenu(self):
@@ -91,6 +92,8 @@ class Noise(tk.Frame):
         self.dd_opts.config(width=11)
         self.dd_opts.grid(column=1, row=0, sticky=tk.W, padx=5)
 
+        checkValues()
+
     # Called when inserting something in the entry of fs. Only lets the user enter numbers.
     def onValidateFs(self, S):
         if S.isdigit():
@@ -103,7 +106,6 @@ class Noise(tk.Frame):
         duration = self.sca_dura.get()
         self.fs = int(self.ent_fs.get()) # sample frequency
         samples = int(duration*self.fs)
-        fig, ax = plt.subplots()
 
         if choice == 'White noise':
             beta = 0
@@ -121,7 +123,7 @@ class Noise(tk.Frame):
         # L2 = [x**2 for x in noise]
         # suma = sum(L2)/np.size(noise)
 
-        fig, ax = self.cm.generateWindow(self, fig, ax, self.fs, time, noise, nm, choice)
+        fig, ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, noise, nm, choice)
 
         # Plot the noise
         ax.plot(time, noise)

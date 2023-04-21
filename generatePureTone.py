@@ -16,6 +16,7 @@ class PureTone(tk.Frame):
         self.controller = controller
         self.master = master
         self.cm = ControlMenu()
+        self.fig, self.ax = plt.subplots()
         self.toneMenu()
 
     def toneMenu(self):
@@ -119,6 +120,8 @@ class PureTone(tk.Frame):
         self.but_gene = ttk.Button(tm, text='Generate', command=lambda: checkValues())
         self.but_gene.grid(column=4, row=6, sticky=tk.EW, padx=5, pady=5)
 
+        checkValues()
+
     # Called when inserting something in the entry of fs. Only lets the user enter numbers.
     def onValidateFs(self, S):
         if S.isdigit():
@@ -132,7 +135,6 @@ class PureTone(tk.Frame):
         duration = float(self.ent_dura.get())
         offset = float(self.ent_offs.get())
         samples = int(duration*self.fs)
-        fig, ax = plt.subplots()
 
         # Update expression
         sign = str(self.ent_offs.get()+' + '+str(self.ent_ampl.get())+' COS(2'+unicodedata.lookup("GREEK SMALL LETTER PI")+' '+str(self.ent_freq.get())+'t + '+str(self.ent_phas.get())+unicodedata.lookup("GREEK SMALL LETTER PI")+')')
@@ -144,7 +146,7 @@ class PureTone(tk.Frame):
         time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
         ptone = amplitude * (np.cos(2*np.pi * frequency*time + phase*np.pi)) + offset
 
-        fig, ax = self.cm.generateWindow(self, fig, ax, self.fs, time, ptone, tm, 'Pure tone')
+        fig, ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, ptone, tm, 'Pure tone')
 
         # Plot the pure tone
         limite = max(abs(ptone))*1.1

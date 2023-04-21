@@ -17,6 +17,7 @@ class SquareWave(tk.Frame):
         self.controller = controller
         self.master = master
         self.cm = ControlMenu()
+        self.fig, self.ax = plt.subplots()
         self.squareMenu()
 
     def squareMenu(self):
@@ -114,6 +115,8 @@ class SquareWave(tk.Frame):
         self.but_gene = ttk.Button(sm, text='Generate', command=lambda: checkValues())
         self.but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)
 
+        checkValues()
+
     # Called when inserting something in the entry of fs. Only lets the user enter numbers.
     def onValidateFs(self, S):
         if S.isdigit():
@@ -128,7 +131,6 @@ class SquareWave(tk.Frame):
         duration = float(self.ent_dura.get())
         offset = float(self.ent_offs.get())
         samples = int(duration*self.fs)
-        fig, ax = plt.subplots()
 
         # Check if the frequency is smaller than self.fs/2
         self.cm.bigFrequency(frequency, self.fs)
@@ -136,7 +138,7 @@ class SquareWave(tk.Frame):
         time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
         square = amplitude * (signal.square(2*np.pi*frequency*time + phase*np.pi, duty=cycle/100) / 2) + offset * np.ones(len(time))
 
-        fig, ax = self.cm.generateWindow(self, fig, ax, self.fs, time, square, sm, 'Square signal')
+        fig, ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, square, sm, 'Square signal')
         
         # Plot the square wave
         limite = max(abs(square))*1.1

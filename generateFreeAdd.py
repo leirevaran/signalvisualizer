@@ -16,7 +16,7 @@ class FreeAdditionPureTones(tk.Frame):
         self.master = master
         self.fs = 48000 # sample frequency
         self.cm = ControlMenu()
-        self.pianoExists = False
+        self.fig, self.ax = plt.subplots()
         self.freeAddMenu()
 
     def freeAddMenu(self):
@@ -78,6 +78,7 @@ class FreeAdditionPureTones(tk.Frame):
         self.ent_frq6 = ttk.Spinbox(fam, from_=0, to=24000, textvariable=fam.var_frq6, validate='key', width=10)
         self.ent_dura = ttk.Entry(fam, textvariable=fam.var_dura, validate='key', width=10, validatecommand=vcmd)
         self.ent_octv = ttk.Spinbox(fam, from_=1, to=6, textvariable=fam.var_octv, validate='key', width=10, state='readonly')
+        self.ent_octv.config(state='disabled')
 
         self.ent_frq1.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5)
         self.ent_frq2.grid(column=2, row=1, sticky=tk.EW, padx=5, pady=5)
@@ -117,6 +118,8 @@ class FreeAdditionPureTones(tk.Frame):
         self.but_gene.grid(column=6, row=8, sticky=tk.EW, padx=5, pady=5)
         self.but_pian.grid(column=2, row=4, sticky=tk.EW, padx=5, pady=5)
 
+        self.generateFAPT(fam)
+
     def generateFAPT(self, fam):
         frq1 = float(self.ent_frq1.get())
         frq2 = float(self.ent_frq2.get())
@@ -132,7 +135,6 @@ class FreeAdditionPureTones(tk.Frame):
         amp6 = self.sca_amp6.get()
         duration = float(self.ent_dura.get())
         samples = int(duration*self.fs)
-        fig, ax = plt.subplots()
 
         time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
         fapt1 = amp1 * (np.sin(2*np.pi * frq1*time))
@@ -143,7 +145,7 @@ class FreeAdditionPureTones(tk.Frame):
         fapt6 = amp6 * (np.sin(2*np.pi * frq6*time))
         fapt = fapt1+fapt2+fapt3+fapt4+fapt5+fapt6
 
-        fig, ax = self.cm.generateWindow(self, fig, ax, self.fs, time, fapt, fam, 'Free addition of pure tones')
+        fig, ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, fapt, fam, 'Free addition of pure tones')
 
         # Plot free addition of pure tones
         limite = max(abs(fapt))*1.1
@@ -193,7 +195,15 @@ class FreeAdditionPureTones(tk.Frame):
         self.piano = tk.Toplevel()
         self.piano.title("Piano")
         # self.piano.geometry('{}x200'.format(300))
-        self.pianoExists = True
+        self.but_pian.configure(state='disabled')
+        self.ent_octv.config(state='active')
+
+        # If the piano window is closed, reactivate the "show piano" button
+        def on_closing():
+            self.piano.destroy()
+            self.but_pian.configure(state='active')
+            self.ent_octv.config(state='disabled')
+        self.piano.protocol("WM_DELETE_WINDOW", on_closing)
 
         white_keys = 7
         black = [1, 1, 0, 1, 1, 1, 0]

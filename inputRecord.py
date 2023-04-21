@@ -90,6 +90,7 @@ class Record(tk.Frame):
         time = np.linspace(start=0, stop=duration, num=lenMyRecord)
 
         fig, ax = self.cm.generateWindow(self, fig, ax, self.fs, time, myrecording, rm, 'Record')
+        # rm.destroy()
 
         # Plot the recording
         ax.plot(time, myrecording)
