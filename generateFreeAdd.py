@@ -17,6 +17,7 @@ class FreeAdditionPureTones(tk.Frame):
         self.fs = 48000 # sample frequency
         self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
+        self.file = 'csv/generateFreeAdd.csv'
         self.freeAddMenu()
 
     def freeAddMenu(self):
@@ -34,14 +35,31 @@ class FreeAdditionPureTones(tk.Frame):
         for i in range(4):
             fam.rowconfigure(i, weight=1)
 
+        # Read the default values of the atributes from a csv file
+        list = self.cm.readFromCsv(self.file)
+        freq1 = list[0]
+        freq2 = list[1]
+        freq3 = list[2]
+        freq4 = list[3]
+        freq5 = list[4]
+        freq6 = list[5]
+        ampl1 = list[6]
+        ampl2 = list[7]
+        ampl3 = list[8]
+        ampl4 = list[9]
+        ampl5 = list[10]
+        ampl6 = list[11]
+        duration = list[12]
+        octave = list[13]
+
         # SCALES
-        fam.var_amp1 = tk.DoubleVar(value=0.5)
-        fam.var_amp2 = tk.DoubleVar(value=0)
-        fam.var_amp3 = tk.DoubleVar(value=0)
-        fam.var_amp4 = tk.DoubleVar(value=0)
-        fam.var_amp5 = tk.DoubleVar(value=0)
-        fam.var_amp6 = tk.DoubleVar(value=0)
-        fam.var_dura = tk.IntVar(value=1)
+        fam.var_amp1 = tk.DoubleVar(value=ampl1)
+        fam.var_amp2 = tk.DoubleVar(value=ampl2)
+        fam.var_amp3 = tk.DoubleVar(value=ampl3)
+        fam.var_amp4 = tk.DoubleVar(value=ampl4)
+        fam.var_amp5 = tk.DoubleVar(value=ampl5)
+        fam.var_amp6 = tk.DoubleVar(value=ampl6)
+        fam.var_dura = tk.IntVar(value=duration)
 
         self.sca_amp1 = tk.Scale(fam, from_=1, to=0, variable=fam.var_amp1, length=300, orient='vertical', resolution=0.01)
         self.sca_amp2 = tk.Scale(fam, from_=1, to=0, variable=fam.var_amp2, length=300, orient='vertical', resolution=0.01)
@@ -60,13 +78,13 @@ class FreeAdditionPureTones(tk.Frame):
         self.sca_dura.grid(column=1, row=3, sticky=tk.EW, padx=5, pady=5, columnspan=5)
 
         # ENTRY/SPINBOX
-        fam.var_frq1 = tk.DoubleVar(value=2)
-        fam.var_frq2 = tk.DoubleVar(value=0)
-        fam.var_frq3 = tk.DoubleVar(value=0)
-        fam.var_frq4 = tk.DoubleVar(value=0)
-        fam.var_frq5 = tk.DoubleVar(value=0)
-        fam.var_frq6 = tk.DoubleVar(value=0)
-        fam.var_octv = tk.IntVar(value=1)
+        fam.var_frq1 = tk.DoubleVar(value=freq1)
+        fam.var_frq2 = tk.DoubleVar(value=freq2)
+        fam.var_frq3 = tk.DoubleVar(value=freq3)
+        fam.var_frq4 = tk.DoubleVar(value=freq4)
+        fam.var_frq5 = tk.DoubleVar(value=freq5)
+        fam.var_frq6 = tk.DoubleVar(value=freq6)
+        fam.var_octv = tk.IntVar(value=octave)
 
         vcmd = (fam.register(self.cm.onValidateFloat), '%s', '%S')
 
@@ -115,10 +133,32 @@ class FreeAdditionPureTones(tk.Frame):
         # BUTTONS
         self.but_gene = ttk.Button(fam, text='Generate', command=lambda: self.generateFAPT(fam))
         self.but_pian = ttk.Button(fam, text='Show piano', command=lambda: self.pianoKeyboard())
+        self.but_save = ttk.Button(fam, text='Save values as default', command=lambda: self.saveDefaultValues())
+
         self.but_gene.grid(column=6, row=8, sticky=tk.EW, padx=5, pady=5)
         self.but_pian.grid(column=2, row=4, sticky=tk.EW, padx=5, pady=5)
+        self.but_save.grid(column=6, row=7, sticky=tk.EW, padx=5, pady=5)
 
         self.generateFAPT(fam)
+
+    def saveDefaultValues(self):
+        frq1 = float(self.ent_frq1.get())
+        frq2 = float(self.ent_frq2.get())
+        frq3 = float(self.ent_frq3.get())
+        frq4 = float(self.ent_frq4.get())
+        frq5 = float(self.ent_frq5.get())
+        frq6 = float(self.ent_frq6.get())
+        amp1 = self.sca_amp1.get()
+        amp2 = self.sca_amp2.get()
+        amp3 = self.sca_amp3.get()
+        amp4 = self.sca_amp4.get()
+        amp5 = self.sca_amp5.get()
+        amp6 = self.sca_amp6.get()
+        duration = float(self.ent_dura.get())
+        oct = float(self.ent_octv.get())
+
+        list = [frq1, frq2, frq3, frq4, frq5, frq6, amp1, amp2, amp3, amp4, amp5, amp6, duration, oct]
+        self.cm.saveDefaultAsCsv(self.file, list)
 
     def generateFAPT(self, fam):
         frq1 = float(self.ent_frq1.get())

@@ -6,6 +6,7 @@ import scipy.signal
 import parselmouth
 import numpy as np
 import sounddevice as sd
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from tkinter import ttk
 from pathlib import Path
@@ -44,6 +45,12 @@ class ControlMenu():
 
         for i in range(14):
             cm.rowconfigure(i, weight=1)
+
+        # If the 'Control menu' window is closed, close also all the generated figures
+        def on_closing():
+            cm.destroy()
+            plt.close('all') # closes all matplotlib figures
+        cm.protocol("WM_DELETE_WINDOW", on_closing)
 
         # LABELS
         # Labels of OptionMenus
@@ -312,7 +319,7 @@ class ControlMenu():
         self.but_plot.grid(column=3, row=14, sticky=tk.EW, padx=5, pady=5)
 
         # OPTION MENUS
-        cm.options = ('FT','STFT', 'Spectrogram','STFT + Spect', 'Short-Time-Energy', 'Pitch', 'Spectral Centroid', 'Filtering', 'Save fragment')
+        cm.options = ('FT','STFT', 'Spectrogram','STFT + Spect', 'Short-Time-Energy', 'Pitch', 'Spectral Centroid', 'Filtering')
         cm.opt_wind = ('Bartlett','Blackman', 'Hamming','Hanning', 'Kaiser')
         cm.opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
         cm.opt_meth = ('Autocorrelation', 'Cross-correlation', 'Subharmonics', 'Spinet')
@@ -341,11 +348,11 @@ class ControlMenu():
             cm.var_cut2.set('0')
             cm.var_beta.set('0')
 
-            if choice == 'FT' or choice == 'STFT' or choice == 'Pitch' or choice == 'Filtering' or choice == 'Save fragment': 
+            if choice == 'FT' or choice == 'STFT' or choice == 'Pitch' or choice == 'Filtering': 
                 self.ent_over.config(state='disabled')
             else: self.ent_over.config(state='normal')
 
-            if choice == 'FT' or choice == 'Pitch' or choice == 'Filtering' or choice == 'Save fragment': 
+            if choice == 'FT' or choice == 'Pitch' or choice == 'Filtering': 
                 self.ent_size.config(state='disabled')
             else: self.ent_size.config(state='normal')
 
@@ -427,12 +434,6 @@ class ControlMenu():
                 self.ent_beta.config(state='normal')
             else: self.ent_beta.config(state='disabled')
 
-            if choice == 'Save fragment':
-                self.but_plot.configure(state='disabled')
-                self.saveasWav(self.audioFrag, self.audiofs)
-            else:
-                self.but_plot.configure(state='active')
-
         # creating option menus
         self.dd_opts = ttk.OptionMenu(cm, cm.var_opts, cm.options[0], *cm.options, command=displayOptions)
         self.dd_wind = ttk.OptionMenu(cm, cm.var_wind, cm.opt_wind[0], *cm.opt_wind)
@@ -502,7 +503,21 @@ class ControlMenu():
     def colorBar(self, fig, x, img):
         fig.subplots_adjust(right=0.9) # leave space for the color bar
         sub_ax = plt.axes([0.91, 0.12, 0.02, x]) # add a small custom axis (left, bottom, width, height)
-        fig.colorbar(img, cax=sub_ax, format='%+2.0f dB')
+        fig.colorbar(img, cax=sub_ax, format='%+2.0f dB') # %4.2e, {x:.2e}
+
+    def readFromCsv(self, file):
+        list = []
+        with open(file, 'r') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                list.append(row[0])
+        return list
+    
+    def saveDefaultAsCsv(self, file, list):
+        with open(file, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            for i in range(len(list)):
+                writer.writerow([list[i]])
 
     # Convert the numpy array containing the audio into a wav file
     def saveasWav(self, audio, fs):
@@ -512,7 +527,7 @@ class ControlMenu():
             return
         write(file, fs, scaled) # generates a wav file in the selected folder
         return file
-
+    
     # Save the values of 'x' and 'y' axis of a plot as a csv file
     def saveasCsv(self, fig, x, y, dist):
         def save(event):
@@ -522,7 +537,7 @@ class ControlMenu():
             with open(file, 'w', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow(["x", "y"])
-                for i in range(len(x)-1):
+                for i in range(len(x)):
                     writer.writerow([x[i], y[i]])
 
         # Adds a 'Save' button to the figure
@@ -530,7 +545,29 @@ class ControlMenu():
         but_save = Button(axsave, 'Save')
         but_save.on_clicked(save)
         axsave._but_save = but_save # reference to the Button (otherwise the button does nothing)
-    
+
+    # Used for saving a waveform as a wav or csv file
+    def saveasWavCsv(self, fig, x, y, dist, fs):
+        def save(event):
+            file = tk.filedialog.asksaveasfilename(title='Save', defaultextension=".wav", filetypes=(("wav files","*.wav"),("csv files","*.csv"),))
+            if file is None or file == '':
+                return
+            if file.endswith('wav'):
+                scaled = np.int16(y/np.max(np.abs(y)) * 32767)
+                write(file, fs, scaled) # generates a wav file in the selected folder
+            elif file.endswith('.csv'):
+                with open(file, 'w', newline='') as csvfile:
+                    writer = csv.writer(csvfile)
+                    writer.writerow(["x", "y"])
+                    for i in range(len(x)):
+                        writer.writerow([x[i], y[i]])
+
+        # Adds a 'Save' button to the figure
+        axsave = fig.add_axes([0.91, dist, 0.05, 0.04]) # [left, bottom, width, height]
+        but_save = Button(axsave, 'Save')
+        but_save.on_clicked(save)
+        axsave._but_save = but_save # reference to the Button (otherwise the button does nothing)
+
     # Plays the audio of the selected fragment of the fragment
     def listenFragFrag(self, xmin, xmax):
         ini, end = np.searchsorted(self.audiotimeFrag, (xmin, xmax))
@@ -646,7 +683,7 @@ class ControlMenu():
         self.axFragFT[1].plot(self.frequencies, 20*np.log10(abs(self.fft2)))
         self.axFragFT[1].set(xlim=[0, max(self.frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Fourier Transform')
 
-        self.saveasCsv(self.figFragFT, self.audiotimeFrag, self.audioFrag, 0.5) # save waveform as csv
+        self.saveasWavCsv(self.figFragFT, self.audiotimeFrag, self.audioFrag, 0.5, self.audiofs) # save waveform as csv
         self.saveasCsv(self.figFragFT, self.frequencies, 20*np.log10(abs(self.fft2)), 0.05) # save FT as csv
 
         # TO-DO: connect figFrag with w1Button in signalVisualizer
@@ -668,7 +705,7 @@ class ControlMenu():
         self.line1, = axFragSTFT[1].plot(frequencies, 20*np.log10(abs(stft)))
         axFragSTFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Short Time Fourier Transform')
 
-        self.saveasCsv(figFragSTFT, self.audiotimeFrag, self.audioFrag, 0.5) # save waveform as csv
+        self.saveasWavCsv(figFragSTFT, self.audiotimeFrag, self.audioFrag, 0.5, self.audiofs) # save waveform as csv
         self.saveasCsv(figFragSTFT, frequencies, 20*np.log10(abs(stft)), 0.05) # save FT as csv
         
         cursorSTFT = Cursor(axFragSTFT[0], horizOn=False, useblit=True, color='black', linewidth=1)
@@ -689,12 +726,12 @@ class ControlMenu():
         if self.draw == 1: # linear
             linear = librosa.stft(self.audioFrag, n_fft=self.nfftUser, hop_length=self.hopSize, win_length=self.windSizeSampInt, window=self.window, center=True, dtype=None, pad_mode='constant')
             linear_dB = librosa.amplitude_to_db(np.abs(linear), ref=np.max)
-            img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.audiofs, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSTFTSpect[2], hop_length=self.hopSize, cmap=None)
+            img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.audiofs, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSTFTSpect[2], hop_length=self.hopSize, cmap=self.cmap)
             axFragSTFTSpect[2].set(xlim=[0, self.audioFragDuration], ylim=[self.minfreq, self.maxfreq], title='Spectrogram')
         else: # mel
             mel = librosa.feature.melspectrogram(y=self.audioFrag, sr=self.audiofs, win_length=self.windSizeSampInt, n_fft=self.nfftUser, window=self.window, fmin=self.minfreq, fmax=self.maxfreq, hop_length=self.hopSize)
             mel_dB = librosa.power_to_db(mel)
-            img = librosa.display.specshow(mel_dB, x_axis='time', y_axis='mel', sr=self.audiofs, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSTFTSpect[2], hop_length=self.hopSize, cmap=None)
+            img = librosa.display.specshow(mel_dB, x_axis='time', y_axis='mel', sr=self.audiofs, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSTFTSpect[2], hop_length=self.hopSize, cmap=self.cmap)
             axFragSTFTSpect[2].set(xlim=[0, self.audioFragDuration], title='Mel-frequency spectrogram')
         self.yticks(self.minfreq, self.maxfreq) # represent the numbers of y axis
         self.colorBar(figFragSTFTSpect, 0.17, img)
@@ -703,11 +740,10 @@ class ControlMenu():
         axFragSTFTSpect[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         axFragSTFTSpect[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
         self.line1, = axFragSTFTSpect[1].plot(frequencies, 20*np.log10(abs(stft)))
-        axFragSTFTSpect[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Spectrum of the Short Time Fourier Transform')
+        axFragSTFTSpect[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Short Time Fourier Transform')
 
-        self.saveasCsv(figFragSTFTSpect, self.audiotimeFrag, self.audioFrag, 0.65) # save waveform as csv
+        self.saveasWavCsv(figFragSTFTSpect, self.audiotimeFrag, self.audioFrag, 0.65, self.audiofs) # save waveform as csv
         self.saveasCsv(figFragSTFTSpect, frequencies, 20*np.log10(abs(stft)), 0.35) # save STFT as csv
-        # self.saveasCsv(figFragSTFTSpect, img.x, img.y, 0.05) # save spectrogram as csv
         
         cursorSTFTSpect = MultiCursor(figFragSTFTSpect.canvas, (axFragSTFTSpect[0], axFragSTFTSpect[2]), color='black', lw=1)
         self.span = self.createSpanSelector(axFragSTFTSpect[0]) # Select a fragment with the cursor and play the audio of that fragment
@@ -733,11 +769,11 @@ class ControlMenu():
         if self.draw == 1: # linear
             linear = librosa.stft(self.audioFrag, n_fft=self.nfftUser, hop_length=self.hopSize, win_length=self.windSizeSampInt, window=self.window, center=True, dtype=None, pad_mode='constant')
             linear_dB = librosa.amplitude_to_db(np.abs(linear), ref=np.max)
-            img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.audiofs, win_length=self.windSizeSampInt, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSC[2], hop_length=self.hopSize, cmap=None)
+            img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.audiofs, win_length=self.windSizeSampInt, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSC[2], hop_length=self.hopSize, cmap=self.cmap)
         else: # mel
             mag, phase = librosa.magphase(librosa.stft(self.audioFrag, n_fft=self.nfftUser, hop_length=self.hopSize, win_length=self.windSizeSampInt, window=self.window, center=True, dtype=None, pad_mode='constant')) # magnitude of the spectrogram
             mag_dB = librosa.amplitude_to_db(mag, ref=np.max)
-            img = librosa.display.specshow(mag_dB, x_axis='time', y_axis='log', sr=self.audiofs, win_length=self.windSizeSampInt, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSC[2], hop_length=self.hopSize, cmap=None)
+            img = librosa.display.specshow(mag_dB, x_axis='time', y_axis='log', sr=self.audiofs, win_length=self.windSizeSampInt, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSC[2], hop_length=self.hopSize, cmap=self.cmap)
         self.yticks(self.minfreq, self.maxfreq) # represent the numbers of y axis
         self.colorBar(figFragSC, 0.17, img)
 
@@ -747,12 +783,11 @@ class ControlMenu():
         psd, freqs = axFragSC[1].psd(audioFragWind2, NFFT=self.windSizeSampInt, pad_to=self.nfftUser, Fs=self.audiofs, window=self.window, noverlap=self.overlapSamp)
         axFragSC[1].axvline(x=spectralC, color='r', linewidth='1') # draw a vertical line in x=value of the spectral centroid
         axFragSC[1].set(xlim=[0, max(freqs)], xlabel='Frequency (Hz)', ylabel='Power spectral density (dB/Hz)', title='Power spectral density using fft, spectral centroid value is '+ scValue)
-        self.line1, = axFragSC[2].plot(times, sc.T, color='w')
+        self.line1, = axFragSC[2].plot(times, sc.T, color='w') # draw the white line
         axFragSC[2].set(xlim=[0, self.audioFragDuration], title='log Power spectrogram')
 
-        self.saveasCsv(figFragSC, self.audiotimeFrag, self.audioFrag, 0.65) # save waveform as csv
-        # self.saveasCsv(figFragSC, , , 0.35) # save power spectral density as csv
-        self.saveasCsv(figFragSC, times, sc.T, 0.05) # save power spectrogram as csv
+        self.saveasWavCsv(figFragSC, self.audiotimeFrag, self.audioFrag, 0.65, self.audiofs) # save waveform as csv
+        self.saveasCsv(figFragSC, times, sc.T, 0.05) # save the white line as csv
         
         cursorSC = MultiCursor(figFragSC.canvas, (axFragSC[0], axFragSC[2]), color='black', lw=1)
         self.span = self.createSpanSelector(axFragSC[0]) # Select a fragment with the cursor and play the audio of that fragment
@@ -773,12 +808,12 @@ class ControlMenu():
         if self.draw == 1: # linear
             linear = librosa.stft(self.audioFrag, n_fft=self.nfftUser, hop_length=self.hopSize, win_length=self.windSizeSampInt, window=self.window, center=True, dtype=None, pad_mode='constant')
             linear_dB = librosa.amplitude_to_db(np.abs(linear), ref=np.max)
-            img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.audiofs, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSpect[1], hop_length=self.hopSize, cmap=None)
+            img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.audiofs, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSpect[1], hop_length=self.hopSize, cmap=self.cmap)
             axFragSpect[1].set(xlim=[0, self.audioFragDuration], ylim=[self.minfreq, self.maxfreq], title='Spectrogram')
         else: # mel
             mel = librosa.feature.melspectrogram(y=self.audioFrag, sr=self.audiofs, win_length=self.windSizeSampInt, n_fft=self.nfftUser, window=self.window, fmin=self.minfreq, fmax=self.maxfreq, hop_length=self.hopSize)
             mel_dB = librosa.power_to_db(mel)
-            img = librosa.display.specshow(mel_dB, x_axis='time', y_axis='mel', sr=self.audiofs, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSpect[1], hop_length=self.hopSize, cmap=None)
+            img = librosa.display.specshow(mel_dB, x_axis='time', y_axis='mel', sr=self.audiofs, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSpect[1], hop_length=self.hopSize, cmap=self.cmap)
             axFragSpect[1].set(xlim=[0, self.audioFragDuration], ylim=[self.minfreq, self.maxfreq], title='Mel-frequency spectrogram')
         self.yticks(self.minfreq, self.maxfreq) # represent the numbers of y axis
         self.colorBar(figFragSpect, 0.3, img)
@@ -789,8 +824,7 @@ class ControlMenu():
 
         spect_values = img.get_array()
         print(spect_values)
-        self.saveasCsv(figFragSpect, self.audiotimeFrag, self.audioFrag, 0.5) # save waveform as csv
-        # self.saveasCsv(figFragSpect, img.x, img.y, 0.05) # save spectrogram as csv
+        self.saveasWavCsv(figFragSpect, self.audiotimeFrag, self.audioFrag, 0.5, self.audiofs) # save waveform as csv
 
         cursorSpect.clear(figFragSpect)
         self.span = self.createSpanSelector(axFragSpect[0]) # Select a fragment with the cursor and play the audio of that fragment
@@ -812,7 +846,7 @@ class ControlMenu():
         axFragSTE[1].plot(time, ste)
         axFragSTE[1].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude (dB)', title='Short Time Energy')
 
-        self.saveasCsv(figFragSTE, self.audiotimeFrag, self.audioFrag, 0.5) # save waveform as csv
+        self.saveasWavCsv(figFragSTE, self.audiotimeFrag, self.audioFrag, 0.5, self.audiofs) # save waveform as csv
         self.saveasCsv(figFragSTE, time, ste, 0.05) # save STE as csv
 
         self.span = self.createSpanSelector(axFragSTE[0]) # Select a fragment with the cursor and play the audio of that fragment
@@ -899,7 +933,7 @@ class ControlMenu():
         axFragPitch[1].plot(pitch.xs(), pitch_values, draw)
         axFragPitch[1].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Pitch measurement overtime')
 
-        self.saveasCsv(figFragPitch, self.audiotimeFrag, self.audioFrag, 0.5) # save waveform as csv
+        self.saveasWavCsv(figFragPitch, self.audiotimeFrag, self.audioFrag, 0.5, self.audiofs) # save waveform as csv
         self.saveasCsv(figFragPitch, pitch.xs(), pitch_values, 0.05) # save Pitch as csv        
 
         self.span = self.createSpanSelector(axFragPitch[0]) # Select a fragment with the cursor and play the audio of that fragment
@@ -929,6 +963,8 @@ class ControlMenu():
 
     # Called when pressing the 'Plot' button
     def plotFigure(self, cm):
+        list = self.readFromCsv('csv/colormap.csv')
+        self.cmap = mpl.colormaps[list[0]]
         ## VALUES GIVEN BY THE USER (that were not created in checkValues())
         choice = cm.var_opts.get()
         self.windType = cm.var_wind.get()

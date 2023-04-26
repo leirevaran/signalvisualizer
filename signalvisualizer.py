@@ -11,6 +11,7 @@ from generateFreeAdd import FreeAdditionPureTones
 from generateSquareWave import SquareWave
 from generateSawtoothWave import SawtoothWave
 # from generateRosenbergPulse import RosenbergPulse
+from optionsSpectrogram import Spectrogram
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -76,6 +77,10 @@ class Start(tk.Tk):
         #     self.frames['RosenbergPulse'] = RosenbergPulse(master=self.container, controller=self)
         #     self.frames['RosenbergPulse'].grid(row=0, column=0, sticky="nsew")
         #     self.show_frame('RosenbergPulse')
+        elif page_name == 'Spectrogram':
+            self.frames['Spectrogram'] = Spectrogram(master=self.container, controller=self)
+            self.frames['Spectrogram'].grid(row=0, column=0, sticky="nsew")
+            self.show_frame('Spectrogram')
 
     def show_frame(self, page_name):
         '''Show a frame for the given page name'''
@@ -125,9 +130,9 @@ class SignalVisualizer(tk.Frame):
         inputmenu.add_command(label="Record", command=lambda: self.controller.initialize_frame('Record'))
 
         optionsmenu = tk.Menu(menubar, tearoff=0)
-        optionsmenu.add_command(label="General")
-        optionsmenu.add_command(label="Signal")
-        optionsmenu.add_command(label="Spectrogram")
+        # optionsmenu.add_command(label="General")
+        # optionsmenu.add_command(label="Signal")
+        optionsmenu.add_command(label="Spectrogram", command=lambda: self.controller.initialize_frame('Spectrogram'))
 
         # adding the options created to the menu bar
         menubar.add_cascade(label="Signal Visualizer", menu=signalmenu)

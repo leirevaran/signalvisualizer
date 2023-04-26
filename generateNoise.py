@@ -17,6 +17,7 @@ class Noise(tk.Frame):
         self.master = master
         self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
+        self.file = 'csv/generateNoise.csv'
         self.noiseMenu()
 
     def noiseMenu(self):
@@ -34,16 +35,23 @@ class Noise(tk.Frame):
         for i in range(4):
             nm.rowconfigure(i, weight=1)
 
+        # Read the default values of the atributes from a csv file
+        list = self.cm.readFromCsv(self.file)
+        choice = list[0]
+        amplitude = list[1]
+        duration = list[2]
+        self.fs = list[3]
+
         # SCALERS
-        nm.var_ampl = tk.DoubleVar(value=1)
-        nm.var_dura = tk.DoubleVar(value=1)
+        nm.var_ampl = tk.DoubleVar(value=amplitude)
+        nm.var_dura = tk.DoubleVar(value=duration)
         self.sca_ampl = tk.Scale(nm, from_=0, to=1, variable=nm.var_ampl, length=500, orient='horizontal', tickinterval=0.1, resolution=0.01)
         self.sca_dura = tk.Scale(nm, from_=0.01, to=30, variable=nm.var_dura, length=500, orient='horizontal', resolution=0.01)
         self.sca_ampl.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5, columnspan=3)
         self.sca_dura.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5, columnspan=3)
 
         # ENTRYS
-        nm.var_fs = tk.IntVar(value=48000)
+        nm.var_fs = tk.IntVar(value=self.fs)
         vcmd = (nm.register(self.cm.onValidateFloat), '%s', '%S')
         vcfs = (nm.register(self.onValidateFs), '%S')
         
@@ -76,23 +84,27 @@ class Noise(tk.Frame):
         lab_fs.grid(column=0, row=4, sticky=tk.E)
         
         # BUTTONS
-        def checkValues():
+        def checkValues(but):
             self.fs = int(self.ent_fs.get()) # sample frequency
             if fsEntry(self.fs) != True:
                 return
-            self.generateNoise(nm)
+            if but == 1: self.generateNoise(nm)
+            elif but == 2: self.saveDefaultValues(nm)
 
-        self.but_gene = ttk.Button(nm, text='Generate', command=lambda: checkValues())
+        self.but_gene = ttk.Button(nm, text='Generate', command=lambda: checkValues(1))
+        self.but_save = ttk.Button(nm, text='Save values as default', command=lambda: checkValues(2))
+
         self.but_gene.grid(column=4, row=4, sticky=tk.EW, padx=5, pady=5)
+        self.but_save.grid(column=3, row=4, sticky=tk.EW, padx=5, pady=5)
 
         # OPTION MENUS
         nm.options = ('White noise','Pink noise', 'Brown noise')
         nm.var_opts = tk.StringVar()
-        self.dd_opts = ttk.OptionMenu(nm, nm.var_opts, nm.options[0], *nm.options)
+        self.dd_opts = ttk.OptionMenu(nm, nm.var_opts, choice, *nm.options)
         self.dd_opts.config(width=11)
         self.dd_opts.grid(column=1, row=0, sticky=tk.W, padx=5)
 
-        checkValues()
+        checkValues(1)
 
     # Called when inserting something in the entry of fs. Only lets the user enter numbers.
     def onValidateFs(self, S):
@@ -100,11 +112,18 @@ class Noise(tk.Frame):
             return True
         else: return False
 
+    def saveDefaultValues(self, nm):
+        choice = nm.var_opts.get()
+        amplitude = float(self.sca_ampl.get())
+        duration = self.sca_dura.get()
+
+        list = [choice, amplitude, duration, self.fs]
+        self.cm.saveDefaultAsCsv(self.file, list)
+
     def generateNoise(self, nm):
         choice = nm.var_opts.get()
         amplitude = float(self.sca_ampl.get())
         duration = self.sca_dura.get()
-        self.fs = int(self.ent_fs.get()) # sample frequency
         samples = int(duration*self.fs)
 
         if choice == 'White noise':

@@ -18,6 +18,7 @@ class SquareWave(tk.Frame):
         self.master = master
         self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
+        self.file = 'csv/generateSquareWave.csv'
         self.squareMenu()
 
     def squareMenu(self):
@@ -35,13 +36,23 @@ class SquareWave(tk.Frame):
         for i in range(7):
             sm.rowconfigure(i, weight=1)
 
+        # Read the default values of the atributes from a csv file
+        list = self.cm.readFromCsv(self.file)
+        duration = list[0]
+        offset = list[1]
+        amplitude = list[2]
+        frequency = list[3]
+        phase = list[4]
+        cycle = list[5]
+        self.fs = list[6]
+
         # SCALES
-        sm.var_dura = tk.IntVar(value=1)
-        sm.var_offs = tk.DoubleVar(value=0)
-        sm.var_ampl = tk.DoubleVar(value=0.5)
-        sm.var_freq = tk.IntVar(value=2)
-        sm.var_phas = tk.DoubleVar(value=0)
-        sm.var_cycl = tk.IntVar(value=50)
+        sm.var_dura = tk.IntVar(value=duration)
+        sm.var_offs = tk.DoubleVar(value=offset)
+        sm.var_ampl = tk.DoubleVar(value=amplitude)
+        sm.var_freq = tk.IntVar(value=frequency)
+        sm.var_phas = tk.DoubleVar(value=phase)
+        sm.var_cycl = tk.IntVar(value=cycle)
 
         self.sca_dura = tk.Scale(sm, from_=0.01, to=30, variable=sm.var_dura, length=500, orient='horizontal', resolution=0.01)
         self.sca_offs = tk.Scale(sm, from_=-1, to=1, variable=sm.var_offs, length=500, orient='horizontal', resolution=0.01)
@@ -58,7 +69,7 @@ class SquareWave(tk.Frame):
         self.sca_cycl.grid(column=1, row=5, sticky=tk.EW, padx=5, pady=5, columnspan=3)
 
         # ENTRYS
-        sm.var_fs = tk.IntVar(value=48000)
+        sm.var_fs = tk.IntVar(value=self.fs)
         vcmd = (sm.register(self.cm.onValidateFloat), '%s', '%S')
         vcfs = (sm.register(self.onValidateFs), '%S')
 
@@ -106,22 +117,37 @@ class SquareWave(tk.Frame):
         lab_fs.grid(column=3, row=6, sticky=tk.E)
         
         # BUTTONS
-        def checkValues():
+        def checkValues(but):
             self.fs = int(self.ent_fs.get()) # sample frequency
             if fsEntry(self.fs) != True:
                 return
-            self.generateSquareWave(sm)
+            if but == 1: self.generateSquareWave(sm)
+            elif but == 2: self.saveDefaultValues()
 
-        self.but_gene = ttk.Button(sm, text='Generate', command=lambda: checkValues())
+        self.but_gene = ttk.Button(sm, text='Generate', command=lambda: checkValues(1))
+        self.but_save = ttk.Button(sm, text='Save values as default', command=lambda: checkValues(2))
+
         self.but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)
+        self.but_save.grid(column=3, row=7, sticky=tk.EW, padx=5, pady=5)
 
-        checkValues()
+        checkValues(1)
 
     # Called when inserting something in the entry of fs. Only lets the user enter numbers.
     def onValidateFs(self, S):
         if S.isdigit():
             return True
         else: return False
+
+    def saveDefaultValues(self):
+        amplitude = float(self.ent_ampl.get())
+        frequency = float(self.ent_freq.get())
+        phase = float(self.ent_phas.get())
+        cycle = float(self.ent_cycl.get())
+        duration = float(self.ent_dura.get())
+        offset = float(self.ent_offs.get())
+
+        list = [duration, offset, amplitude, frequency, phase, cycle, self.fs]
+        self.cm.saveDefaultAsCsv(self.file, list)
 
     def generateSquareWave(self, sm):
         amplitude = float(self.ent_ampl.get())

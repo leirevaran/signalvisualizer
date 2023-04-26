@@ -89,7 +89,7 @@ class Record(tk.Frame):
         duration = lenMyRecord / self.fs
         time = np.linspace(start=0, stop=duration, num=lenMyRecord)
 
-        fig, ax = self.cm.generateWindow(self, fig, ax, self.fs, time, myrecording, rm, 'Record')
+        fig, ax = self.cm.generateWindow(self, fig, ax, self.fs, time, myrecording, rm, 'Recording')
         # rm.destroy()
 
         # Plot the recording

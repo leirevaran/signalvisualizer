@@ -17,6 +17,7 @@ class PureTone(tk.Frame):
         self.master = master
         self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
+        self.file = 'csv/generatePureTone.csv'
         self.toneMenu()
 
     def toneMenu(self):
@@ -34,12 +35,21 @@ class PureTone(tk.Frame):
         for i in range(6):
             tm.rowconfigure(i, weight=1)
 
+        # Read the default values of the atributes from a csv file
+        list = self.cm.readFromCsv(self.file)
+        duration = list[0]
+        offset = list[1]
+        amplitude = list[2]
+        frequency = list[3]
+        phase = list[4]
+        self.fs = list[5]
+
         # SCALES
-        tm.var_dura = tk.IntVar(value=1)
-        tm.var_offs = tk.DoubleVar(value=0)
-        tm.var_ampl = tk.DoubleVar(value=0.5)
-        tm.var_freq = tk.IntVar(value=2)
-        tm.var_phas = tk.DoubleVar(value=0)
+        tm.var_dura = tk.IntVar(value=duration)
+        tm.var_offs = tk.DoubleVar(value=offset)
+        tm.var_ampl = tk.DoubleVar(value=amplitude)
+        tm.var_freq = tk.IntVar(value=frequency)
+        tm.var_phas = tk.DoubleVar(value=phase)
 
         def updateExpression(event):
             sign = str(self.ent_offs.get()+' + '+str(self.ent_ampl.get())+' COS(2'+unicodedata.lookup("GREEK SMALL LETTER PI")+' '+str(self.ent_freq.get())+'t + '+str(self.ent_phas.get())+unicodedata.lookup("GREEK SMALL LETTER PI")+')')
@@ -58,7 +68,7 @@ class PureTone(tk.Frame):
         self.sca_phas.grid(column=1, row=4, sticky=tk.EW, padx=5, pady=5, columnspan=3)
 
         # ENTRYS
-        tm.var_fs = tk.IntVar(value=48000)
+        tm.var_fs = tk.IntVar(value=self.fs)
         vcmd = (tm.register(self.cm.onValidateFloat), '%s', '%S')
         vcfs = (tm.register(self.onValidateFs), '%S')
 
@@ -111,22 +121,36 @@ class PureTone(tk.Frame):
         lab_fs.grid(column=3, row=5, sticky=tk.E)
         
         # BUTTONS
-        def checkValues():
+        def checkValues(but):
             self.fs = int(self.ent_fs.get()) # sample frequency
             if fsEntry(self.fs) != True:
                 return
-            self.generatePureTone(tm, lab_sign)
+            if but == 1: self.generatePureTone(tm, lab_sign)
+            elif but == 2: self.saveDefaultValues()
 
-        self.but_gene = ttk.Button(tm, text='Generate', command=lambda: checkValues())
-        self.but_gene.grid(column=4, row=6, sticky=tk.EW, padx=5, pady=5)
+        self.but_gene = ttk.Button(tm, text='Generate', command=lambda: checkValues(1))
+        self.but_save = ttk.Button(tm, text='Save values as default', command=lambda: checkValues(2))
 
-        checkValues()
+        self.but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)
+        self.but_save.grid(column=4, row=6, sticky=tk.EW, padx=5, pady=5)
+
+        checkValues(1)
 
     # Called when inserting something in the entry of fs. Only lets the user enter numbers.
     def onValidateFs(self, S):
         if S.isdigit():
             return True
         else: return False
+
+    def saveDefaultValues(self):
+        amplitude = float(self.ent_ampl.get())
+        frequency = float(self.ent_freq.get())
+        phase = float(self.ent_phas.get())
+        duration = float(self.ent_dura.get())
+        offset = float(self.ent_offs.get())
+
+        list = [duration, offset, amplitude, frequency, phase, self.fs]
+        self.cm.saveDefaultAsCsv(self.file, list)
 
     def generatePureTone(self, tm, lab_sign):
         amplitude = float(self.ent_ampl.get())

@@ -18,6 +18,7 @@ class SawtoothWave(tk.Frame):
         self.master = master
         self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
+        self.file = 'csv/generateSawtoothWave.csv'
         self.sawtoothMenu()
 
     def sawtoothMenu(self):
@@ -35,13 +36,23 @@ class SawtoothWave(tk.Frame):
         for i in range(7):
             stm.rowconfigure(i, weight=1)
 
+        # Read the default values of the atributes from a csv file
+        list = self.cm.readFromCsv(self.file)
+        duration = list[0]
+        offset = list[1]
+        amplitude = list[2]
+        frequency = list[3]
+        phase = list[4]
+        maxpos = list[5]
+        self.fs = list[6]
+
         # SCALES
-        stm.var_dura = tk.IntVar(value=1)
-        stm.var_offs = tk.DoubleVar(value=0)
-        stm.var_ampl = tk.DoubleVar(value=0.5)
-        stm.var_freq = tk.IntVar(value=2)
-        stm.var_phas = tk.DoubleVar(value=0)
-        stm.var_maxp = tk.DoubleVar(value=1)
+        stm.var_dura = tk.IntVar(value=duration)
+        stm.var_offs = tk.DoubleVar(value=offset)
+        stm.var_ampl = tk.DoubleVar(value=amplitude)
+        stm.var_freq = tk.IntVar(value=frequency)
+        stm.var_phas = tk.DoubleVar(value=phase)
+        stm.var_maxp = tk.DoubleVar(value=maxpos)
 
         self.sca_dura = tk.Scale(stm, from_=0.01, to=30, variable=stm.var_dura, length=500, orient='horizontal', resolution=0.01)
         self.sca_offs = tk.Scale(stm, from_=-1, to=1, variable=stm.var_offs, length=500, orient='horizontal', resolution=0.01)
@@ -58,7 +69,7 @@ class SawtoothWave(tk.Frame):
         self.sca_maxp.grid(column=1, row=5, sticky=tk.EW, padx=5, pady=5, columnspan=3)
         
         # ENTRYS
-        stm.var_fs = tk.IntVar(value=48000)
+        stm.var_fs = tk.IntVar(value=self.fs)
         vcmd = (stm.register(self.cm.onValidateFloat), '%s', '%S')
         vcfs = (stm.register(self.onValidateFs), '%S')
 
@@ -106,22 +117,37 @@ class SawtoothWave(tk.Frame):
         lab_fs.grid(column=3, row=6, sticky=tk.E)
         
         # BUTTONS
-        def checkValues():
+        def checkValues(but):
             self.fs = int(self.ent_fs.get()) # sample frequency
             if fsEntry(self.fs) != True:
                 return
-            self.generateSawtoothWave(stm)
+            if but == 1: self.generateSawtoothWave(stm)
+            elif but == 2: self.saveDefaultValues()
 
-        self.but_gene = ttk.Button(stm, text='Generate', command=lambda: checkValues())
+        self.but_gene = ttk.Button(stm, text='Generate', command=lambda: checkValues(1))
+        self.but_save = ttk.Button(stm, text='Save values as default', command=lambda: checkValues(2))
+
         self.but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)
+        self.but_save.grid(column=3, row=7, sticky=tk.EW, padx=5, pady=5)
 
-        checkValues()
+        checkValues(1)
 
     # Called when inserting something in the entry of fs. Only lets the user enter numbers.
     def onValidateFs(self, S):
         if S.isdigit():
             return True
         else: return False
+
+    def saveDefaultValues(self):
+        amplitude = float(self.ent_ampl.get())
+        frequency = float(self.ent_freq.get())
+        phase = float(self.ent_phas.get())
+        maxpos = float(self.ent_maxp.get())
+        duration = float(self.ent_dura.get())
+        offset = float(self.ent_offs.get())
+
+        list = [duration, offset, amplitude, frequency, phase, maxpos, self.fs]
+        self.cm.saveDefaultAsCsv(self.file, list)
 
     def generateSawtoothWave(self, stm):
         amplitude = float(self.ent_ampl.get())
