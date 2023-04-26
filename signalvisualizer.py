@@ -2,8 +2,9 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 from matplotlib import backend_bases
 
-from controlMenu import ControlMenu
+from info import Info
 from inputLoad import Load
+from controlMenu import ControlMenu
 from inputRecord import Record
 from generateNoise import Noise
 from generatePureTone import PureTone
@@ -45,6 +46,10 @@ class Start(tk.Tk):
             self.frames['SignalVisualizer'] = SignalVisualizer(master=self.container, controller=self)
             self.frames['SignalVisualizer'].grid(row=0, column=0, sticky="nsew")
             self.show_frame('SignalVisualizer')
+        elif page_name == 'Info':
+            self.frames['Info'] = Info(master=self.container, controller=self)
+            self.frames['Info'].grid(row=0, column=0, sticky="nsew")
+            self.show_frame('Info')
         elif page_name == 'Load':
             self.frames['Load'] = Load(master=self.container, controller=self)
             self.frames['Load'].grid(row=0, column=0, sticky="nsew")
@@ -112,7 +117,7 @@ class SignalVisualizer(tk.Frame):
             
         # creation of the options in the menu bar
         signalmenu = tk.Menu(menubar, tearoff=0) # tearoff=0 to avoid useless lines
-        signalmenu.add_command(label="Info")
+        signalmenu.add_command(label="Info", command=lambda: self.controller.initialize_frame('Info'))
         signalmenu.add_command(label="Exit", command=self.quit)
 
         generatemenu = tk.Menu(menubar, tearoff=0)

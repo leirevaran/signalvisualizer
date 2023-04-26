@@ -66,11 +66,6 @@ class Spectrogram(tk.Frame):
         gradient = np.linspace(0, 1, 256)
         gradient = np.vstack((gradient, gradient))
 
-        # for cmap_category, cmap_list in cmaps:
-        #     self.plot_color_gradients(cmap_category, cmap_list, gradient)
-        
-        # plt.show()
-
         # Read the value of the colormap from a csv file
         list = self.cm.readFromCsv(self.file)
         choice = list[0]
