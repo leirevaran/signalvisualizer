@@ -15,6 +15,8 @@ from matplotlib.backend_bases import MouseButton
 from matplotlib.patches import Rectangle
 from scipy.io.wavfile import write
 
+from help import HelpMenu
+
 # To avoid blurry fonts
 from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
@@ -38,6 +40,7 @@ class ControlMenu():
         # cm.iconbitmap('icon.ico')
         cm.wm_transient(root) # Place the toplevel window at the top
         self.windowGeometry(cm, 750, 575)
+        hm = HelpMenu()
 
         # Adapt the window to different sizes
         for i in range(3):
@@ -305,11 +308,12 @@ class ControlMenu():
             
             self.plotFigure(cm)
 
-        self.but_adse = ttk.Button(cm, text='Advanced settings', command=lambda: self.advancedSettings(), state='disabled')
-        self.but_freq = ttk.Button(cm, text='Filter Frequency Response', state='disabled')
-        self.but_rese = ttk.Button(cm, text='Reset Signal', state='disabled')
-        self.but_fisi = ttk.Button(cm, text='Filter Signal', state='disabled')
-        self.but_plot = ttk.Button(cm, text='Plot', command=lambda: checkValues())
+        self.but_adse = ttk.Button(cm, state='disabled', command=lambda: self.advancedSettings(), text='Advanced settings')
+        self.but_freq = ttk.Button(cm, state='disabled', text='Filter Frequency Response')
+        self.but_rese = ttk.Button(cm, state='disabled', text='Reset Signal')
+        self.but_fisi = ttk.Button(cm, state='disabled', text='Filter Signal')
+        self.but_plot = ttk.Button(cm, command=lambda: checkValues(), text='Plot')
+        self.but_help = ttk.Button(cm, command=lambda: hm.createHelpMenu(cm, 8), text='🛈', width=2)
 
         # positioning Buttons
         self.but_adse.grid(column=1, row=14, sticky=tk.EW, padx=5, pady=5)
@@ -317,6 +321,7 @@ class ControlMenu():
         self.but_rese.grid(column=3, row=8, sticky=tk.EW, padx=5, pady=5)
         self.but_fisi.grid(column=3, row=9, sticky=tk.EW, padx=5, pady=5)
         self.but_plot.grid(column=3, row=14, sticky=tk.EW, padx=5, pady=5)
+        self.but_help.grid(column=2, row=14, sticky=tk.E, padx=5, pady=5)
 
         # OPTION MENUS
         cm.options = ('FT','STFT', 'Spectrogram','STFT + Spect', 'Short-Time-Energy', 'Pitch', 'Spectral Centroid', 'Filtering')

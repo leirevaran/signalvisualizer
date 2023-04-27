@@ -1,0 +1,231 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Visualization window</title>
+    <style>
+        body {
+            background-color: #ffffff;
+            padding: 0pt 0pt 0pt 20pt;
+        }
+
+        h1 {
+            color: #2a3d1b;
+            font-weight: bold;
+            text-decoration: none;
+            vertical-align: baseline;
+            font-size: 24pt;
+            font-family: "Arial Rounded MT";
+            font-style: normal;
+        }
+
+        h2 {
+            padding-top: 24pt;
+            padding-bottom: 0pt;
+            line-height: 1.3;
+            text-align: justify;
+            padding-top: 24pt;
+            color: #4c5b29;
+            font-size: 14pt;
+            padding-bottom: 0pt;
+            font-family: "Arial Rounded MT";
+            line-height: 1.3;
+            text-align: justify;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        p, li {
+            padding-top: 10pt;
+            padding-bottom: 0pt;
+            line-height: 1.3;
+            text-align: justify;
+            margin: 0;
+            color: #666666;
+            font-size: 11pt;
+            font-family: "Droid Serif";
+        }
+
+        td {
+            text-align: center;
+            font-style: italic;
+        }
+
+        .formula {
+            font-size: 15pt;
+            font-style: italic;
+            padding-top: 10pt;
+            padding-bottom: 0pt;
+            line-height: 1.3;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Visualization window</h1>
+    <p>
+        This window allows to analyze the spectrum of the chosen signal by different methods: <a href="#fourier_transform">Fourier Transform</a>, <a href="#stft">Short Time Fourier Transform</a> and <a href="#spectrogram">spectrogram</a>.
+    </p>
+    <h2>Interface</h2>
+    <p><b>Fourier Transform</b></p><br />
+    <img alt="Fourier transform interface" src="images/visualization1_en.png" style="width: 602.00px; margin-left: 0.00px; margin-top: 0.00px;">
+    <p>
+        It allows to observe the <a href="#fourier_transform">Fourier Transform</a> of the audio signal.
+    </p>
+    <ol>
+        <li>
+            <b>Waveform view:</b> Displays the loaded audio signal in the display window.
+        </li>
+        <li>
+            <b>Playback buttons:</b> They allow to control the playback of the audio signal.
+            <ol type="a">
+                <li>
+                    The right button starts playback from the beginning of the signal.
+                </li>
+                <li>
+                    The center button starts playback from the cursor placed by clicking on the signal.
+                </li>
+                <li>
+                    The left button stops playback.
+                </li>
+            </ol>
+        </li>
+        <li>
+            <b>Export button:</b> It allows to export the signal or the spectrum as a <i>.csv</i> or <i>.xls</i> file. The signal can be saved as a <i>.wav</i> sound file.<br /><br />
+        </li>
+        <li>
+            <b>Signal navigation panel</b><br /><br />
+            <img alt="Signal navigation panel" src="images/image10.png" style="width: 208.00px; height: 252.00px; margin-left: 100pt; margin-top: 0.00px;">
+            <ol type="a">
+                <li>
+                    They are used to zoom in and out on the vertical axis.
+                </li>
+                <li>
+                    They are used to zoom in and out on the horizontal axis.
+                </li>
+                <li>
+                    Restores the original view.
+                </li>
+                <li>
+                    Scrolls through the view
+                </li>
+            </ol>
+        </li>
+        <li>
+            <b>View switching buttons:</b> They allow to enlarge one of the plots.
+        </li>
+        <li>
+            <b>Spectral information view:</b> Here you can see the spectral information of the signal, obtained by the selected method.
+        </li>
+        <li>
+            <b>Spectral Information Navigation Panel:</b> Use this panel to navigate through the spectral information view. It works in the same way as the signal navigation panel.
+        </li>
+        <li>
+            <b>Mode selection:</b> Allows to select the method by which the spectral information of the signal is obtained.
+        </li>
+        <li>
+            <b>Sampling rate:</b> It shows the sampling rate of the loaded signal.
+        </li>
+    </ol>
+
+    <b>Right button:</b> When you click with the right button over a plot, a menu is shown. There you can:
+    <ol type="a">
+        <li>
+            <b>Export plot as image</b>
+        </li>
+        <li>
+            <b>Change the scale of Y axe between lineal or logarithmic</b>
+        </li>
+    </ol>
+
+    <p><b>STFT</b></p>
+
+    <p>
+        It allows to observe the <a href="#stft">Short Time Fourier Transform (STFT)</a> of the audio signal.<br /><br />
+    </p>
+
+    <img alt="STFT interface" src="images/image13.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
+
+    <ol start="8">
+        <li>
+            <b>Window:</b> Window used to calculate the STFT. You can change its position by clicking on the signal.
+        </li>
+        <li>
+            <b>Window shape selector</b>
+        </li>
+        <li>
+            <b>Window size selector:</b> Allows you to enter the size of the window in seconds (between 0.001 and 1).
+        </li>
+        <li>
+            <b>nfft selector:</b> Allows to select the number of points of the transform among the available options.
+        </li>
+    </ol>
+    <p><b>Spectrogram</b></p>
+    <p>
+        It allows to see the <a href="#spectrogram">spectrogram</a> of the signal.<br /><br />
+    </p>
+    <img alt="Spectrogram interface" src="images/image7.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
+
+    <p><b>STFT + Spectrogram</b></p>
+
+    <p>
+        It allows to observe the <a href="#stft">STFT</a> of the signal and to see its position in the <a href="#spectrogram">spectrogram</a>. <br /><br />
+    </p>
+    <img alt="Spectrogram interface" src="images/image4.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
+    <h2 id="fourier_transform">Fourier Transform</h2>
+    <p>
+        The Fourier Transform is a mathematical transformation used to transform signals in the time domain (in this case, the audio signal) to the frequency domain. The result shows the frequency content of the signal. In short, it is an approach to breaking down a signal into a sum of several pure tones of different frequencies.
+    </p>
+    <img src="images/ft_formula.png" alt="TF formula" style="margin-left: 100pt" />
+    <p>
+        Where <i>f(t)</i> is a signal in the time domain and where <i>ω = 2𝜋f</i>. <i>F(ω)</i> is the obtained Fourier Transform.
+        <br /><br />
+        In this case, the audio signal is not a continuous signal, but a discrete signal, in other words, formed by a set of samples. So it’s actually performing a Discrete Fourier Transform, which is mathematically defined as follows:
+    </p>
+    <img src="images/dft_formula.png" alt="DTF formula" style="margin-left: 100pt" />
+    <p>
+        Where <i>x[n]</i> is the audio signal, with <i>N</i> samples, y <i>ω = 2𝜋f</i>. <i>X(ω)</i> is the obtained Discrete Fourier Transform.
+    </p>
+
+    <h2 id="stft">Short Time Fourier Transform (STFT)</h2>
+    <p>
+        It consists of performing the <a href="#fourier_transform">Discrete Fourier Transform</a> on a segment of the signal, rather than on the entire signal. This segment of the signal is obtained by multiplying the original signal by a window. In this way, only the samples of the signal inside the window will be taken into account. The values of these samples will be modified by the shape of the window (except in the case of the rectangular window).
+    </p>
+    <table>
+        <tr>
+            <td>
+                <img alt="Rectangular window" src="images/image6.png" style="width: 286.00px; height: 214.67px; margin-left: 0.00px; margin-top: 0.00px;">
+            </td>
+            <td>
+                <img alt="Rectangular window applied" src="images/image9.png" style="width: 286.00px; height: 214.67px; margin-left: 0.00px; margin-top: 0.00px;">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                Rectangular window applied to a signal
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <img alt="Hanning window" src="images/image3.png" style="width: 286.00px; height: 214.67px; margin-left: 0.00px; margin-top: 0.00px;">
+            </td>
+            <td>
+                <img alt="Hanning window applied" src="images/image12.png" style="width: 286.00px; height: 214.67px; margin-left: 0.00px; margin-top: 0.00px;">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                Hanning window applied to a signal
+            </td>
+        </tr>
+    </table>
+    <h2 id="spectrogram">Spectrogram</h2>
+    <p>
+        Representation that allows to see the frequency development of the audio signal over time. The horizontal axis corresponds to the time axis, the vertical axis to the frequency, and the variation of the power spectral density is represented by a colour gradient.
+        <br /><br />
+        The spectrogram is calculated by performing several consecutive <a href="#stft">STFTs</a>, scanning with the chosen window.
+    </p>
+    <img alt="Window scanning" src="images/image11.gif" style="width: 602.00px; height: 452.00px; margin-left: 0.00px; margin-top: 0.00px;">
+</body>
+</html>

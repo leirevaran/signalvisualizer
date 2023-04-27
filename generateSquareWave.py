@@ -6,6 +6,7 @@ from tkinter import ttk
 from scipy import signal
 
 from controlMenu import ControlMenu
+from help import HelpMenu
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -28,6 +29,7 @@ class SquareWave(tk.Frame):
         # tm.iconbitmap('icon.ico')
         sm.wm_transient(self) # Place the toplevel window at the top
         self.cm.windowGeometry(sm, 850, 500)
+        hm = HelpMenu()
 
         # Adapt the window to different sizes
         for i in range(4):
@@ -124,11 +126,13 @@ class SquareWave(tk.Frame):
             if but == 1: self.generateSquareWave(sm)
             elif but == 2: self.saveDefaultValues()
 
-        self.but_gene = ttk.Button(sm, text='Generate', command=lambda: checkValues(1))
-        self.but_save = ttk.Button(sm, text='Save values as default', command=lambda: checkValues(2))
+        self.but_gene = ttk.Button(sm, command=lambda: checkValues(1), text='Generate')
+        self.but_save = ttk.Button(sm, command=lambda: checkValues(2), text='Save values as default')
+        self.but_help = ttk.Button(sm, command=lambda: hm.createHelpMenu(self, 3), text='🛈', width=2)
 
         self.but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)
         self.but_save.grid(column=3, row=7, sticky=tk.EW, padx=5, pady=5)
+        self.but_help.grid(column=0, row=7, sticky=tk.W, padx=5, pady=5)
 
         checkValues(1)
 

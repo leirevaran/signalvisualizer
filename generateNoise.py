@@ -5,6 +5,7 @@ import numpy as np
 from tkinter import ttk
 
 from controlMenu import ControlMenu
+from help import HelpMenu
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -27,6 +28,7 @@ class Noise(tk.Frame):
         # nm.iconbitmap('icon.ico')
         nm.wm_transient(self) # Place the toplevel window at the top
         self.cm.windowGeometry(nm, 850, 250)
+        hm = HelpMenu()
 
         # Adapt the window to different sizes
         for i in range(4):
@@ -91,11 +93,13 @@ class Noise(tk.Frame):
             if but == 1: self.generateNoise(nm)
             elif but == 2: self.saveDefaultValues(nm)
 
-        self.but_gene = ttk.Button(nm, text='Generate', command=lambda: checkValues(1))
-        self.but_save = ttk.Button(nm, text='Save values as default', command=lambda: checkValues(2))
+        self.but_gene = ttk.Button(nm, command=lambda: checkValues(1), text='Generate')
+        self.but_save = ttk.Button(nm, command=lambda: checkValues(2), text='Save values as default')
+        self.but_help = ttk.Button(nm, command=lambda: hm.createHelpMenu(self, 5), text='🛈', width=2)
 
-        self.but_gene.grid(column=4, row=4, sticky=tk.EW, padx=5, pady=5)
-        self.but_save.grid(column=3, row=4, sticky=tk.EW, padx=5, pady=5)
+        self.but_gene.grid(column=4, row=5, sticky=tk.EW, padx=5, pady=5)
+        self.but_save.grid(column=3, row=5, sticky=tk.EW, padx=5, pady=5)
+        self.but_help.grid(column=0, row=5, sticky=tk.W, padx=5, pady=5)
 
         # OPTION MENUS
         nm.options = ('White noise','Pink noise', 'Brown noise')

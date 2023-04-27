@@ -5,6 +5,7 @@ import unicodedata
 from tkinter import ttk
 
 from controlMenu import ControlMenu
+from help import HelpMenu
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -27,6 +28,7 @@ class PureTone(tk.Frame):
         # tm.iconbitmap('icon.ico')
         tm.wm_transient(self) # Place the toplevel window at the top
         self.cm.windowGeometry(tm, 850, 475)
+        hm = HelpMenu()
 
         # Adapt the window to different sizes
         for i in range(4):
@@ -128,11 +130,13 @@ class PureTone(tk.Frame):
             if but == 1: self.generatePureTone(tm, lab_sign)
             elif but == 2: self.saveDefaultValues()
 
-        self.but_gene = ttk.Button(tm, text='Generate', command=lambda: checkValues(1))
-        self.but_save = ttk.Button(tm, text='Save values as default', command=lambda: checkValues(2))
+        self.but_gene = ttk.Button(tm, command=lambda: checkValues(1), text='Generate')
+        self.but_save = ttk.Button(tm, command=lambda: checkValues(2), text='Save values as default')
+        self.but_help = ttk.Button(tm, command=lambda: hm.createHelpMenu(self, 1), text='🛈', width=2)
 
         self.but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)
         self.but_save.grid(column=4, row=6, sticky=tk.EW, padx=5, pady=5)
+        self.but_help.grid(column=3, row=7, sticky=tk.E, padx=5, pady=5)
 
         checkValues(1)
 

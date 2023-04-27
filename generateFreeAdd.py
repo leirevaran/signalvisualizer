@@ -4,6 +4,7 @@ import numpy as np
 from tkinter import ttk
 
 from controlMenu import ControlMenu
+from help import HelpMenu
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -27,6 +28,7 @@ class FreeAdditionPureTones(tk.Frame):
         # fam.iconbitmap('icon.ico')
         fam.wm_transient(self) # Place the toplevel window at the top
         self.cm.windowGeometry(fam, 800, 600)
+        hm = HelpMenu()
 
         # Adapt the window to different sizes
         for i in range(6):
@@ -131,13 +133,15 @@ class FreeAdditionPureTones(tk.Frame):
         lab_octv.grid(column=0, row=4, sticky=tk.E)
         
         # BUTTONS
-        self.but_gene = ttk.Button(fam, text='Generate', command=lambda: self.generateFAPT(fam))
-        self.but_pian = ttk.Button(fam, text='Show piano', command=lambda: self.pianoKeyboard())
-        self.but_save = ttk.Button(fam, text='Save values as default', command=lambda: self.saveDefaultValues())
+        self.but_gene = ttk.Button(fam, command=lambda: self.generateFAPT(fam), text='Generate')
+        self.but_pian = ttk.Button(fam, command=lambda: self.pianoKeyboard(), text='Show piano')
+        self.but_save = ttk.Button(fam, command=lambda: self.saveDefaultValues(), text='Save values as default')
+        self.but_help = ttk.Button(fam, command=lambda: hm.createHelpMenu(self, 2), text='🛈', width=2)
 
         self.but_gene.grid(column=6, row=8, sticky=tk.EW, padx=5, pady=5)
         self.but_pian.grid(column=2, row=4, sticky=tk.EW, padx=5, pady=5)
         self.but_save.grid(column=6, row=7, sticky=tk.EW, padx=5, pady=5)
+        self.but_help.grid(column=5, row=8, sticky=tk.E, padx=5, pady=5)
 
         self.generateFAPT(fam)
 

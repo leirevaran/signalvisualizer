@@ -156,6 +156,7 @@ class Spectrogram(tk.Frame):
         self.rdb_qual = tk.Radiobutton(cmm, variable=cmm.var_type, value=6, command=lambda: self.displayOptions(cmm.var_type.get()), text='Qualitative')
         self.rdb_misc = tk.Radiobutton(cmm, variable=cmm.var_type, value=7, command=lambda: self.displayOptions(cmm.var_type.get()), text='Miscellaneous')
            
+        # positioning Radiobuttons
         self.rdb_pusq.grid(column=0, row=0, sticky=tk.W)
         self.rdb_sequ.grid(column=0, row=2, sticky=tk.W)
         self.rdb_seq2.grid(column=0, row=4, sticky=tk.W)

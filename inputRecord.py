@@ -1,16 +1,13 @@
 import tkinter as tk
-import os
-import wave
 import time
 import threading
 import pyaudio
 import matplotlib.pyplot as plt
 import numpy as np
-import sounddevice as sd
 from tkinter import ttk
-from matplotlib.widgets import Button, SpanSelector
 
 from controlMenu import ControlMenu
+from help import HelpMenu
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -33,6 +30,7 @@ class Record(tk.Frame):
         # rm.iconbitmap('icon.ico')
         rm.wm_transient(self) # Place the toplevel window at the top
         # self.cm.windowGeometry(rm, 850, 250)
+        hm = HelpMenu()
 
         # Adapt the window to different sizes
         for i in range(1):
@@ -45,10 +43,13 @@ class Record(tk.Frame):
         # play = PhotoImage(file='icons/play.png')
         # stop = PhotoImage(file='icons/stop.png')
         # self.but_reco = tk.Button(rm, text='🎤', font=('Arial', 100, 'bold'), command=lambda: self.clickHandler())
-        self.but_play = tk.Button(rm, text='Start recording', command=lambda: self.startrecording())
-        self.but_stop = tk.Button(rm, text='Stop recording', command=lambda: self.stoprecording(rm))
+        self.but_play = ttk.Button(rm, command=lambda: self.startrecording(), text='Start recording')
+        self.but_stop = ttk.Button(rm, command=lambda: self.stoprecording(rm), text='Stop recording')
+        self.but_help = ttk.Button(rm, command=lambda: hm.createHelpMenu(self, 7), text='🛈', width=2)
+
         self.but_play.grid()
         self.but_stop.grid()
+        self.but_help.grid()
 
         self.lab_time = ttk.Label(rm, text='00:00')
         self.lab_time.grid()
