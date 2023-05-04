@@ -18,7 +18,6 @@ class FreeAdditionPureTones(tk.Frame):
         self.fs = 48000 # sample frequency
         self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
-        self.file = 'csv/generateFreeAdd.csv'
         self.freeAddMenu()
 
     def freeAddMenu(self):
@@ -38,21 +37,11 @@ class FreeAdditionPureTones(tk.Frame):
             fam.rowconfigure(i, weight=1)
 
         # Read the default values of the atributes from a csv file
-        list = self.cm.readFromCsv(self.file)
-        freq1 = list[0]
-        freq2 = list[1]
-        freq3 = list[2]
-        freq4 = list[3]
-        freq5 = list[4]
-        freq6 = list[5]
-        ampl1 = list[6]
-        ampl2 = list[7]
-        ampl3 = list[8]
-        ampl4 = list[9]
-        ampl5 = list[10]
-        ampl6 = list[11]
-        duration = list[12]
-        octave = list[13]
+        list = self.cm.readFromCsv()
+        duration = list[4][2]
+        octave = list[4][4]
+        freq1, freq2, freq3, freq4, freq5, freq6 = list[4][6], list[4][8], list[4][10], list[4][12], list[4][14], list[4][16]
+        ampl1, ampl2, ampl3, ampl4, ampl5, ampl6 = list[4][18], list[4][20], list[4][22], list[4][24], list[4][26], list[4][28]
 
         # SCALES
         fam.var_amp1 = tk.DoubleVar(value=ampl1)
@@ -135,7 +124,7 @@ class FreeAdditionPureTones(tk.Frame):
         # BUTTONS
         self.but_gene = ttk.Button(fam, command=lambda: self.generateFAPT(fam), text='Generate')
         self.but_pian = ttk.Button(fam, command=lambda: self.pianoKeyboard(), text='Show piano')
-        self.but_save = ttk.Button(fam, command=lambda: self.saveDefaultValues(), text='Save values as default')
+        self.but_save = ttk.Button(fam, command=lambda: self.saveDefaultValues(list), text='Save values as default')
         self.but_help = ttk.Button(fam, command=lambda: hm.createHelpMenu(self, 2), text='🛈', width=2)
 
         self.but_gene.grid(column=6, row=8, sticky=tk.EW, padx=5, pady=5)
@@ -145,7 +134,9 @@ class FreeAdditionPureTones(tk.Frame):
 
         self.generateFAPT(fam)
 
-    def saveDefaultValues(self):
+    def saveDefaultValues(self, list):
+        duration = float(self.ent_dura.get())
+        octave = float(self.ent_octv.get())
         frq1 = float(self.ent_frq1.get())
         frq2 = float(self.ent_frq2.get())
         frq3 = float(self.ent_frq3.get())
@@ -158,11 +149,14 @@ class FreeAdditionPureTones(tk.Frame):
         amp4 = self.sca_amp4.get()
         amp5 = self.sca_amp5.get()
         amp6 = self.sca_amp6.get()
-        duration = float(self.ent_dura.get())
-        oct = float(self.ent_octv.get())
 
-        list = [frq1, frq2, frq3, frq4, frq5, frq6, amp1, amp2, amp3, amp4, amp5, amp6, duration, oct]
-        self.cm.saveDefaultAsCsv(self.file, list)
+        new_list = [['NOISE','\t duration', list[0][2],'\t amplitude', list[0][4],'\t fs', list[0][6],'\t noise type', list[0][8]],
+                ['PURE TONE','\t duration', list[1][2],'\t amplitude', list[1][4],'\t fs', list[1][6],'\t offset', list[1][8],'\t frequency', list[1][10],'\t phase',  list[1][12]],
+                ['SQUARE WAVE','\t duration', list[2][2],'\t amplitude', list[2][4],'\t fs', list[2][6],'\t offset', list[2][8],'\t frequency', list[2][10],'\t phase', list[2][12],'\t active cycle', list[2][14]],
+                ['SAWTOOTH WAVE','\t duration', list[3][2],'\t amplitude', list[3][4],'\t fs', list[3][6],'\t offset', list[3][8],'\t frequency', list[3][10],'\t phase', list[3][12],'\t max position', list[3][14]],
+                ['FREE ADD OF PT','\t duration', duration,'\t octave', octave,'\t freq1', frq1,'\t freq2', frq2,'\t freq3', frq3,'\t freq4', frq4,'\t freq5', frq5,'\t freq6', frq6,'\t amp1', amp1,'\t amp2', amp2,'\t amp3', amp3,'\t amp4', amp4,'\t amp5', amp5,'\t amp6', amp6],
+                ['SPECTROGRAM','\t colormap', list[5][2]]]
+        self.cm.saveDefaultAsCsv(new_list)
 
     def generateFAPT(self, fam):
         frq1 = float(self.ent_frq1.get())

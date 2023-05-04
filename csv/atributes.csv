@@ -1,0 +1,6 @@
+NOISE,	 duration,1.03,	 amplitude,0.1,	 fs,48000,	 noise type,Pink noise
+PURE TONE,	 duration,1.03,	 amplitude,0.5,	 fs,48000,	 offset,1.0,	 frequency,0.0,	 phase,-0.3
+SQUARE WAVE,	 duration,4.95,	 amplitude,1.0,	 fs,48000,	 offset,0.0,	 frequency,2.0,	 phase,0.0,	 active cycle,50.0
+SAWTOOTH WAVE,	 duration,1.0,	 amplitude,0.5,	 fs,48000,	 offset,0.0,	 frequency,2.0,	 phase,0.0,	 max position,1.0
+FREE ADD OF PT,	 duration,1.0,	 octave,1.0,	 freq1,1.0,	 freq2,0.0,	 freq3,0.0,	 freq4,0.0,	 freq5,0.0,	 freq6,0.0,	 amp1,1.0,	 amp2,0.0,	 amp3,0.0,	 amp4,0.0,	 amp5,0.0,	 amp6,0.0
+SPECTROGRAM,	 colormap,viridis

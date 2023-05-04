@@ -14,7 +14,6 @@ class Spectrogram(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.cm = ControlMenu()
-        self.file = 'csv/colormap.csv'
         self.colormapMenu()
 
     def colormapMenu(self):
@@ -67,8 +66,8 @@ class Spectrogram(tk.Frame):
         gradient = np.vstack((gradient, gradient))
 
         # Read the value of the colormap from a csv file
-        list = self.cm.readFromCsv(self.file)
-        choice = list[0]
+        list = self.cm.readFromCsv()
+        choice = list[5][2]
 
         for cmap_category, cmap_list in cmaps:
             for i in range(len(cmap_list)):
@@ -173,7 +172,7 @@ class Spectrogram(tk.Frame):
         self.but_cycl = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[4], cmaps[4][1], gradient))
         self.but_qual = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[5], cmaps[5][1], gradient))
         self.but_misc = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[6], cmaps[6][1], gradient))
-        self.but_save = ttk.Button(cmm, text='Save changes', command=lambda: self.setColormap(cmm))
+        self.but_save = ttk.Button(cmm, text='Save changes', command=lambda: self.setColormap(cmm, list))
 
         # positioning Buttons
         self.but_pusq.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5)
@@ -258,7 +257,7 @@ class Spectrogram(tk.Frame):
 
         plt.show()
 
-    def setColormap(self, cmm):
+    def setColormap(self, cmm, list):
         type = cmm.var_type.get()
 
         if type == 1:
@@ -276,6 +275,13 @@ class Spectrogram(tk.Frame):
         elif type == 7: 
             choice = cmm.var_misc.get()
 
-        self.cm.saveDefaultAsCsv(self.file, [choice])
+        print(choice)
+        new_list = [['NOISE','\t duration', list[0][2],'\t amplitude', list[0][4],'\t fs', list[0][6],'\t noise type', list[0][8]],
+                ['PURE TONE','\t duration', list[1][2],'\t amplitude', list[1][4],'\t fs', list[1][6],'\t offset', list[1][8],'\t frequency', list[1][10],'\t phase',  list[1][12]],
+                ['SQUARE WAVE','\t duration', list[2][2],'\t amplitude', list[2][4],'\t fs', list[2][6],'\t offset', list[2][8],'\t frequency', list[2][10],'\t phase', list[2][12],'\t active cycle', list[2][14]],
+                ['SAWTOOTH WAVE','\t duration', list[3][2],'\t amplitude', list[3][4],'\t fs', list[3][6],'\t offset', list[3][8],'\t frequency', list[3][10],'\t phase', list[3][12],'\t max position', list[3][14]],
+                ['FREE ADD OF PT','\t duration', list[4][2],'\t octave', list[4][4],'\t freq1', list[4][6],'\t freq2', list[4][8],'\t freq3', list[4][10],'\t freq4', list[4][12],'\t freq5', list[4][14],'\t freq6', list[4][16],'\t amp1', list[4][18],'\t amp2', list[4][20],'\t amp3', list[4][22],'\t amp4', list[4][24],'\t amp5', list[4][26],'\t amp6', list[4][28]],
+                ['SPECTROGRAM','\t colormap', choice]]
+        self.cm.saveDefaultAsCsv(new_list)
         cmm.destroy() # close window
         plt.close('all') # closes all matplotlib figures

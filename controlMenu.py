@@ -510,19 +510,20 @@ class ControlMenu():
         sub_ax = plt.axes([0.91, 0.12, 0.02, x]) # add a small custom axis (left, bottom, width, height)
         fig.colorbar(img, cax=sub_ax, format='%+2.0f dB') # %4.2e, {x:.2e}
 
-    def readFromCsv(self, file):
+    def readFromCsv(self):
+        file = 'csv/atributes.csv'
         list = []
         with open(file, 'r') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
-                list.append(row[0])
+                list.append(row)
         return list
     
-    def saveDefaultAsCsv(self, file, list):
+    def saveDefaultAsCsv(self, list):
+        file = 'csv/atributes.csv'
         with open(file, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            for i in range(len(list)):
-                writer.writerow([list[i]])
+            writer.writerows(list)
 
     # Convert the numpy array containing the audio into a wav file
     def saveasWav(self, audio, fs):
@@ -827,8 +828,6 @@ class ControlMenu():
         axFragSpect[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         axFragSpect[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
 
-        spect_values = img.get_array()
-        print(spect_values)
         self.saveasWavCsv(figFragSpect, self.audiotimeFrag, self.audioFrag, 0.5, self.audiofs) # save waveform as csv
 
         cursorSpect.clear(figFragSpect)
@@ -955,21 +954,33 @@ class ControlMenu():
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
         figFragFilt.canvas.manager.set_window_title('Pitch') # set title to the figure window
 
-        # TO-DO
+        # Calculate the linear/mel spectrogram
+        if self.draw == 1: # linear
+            linear = librosa.stft(self.audioFrag, n_fft=self.nfftUser, hop_length=self.hopSize, win_length=self.windSizeSampInt, window=self.window, center=True, dtype=None, pad_mode='constant')
+            linear_dB = librosa.amplitude_to_db(np.abs(linear), ref=np.max)
+            img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.audiofs, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSpect[1], hop_length=self.hopSize, cmap=self.cmap)
+            axFragFilt[1].set(xlim=[0, self.audioFragDuration], ylim=[self.minfreq, self.maxfreq], title='Spectrogram')
+        else: # mel
+            mel = librosa.feature.melspectrogram(y=self.audioFrag, sr=self.audiofs, win_length=self.windSizeSampInt, n_fft=self.nfftUser, window=self.window, fmin=self.minfreq, fmax=self.maxfreq, hop_length=self.hopSize)
+            mel_dB = librosa.power_to_db(mel)
+            img = librosa.display.specshow(mel_dB, x_axis='time', y_axis='mel', sr=self.audiofs, fmin=self.minfreq, fmax=self.maxfreq, ax=axFragSpect[1], hop_length=self.hopSize, cmap=self.cmap)
+            axFragFilt[1].set(xlim=[0, self.audioFragDuration], ylim=[self.minfreq, self.maxfreq], title='Mel-frequency spectrogram')
+        self.yticks(self.minfreq, self.maxfreq) # represent the numbers of y axis
+        self.colorBar(figFragFilt, 0.3, img)
 
         axFragFilt[0].plot(self.audiotimeFrag, self.audioFrag)
         axFragFilt[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         axFragFilt[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-        axFragFilt[1].specgram(x=self.audioFrag, Fs=self.audiofs, window=self.window, pad_to=self.nfftUser, NFFT=self.windSizeSampInt, mode='magnitude', noverlap=self.overlapSamp, scale='dB')
-        axFragFilt[1].set(xlim=[0, self.audioFragDuration], ylim=[self.minfreq, self.maxfreq], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Spectrogram')
+
+        self.saveasWavCsv(figFragFilt, self.audiotimeFrag, self.audioFrag, 0.5, self.audiofs) # save waveform as csv
 
         self.span = self.createSpanSelector(axFragFilt[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
 
     # Called when pressing the 'Plot' button
     def plotFigure(self, cm):
-        list = self.readFromCsv('csv/colormap.csv')
-        self.cmap = mpl.colormaps[list[0]]
+        list = self.readFromCsv()
+        self.cmap = mpl.colormaps[list[5][2]]
         ## VALUES GIVEN BY THE USER (that were not created in checkValues())
         choice = cm.var_opts.get()
         self.windType = cm.var_wind.get()

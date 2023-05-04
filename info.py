@@ -25,18 +25,16 @@ class Info(tk.Frame):
         lab_intr = ttk.Label(iw, text='A collaboration between University of the Basque Country (UPV/EHU)\nand Musikene, Higher School of Music of the Basque Country.\n')
         
         lab_lea1 = ttk.Label(iw, font=('TkDefaultFont', 9, "italic"), text='Project leader:')
-        lab_dev1 = ttk.Label(iw, font=('TkDefaultFont', 9, "italic"), text='Developer:')
-        lab_con1 = ttk.Label(iw, font=('TkDefaultFont', 9, "italic"), text='Consultant from Musikene:')
+        lab_con1 = ttk.Label(iw, font=('TkDefaultFont', 9, "italic"), text='Project leader from Musikene:')
+        lab_dev1 = ttk.Label(iw, font=('TkDefaultFont', 9, "italic"), text='Developers:')
         lab_ico1 = ttk.Label(iw, font=('TkDefaultFont', 9, "italic"), text='Program icon and logo made by:')
-        lab_oth1 = ttk.Label(iw, font=('TkDefaultFont', 9, "italic"), text='Other collaborators:')
 
         lab_lea2 = ttk.Label(iw, text='Inma Hernáez Rioja')
-        lab_dev2 = ttk.Label(iw, text='Leire Varela Aranguren')
         lab_con2 = ttk.Label(iw, text='José María Bretos')
+        lab_dev2 = ttk.Label(iw, text='Leire Varela Aranguren, Valentin Lurier, Eder del Blanco Sierra, Mikel Díez García')
         lab_ico2 = ttk.Label(iw, text='Sergio Santamaría Martínez')
-        lab_oth2 = ttk.Label(iw, text='Mikel Díez García')
 
-        lab_ahol = ttk.Label(iw, text='\nAHOLAB Signal Processing Laboratory (UPV/EHU).\n')
+        lab_ahol = ttk.Label(iw, text='\nHiTZ Basque Center for Language Technologies - Aholab Signal Processing Laboratory (UPV/EHU).\n')
         lab_refe = ttk.Label(iw, text='References:')
         lab_ref1 = ttk.Label(iw, text='Function for creating brown (or red) noise made by Hristo Zhivomirov:\n'+'Hristo Zhivomirov (2020). Pink, Red, Blue and Violet Noise Generation with Matlab\n'+'(https://www.mathworks.com/matlabcentral/fileexchange/42919-pink-red-blue-and-violet-noise-generation-with-matlab),\n'+'MATLAB Central File Exchange. Retrieved August 4, 2020.')
         lab_ref2 = ttk.Label(iw, text='Function for creating a Rosenberg pulse train made by Matt Montag:\n'+'Matt Montag (sin fecha). Matt Montag - EEN 540 Speech Signal Processing - Project 2\n'+'(https://www.mattmontag.com/projects-page/academic/speech) Retrieved August 4, 2020.\n'+'The function has been modified by Eder del Blanco.')
@@ -46,16 +44,14 @@ class Info(tk.Frame):
         lab_intr.grid(column=0, row=1, sticky=tk.W, columnspan=40, padx=20)
 
         lab_lea1.grid(column=0, row=2, sticky=tk.W, padx=20)
-        lab_dev1.grid(column=0, row=3, sticky=tk.W, padx=20)
-        lab_con1.grid(column=0, row=4, sticky=tk.W, padx=20)
+        lab_con1.grid(column=0, row=3, sticky=tk.W, padx=20)
+        lab_dev1.grid(column=0, row=4, sticky=tk.W, padx=20)
         lab_ico1.grid(column=0, row=5, sticky=tk.W, padx=20)
-        lab_oth1.grid(column=0, row=6, sticky=tk.W, padx=20)
 
         lab_lea2.grid(column=1, row=2, sticky=tk.W, padx=20)
-        lab_dev2.grid(column=1, row=3, sticky=tk.W, padx=20)
-        lab_con2.grid(column=1, row=4, sticky=tk.W, padx=20)
+        lab_con2.grid(column=1, row=3, sticky=tk.W, padx=20)
+        lab_dev2.grid(column=1, row=4, sticky=tk.W, padx=20)
         lab_ico2.grid(column=1, row=5, sticky=tk.W, padx=20)
-        lab_oth2.grid(column=1, row=6, sticky=tk.W, padx=20)
 
         lab_ahol.grid(column=0, row=7, sticky=tk.W, columnspan=40, padx=20)
         lab_refe.grid(column=0, row=8, sticky=tk.W, columnspan=40, padx=20)

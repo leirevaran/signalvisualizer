@@ -18,7 +18,6 @@ class PureTone(tk.Frame):
         self.master = master
         self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
-        self.file = 'csv/generatePureTone.csv'
         self.toneMenu()
 
     def toneMenu(self):
@@ -38,13 +37,13 @@ class PureTone(tk.Frame):
             tm.rowconfigure(i, weight=1)
 
         # Read the default values of the atributes from a csv file
-        list = self.cm.readFromCsv(self.file)
-        duration = list[0]
-        offset = list[1]
-        amplitude = list[2]
-        frequency = list[3]
-        phase = list[4]
-        self.fs = list[5]
+        list = self.cm.readFromCsv()
+        duration = list[1][2]
+        amplitude = list[1][4]
+        self.fs = list[1][6]
+        offset = list[1][8]
+        frequency = list[1][10]
+        phase = list[1][12]
 
         # SCALES
         tm.var_dura = tk.IntVar(value=duration)
@@ -128,7 +127,7 @@ class PureTone(tk.Frame):
             if fsEntry(self.fs) != True:
                 return
             if but == 1: self.generatePureTone(tm, lab_sign)
-            elif but == 2: self.saveDefaultValues()
+            elif but == 2: self.saveDefaultValues(list)
 
         self.but_gene = ttk.Button(tm, command=lambda: checkValues(1), text='Generate')
         self.but_save = ttk.Button(tm, command=lambda: checkValues(2), text='Save values as default')
@@ -146,15 +145,20 @@ class PureTone(tk.Frame):
             return True
         else: return False
 
-    def saveDefaultValues(self):
+    def saveDefaultValues(self, list):
         amplitude = float(self.ent_ampl.get())
         frequency = float(self.ent_freq.get())
         phase = float(self.ent_phas.get())
         duration = float(self.ent_dura.get())
         offset = float(self.ent_offs.get())
 
-        list = [duration, offset, amplitude, frequency, phase, self.fs]
-        self.cm.saveDefaultAsCsv(self.file, list)
+        new_list = [['NOISE','\t duration', list[0][2],'\t amplitude', list[0][4],'\t fs', list[0][6],'\t noise type', list[0][8]],
+                ['PURE TONE','\t duration', duration,'\t amplitude', amplitude,'\t fs', self.fs,'\t offset', offset,'\t frequency', frequency,'\t phase',  phase],
+                ['SQUARE WAVE','\t duration', list[2][2],'\t amplitude', list[2][4],'\t fs', list[2][6],'\t offset', list[2][8],'\t frequency', list[2][10],'\t phase', list[2][12],'\t active cycle', list[2][14]],
+                ['SAWTOOTH WAVE','\t duration', list[3][2],'\t amplitude', list[3][4],'\t fs', list[3][6],'\t offset', list[3][8],'\t frequency', list[3][10],'\t phase', list[3][12],'\t max position', list[3][14]],
+                ['FREE ADD OF PT','\t duration', list[4][2],'\t octave', list[4][4],'\t freq1', list[4][6],'\t freq2', list[4][8],'\t freq3', list[4][10],'\t freq4', list[4][12],'\t freq5', list[4][14],'\t freq6', list[4][16],'\t amp1', list[4][18],'\t amp2', list[4][20],'\t amp3', list[4][22],'\t amp4', list[4][24],'\t amp5', list[4][26],'\t amp6', list[4][28]],
+                ['SPECTROGRAM','\t colormap', list[5][2]]]
+        self.cm.saveDefaultAsCsv(new_list)
 
     def generatePureTone(self, tm, lab_sign):
         amplitude = float(self.ent_ampl.get())

@@ -18,7 +18,6 @@ class Noise(tk.Frame):
         self.master = master
         self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
-        self.file = 'csv/generateNoise.csv'
         self.noiseMenu()
 
     def noiseMenu(self):
@@ -38,11 +37,11 @@ class Noise(tk.Frame):
             nm.rowconfigure(i, weight=1)
 
         # Read the default values of the atributes from a csv file
-        list = self.cm.readFromCsv(self.file)
-        choice = list[0]
-        amplitude = list[1]
-        duration = list[2]
-        self.fs = list[3]
+        list = self.cm.readFromCsv()
+        duration = list[0][2]
+        amplitude = list[0][4]
+        self.fs = list[0][6]
+        choice = list[0][8]
 
         # SCALERS
         nm.var_ampl = tk.DoubleVar(value=amplitude)
@@ -91,7 +90,7 @@ class Noise(tk.Frame):
             if fsEntry(self.fs) != True:
                 return
             if but == 1: self.generateNoise(nm)
-            elif but == 2: self.saveDefaultValues(nm)
+            elif but == 2: self.saveDefaultValues(nm, list)
 
         self.but_gene = ttk.Button(nm, command=lambda: checkValues(1), text='Generate')
         self.but_save = ttk.Button(nm, command=lambda: checkValues(2), text='Save values as default')
@@ -116,13 +115,18 @@ class Noise(tk.Frame):
             return True
         else: return False
 
-    def saveDefaultValues(self, nm):
+    def saveDefaultValues(self, nm, list):
         choice = nm.var_opts.get()
         amplitude = float(self.sca_ampl.get())
         duration = self.sca_dura.get()
 
-        list = [choice, amplitude, duration, self.fs]
-        self.cm.saveDefaultAsCsv(self.file, list)
+        new_list = [['NOISE','\t duration', duration,'\t amplitude', amplitude,'\t fs', self.fs,'\t noise type', choice],
+                ['PURE TONE','\t duration', list[1][2],'\t amplitude', list[1][4],'\t fs', list[1][6],'\t offset', list[1][8],'\t frequency', list[1][10],'\t phase',  list[1][12]],
+                ['SQUARE WAVE','\t duration', list[2][2],'\t amplitude', list[2][4],'\t fs', list[2][6],'\t offset', list[2][8],'\t frequency', list[2][10],'\t phase', list[2][12],'\t active cycle', list[2][14]],
+                ['SAWTOOTH WAVE','\t duration', list[3][2],'\t amplitude', list[3][4],'\t fs', list[3][6],'\t offset', list[3][8],'\t frequency', list[3][10],'\t phase', list[3][12],'\t max position', list[3][14]],
+                ['FREE ADD OF PT','\t duration', list[4][2],'\t octave', list[4][4],'\t freq1', list[4][6],'\t freq2', list[4][8],'\t freq3', list[4][10],'\t freq4', list[4][12],'\t freq5', list[4][14],'\t freq6', list[4][16],'\t amp1', list[4][18],'\t amp2', list[4][20],'\t amp3', list[4][22],'\t amp4', list[4][24],'\t amp5', list[4][26],'\t amp6', list[4][28]],
+                ['SPECTROGRAM','\t colormap', list[5][2]]]
+        self.cm.saveDefaultAsCsv(new_list)
 
     def generateNoise(self, nm):
         choice = nm.var_opts.get()
