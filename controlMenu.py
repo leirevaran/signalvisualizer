@@ -692,7 +692,7 @@ class ControlMenu():
         axFragSTFT[0].plot(self.audiotimeFrag, self.audioFrag)
         axFragSTFT[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         axFragSTFT[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-        self.line1, = axFragSTFT[1].plot(frequencies, 20*np.log10(abs(stft)))
+        line1, = axFragSTFT[1].plot(frequencies, 20*np.log10(abs(stft)))
         axFragSTFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Short Time Fourier Transform')
 
         self.saveasWavCsv(figFragSTFT, self.audiotimeFrag, self.audioFrag, 0.5, self.audiofs) # save waveform as csv
@@ -701,7 +701,7 @@ class ControlMenu():
         cursorSTFT = Cursor(axFragSTFT[0], horizOn=False, useblit=True, color='black', linewidth=1)
         self.span = self.createSpanSelector(axFragSTFT[0]) # Select a fragment with the cursor and play the audio of that fragment
 
-        return axFragSTFT
+        return axFragSTFT, line1
 
     def plotSTFTspect(self, stft, frequencies):
         figFragSTFTSpect, axFragSTFTSpect = plt.subplots(3, figsize=(12,6))
@@ -725,7 +725,7 @@ class ControlMenu():
         axFragSTFTSpect[0].plot(self.audiotimeFrag, self.audioFrag)
         axFragSTFTSpect[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         axFragSTFTSpect[0].set(xlim=[0, self.audioFragDuration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-        self.line1, = axFragSTFTSpect[1].plot(frequencies, 20*np.log10(abs(stft)))
+        line1, = axFragSTFTSpect[1].plot(frequencies, 20*np.log10(abs(stft)))
         axFragSTFTSpect[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Short Time Fourier Transform')
 
         self.saveasWavCsv(figFragSTFTSpect, self.audiotimeFrag, self.audioFrag, 0.65, self.audiofs) # save waveform as csv
@@ -734,7 +734,7 @@ class ControlMenu():
         cursorSTFTSpect = MultiCursor(figFragSTFTSpect.canvas, (axFragSTFTSpect[0], axFragSTFTSpect[2]), color='black', lw=1)
         self.span = self.createSpanSelector(axFragSTFTSpect[0]) # Select a fragment with the cursor and play the audio of that fragment
 
-        return axFragSTFTSpect
+        return axFragSTFTSpect, line1
 
     def plotSC(self, audioFragWind2):
         figFragSC, axFragSC = plt.subplots(3, figsize=(12,6))
@@ -765,7 +765,7 @@ class ControlMenu():
         psd, freqs = axFragSC[1].psd(audioFragWind2, NFFT=self.windSizeSampInt, pad_to=self.nfftUser, Fs=self.audiofs, window=self.window, noverlap=self.overlapSamp)
         axFragSC[1].axvline(x=spectralC, color='r', linewidth='1') # draw a vertical line in x=value of the spectral centroid
         axFragSC[1].set(xlim=[0, max(freqs)], xlabel='Frequency (Hz)', ylabel='Power spectral density (dB/Hz)', title='Power spectral density using fft, spectral centroid value is '+ scValue)
-        self.line1, = axFragSC[2].plot(times, sc.T, color='w') # draw the white line
+        line1, = axFragSC[2].plot(times, sc.T, color='w') # draw the white line
         axFragSC[2].set(xlim=[0, self.audioFragDuration], title='log Power spectrogram')
 
         self.saveasWavCsv(figFragSC, self.audiotimeFrag, self.audioFrag, 0.65, self.audiofs) # save waveform as csv
@@ -774,7 +774,7 @@ class ControlMenu():
         cursorSC = MultiCursor(figFragSC.canvas, (axFragSC[0], axFragSC[2]), color='black', lw=1)
         self.span = self.createSpanSelector(axFragSC[0]) # Select a fragment with the cursor and play the audio of that fragment
 
-        return axFragSC
+        return axFragSC, line1
 
     def plotSpectrogram(self):
         figFragSpect, axFragSpect = plt.subplots(2, figsize=(12,6))
@@ -1064,22 +1064,22 @@ class ControlMenu():
             frequencies = values * self.audiofs / self.nfftUser
 
             if choice == 'STFT':
-                axFragSTFT = self.plotSTFT(stft, frequencies)
-                ax = axFragSTFT[0]
+                axFragSTFT, line1 = self.plotSTFT(stft, frequencies)
+                ax0 = axFragSTFT[0]
             elif choice == 'STFT + Spect':
-                axFragSTFTSpect = self.plotSTFTspect(stft, frequencies)
+                axFragSTFTSpect, line1 = self.plotSTFTspect(stft, frequencies)
                 midLineSpect = axFragSTFTSpect[2].axvline(x=midPoint, color='black', linewidth='0.5', fillstyle='full') # line in the middle (spectrogram)
-                ax = axFragSTFTSpect[0]
+                ax0 = axFragSTFTSpect[0]
             elif choice == 'Spectral Centroid':
-                axFragSC = self.plotSC(audioFragWind2)
+                axFragSC, line1 = self.plotSC(audioFragWind2)
                 midLineSpectSC = axFragSC[2].axvline(x=midPoint, color='black', linewidth='0.5', fillstyle='full') # line in the middle (spectrogram)
-                ax = axFragSC[0]
+                ax0 = axFragSC[0]
 
             # Draw the rectangle
-            bottom, top = ax.get_ylim()
+            bottom, top = ax0.get_ylim()
             rectangle = Rectangle(xy=(ini,bottom), width=end-ini, height=top-bottom, alpha=0.5, color='silver', zorder=2)
-            ax.add_artist(rectangle) # draw the rectangle
-            midLine = ax.axvline(x=midPoint, color='black', linewidth='0.5', fillstyle='full', zorder=2) # line in the middle
+            ax0.add_artist(rectangle) # draw the rectangle
+            midLine = ax0.axvline(x=midPoint, color='black', linewidth='0.5', fillstyle='full', zorder=2) # line in the middle
 
             # If the user changes the position of the window, recalculate the STFT/FFT
             def on_click(event):
@@ -1111,21 +1111,25 @@ class ControlMenu():
                         axFragSC[1].set(xlim=[0, max(new_freqs)], xlabel='Frequency (Hz)', ylabel='Power spectral density (dB/Hz)', title='Power spectral density using fft, spectral centroid value is '+ new_scValue)
                     else: # recalculate STFT
                         new_stft = self.calculateSTFT(new_audioFragWind2, self.nfftUser)
-                        self.line1.set_ydata(20*np.log10(abs(new_stft)))
+                        new_values = np.arange(int(self.nfftUser/2))
+                        new_frequencies = new_values * self.audiofs / self.nfftUser
+                        line1.set_xdata(new_frequencies)
+                        line1.set_ydata(20*np.log10(abs(new_stft)))
 
                     # Move the window and rescale 'y' axis
                     midLine.set_xdata(new_midPoint)
                     if choice == 'STFT':
-                        ax =  axFragSTFT[1]
+                        ax1 =  axFragSTFT[1]
                     elif choice == 'STFT + Spect':
-                        ax =  axFragSTFTSpect[1]
+                        ax1 =  axFragSTFTSpect[1]
                         midLineSpect.set_xdata(new_midPoint)
                     elif choice == 'Spectral Centroid':
-                        ax =  axFragSC[1]
+                        ax1 =  axFragSC[1]
                         midLineSpectSC.set_xdata(new_midPoint)
-                    ax.relim()
-                    ax.autoscale_view()
-                    rectangle.set_x(self.audiotimeFrag[new_ini_idx])
+                    ax1.relim()
+                    ax1.autoscale_view()
+                    new_ini = self.audiotimeFrag[new_ini_idx]
+                    rectangle.set_x(new_ini)
 
                     plt.show() # update the figure
                 
