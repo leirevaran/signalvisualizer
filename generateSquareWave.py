@@ -71,7 +71,7 @@ class SquareWave(tk.Frame):
 
         # ENTRYS
         sm.var_fs = tk.IntVar(value=self.fs)
-        vcmd = (sm.register(self.cm.onValidateFloat), '%s', '%S')
+        vcmd = (sm.register(self.cm.onValidate), '%S', '%s', '%d')
         vcfs = (sm.register(self.onValidateFs), '%S')
 
         self.ent_dura = ttk.Entry(sm, textvariable=sm.var_dura, validate='key', validatecommand=vcmd)
@@ -139,7 +139,7 @@ class SquareWave(tk.Frame):
     def onValidateFs(self, S):
         if S.isdigit():
             return True
-        else: return False
+        return False
 
     def saveDefaultValues(self, list):
         amplitude = float(self.ent_ampl.get())

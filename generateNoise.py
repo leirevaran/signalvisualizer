@@ -53,7 +53,7 @@ class Noise(tk.Frame):
 
         # ENTRYS
         nm.var_fs = tk.IntVar(value=self.fs)
-        vcmd = (nm.register(self.cm.onValidateFloat), '%s', '%S')
+        vcmd = (nm.register(self.cm.onValidate), '%S', '%s', '%d')
         vcfs = (nm.register(self.onValidateFs), '%S')
         
         self.ent_ampl = ttk.Entry(nm, textvariable=nm.var_ampl, validate='key', validatecommand=vcmd)
@@ -113,7 +113,7 @@ class Noise(tk.Frame):
     def onValidateFs(self, S):
         if S.isdigit():
             return True
-        else: return False
+        return False
 
     def saveDefaultValues(self, nm, list):
         choice = nm.var_opts.get()

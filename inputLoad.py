@@ -1,5 +1,4 @@
 import tkinter as tk, tkinter.filedialog
-import wave
 import struct
 import numpy as np
 import sounddevice as sd
@@ -52,7 +51,7 @@ class Load(tk.Frame):
         axFile.set(xlim=[0, max(self.audiotime)], xlabel='Time (s)', ylabel='Waveform', title='Load an audio file')
 
         # Select a fragment with the cursor and play the audio of that fragment
-        span = SpanSelector(axFile, self.listenFragment, 'horizontal', useblit=True, props=dict(alpha=0.5, facecolor='tab:blue'), interactive=True, drag_from_anywhere=True)
+        span = SpanSelector(axFile, self.listenFragment, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)
 
         # Add a 'Load' button that takes the selected fragment and opens the control menu when clicked
         def load(event):

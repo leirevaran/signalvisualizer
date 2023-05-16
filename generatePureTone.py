@@ -70,7 +70,7 @@ class PureTone(tk.Frame):
 
         # ENTRYS
         tm.var_fs = tk.IntVar(value=self.fs)
-        vcmd = (tm.register(self.cm.onValidateFloat), '%s', '%S')
+        vcmd = (tm.register(self.cm.onValidate), '%S', '%s', '%d')
         vcfs = (tm.register(self.onValidateFs), '%S')
 
         self.ent_dura = ttk.Entry(tm, textvariable=tm.var_dura, validate='key', validatecommand=vcmd)
@@ -143,7 +143,7 @@ class PureTone(tk.Frame):
     def onValidateFs(self, S):
         if S.isdigit():
             return True
-        else: return False
+        return False
 
     def saveDefaultValues(self, list):
         amplitude = float(self.ent_ampl.get())

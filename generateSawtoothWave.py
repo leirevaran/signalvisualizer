@@ -71,7 +71,7 @@ class SawtoothWave(tk.Frame):
         
         # ENTRYS
         stm.var_fs = tk.IntVar(value=self.fs)
-        vcmd = (stm.register(self.cm.onValidateFloat), '%s', '%S')
+        vcmd = (stm.register(self.cm.onValidate), '%S', '%s', '%d')
         vcfs = (stm.register(self.onValidateFs), '%S')
 
         self.ent_dura = ttk.Entry(stm, textvariable=stm.var_dura, validate='key', validatecommand=vcmd)
@@ -139,7 +139,7 @@ class SawtoothWave(tk.Frame):
     def onValidateFs(self, S):
         if S.isdigit():
             return True
-        else: return False
+        return False
 
     def saveDefaultValues(self, list):
         amplitude = float(self.ent_ampl.get())

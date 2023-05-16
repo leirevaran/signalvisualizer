@@ -77,7 +77,7 @@ class FreeAdditionPureTones(tk.Frame):
         fam.var_frq6 = tk.DoubleVar(value=freq6)
         fam.var_octv = tk.IntVar(value=octave)
 
-        vcmd = (fam.register(self.cm.onValidateFloat), '%s', '%S')
+        vcmd = (fam.register(self.cm.onValidate), '%S', '%s', '%d')
 
         self.ent_frq1 = ttk.Spinbox(fam, from_=0, to=20000, textvariable=fam.var_frq1, validate='key', width=10)
         self.ent_frq2 = ttk.Spinbox(fam, from_=0, to=20000, textvariable=fam.var_frq2, validate='key', width=10)

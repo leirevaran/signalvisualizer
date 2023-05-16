@@ -36,8 +36,8 @@ class Info(tk.Frame):
 
         lab_ahol = ttk.Label(iw, text='\nHiTZ Basque Center for Language Technologies - Aholab Signal Processing Laboratory (UPV/EHU).\n')
         lab_refe = ttk.Label(iw, text='References:')
-        lab_ref1 = ttk.Label(iw, text='Function for creating brown (or red) noise made by Hristo Zhivomirov:\n'+'Hristo Zhivomirov (2020). Pink, Red, Blue and Violet Noise Generation with Matlab\n'+'(https://www.mathworks.com/matlabcentral/fileexchange/42919-pink-red-blue-and-violet-noise-generation-with-matlab),\n'+'MATLAB Central File Exchange. Retrieved August 4, 2020.')
-        lab_ref2 = ttk.Label(iw, text='Function for creating a Rosenberg pulse train made by Matt Montag:\n'+'Matt Montag (sin fecha). Matt Montag - EEN 540 Speech Signal Processing - Project 2\n'+'(https://www.mattmontag.com/projects-page/academic/speech) Retrieved August 4, 2020.\n'+'The function has been modified by Eder del Blanco.')
+        lab_ref1 = ttk.Label(iw, text='Function for creating brown (or red) noise made by Hristo Zhivomirov:\n'+'Hristo Zhivomirov (2020). Pink, Red, Blue and Violet Noise Generation with Matlab.\n'+'https://www.mathworks.com/matlabcentral/fileexchange/42919-pink-red-blue-and-violet-noise-generation-with-matlab\n'+'MATLAB Central File Exchange. Retrieved August 4, 2020.')
+        lab_ref2 = ttk.Label(iw, text='Master thesis describing the version of the software Signal Visualizer in Matlab made by Eder del Blanco Sierra:\n'+'Eder del Blanco Sierra (2020). Programa de apoyo a la enseñanza musical.\n'+'University of the Basque Country (UPV/EHU). Department of Communications Engineering. Retrieved August 8, 2020.\n'+'The function has been modified by Valentin Lurier and Mikel Díez García.')
 
         # positioning Labels
         lab_titl.grid(column=0, row=0, sticky=tk.W, columnspan=40, padx=20, pady=10)
