@@ -788,7 +788,7 @@ class ControlMenu():
             linear = librosa.stft(self.audioFrag, n_fft=nfftUser, hop_length=hopSize, win_length=windSizeSampInt, window=window, center=True, dtype=None, pad_mode='constant')
             linear_dB = librosa.amplitude_to_db(np.abs(linear), ref=np.max)
             img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.audiofs, fmin=minfreq, fmax=maxfreq, ax=axFragSpect[1], hop_length=hopSize, cmap=cmap)
-            axFragSpect[1].set(xlim=[0, self.audioFragDuration], ylim=[self.minfreq, self.maxfreq], title='Linear spectrogram')
+            axFragSpect[1].set(xlim=[0, self.audioFragDuration], ylim=[minfreq, maxfreq], title='Linear spectrogram')
         else: # mel
             mel = librosa.feature.melspectrogram(y=self.audioFrag, sr=self.audiofs, win_length=windSizeSampInt, n_fft=nfftUser, window=window, fmin=minfreq, fmax=maxfreq, hop_length=hopSize)
             mel_dB = librosa.power_to_db(mel)
