@@ -23,6 +23,7 @@ class Record(tk.Frame):
         self.isrecording = False
         self.fs = 44100
         self.cm = ControlMenu()
+        self.fig, self.ax = plt.subplots()
         self.selectedAudio = np.empty(1)
         self.recordMenu()
 
@@ -30,9 +31,8 @@ class Record(tk.Frame):
         rm = tk.Toplevel()
         rm.resizable(True, True)
         rm.title('Record')
-        # rm.iconbitmap('icon.ico')
+        rm.iconbitmap('icons/icon.ico')
         rm.wm_transient(self) # Place the toplevel window at the top
-        # self.cm.windowGeometry(rm, 850, 250)
         hm = HelpMenu()
 
         # Adapt the window to different sizes
@@ -51,14 +51,14 @@ class Record(tk.Frame):
         # BUTTONS
         # play = PhotoImage(file='icons/play.png')
         # stop = PhotoImage(file='icons/stop.png')
-        # self.but_reco = tk.Button(rm, text='🎤', font=('Arial', 100, 'bold'), command=lambda: self.clickHandler())
-        self.but_play = ttk.Button(rm, command=lambda: self.startrecording(), text='Start recording')
-        self.but_stop = ttk.Button(rm, command=lambda: self.stoprecording(rm), text='Stop recording')
-        self.but_help = ttk.Button(rm, command=lambda: hm.createHelpMenu(self, 7), text='🛈', width=2)
+        # but_reco = tk.Button(rm, text='🎤', font=('Arial', 100, 'bold'), command=lambda: self.clickHandler())
+        but_play = ttk.Button(rm, command=lambda: self.startrecording(), text='Start recording')
+        but_stop = ttk.Button(rm, command=lambda: self.stoprecording(rm), text='Stop recording')
+        but_help = ttk.Button(rm, command=lambda: hm.createHelpMenu(self, 7), text='🛈', width=2)
 
-        self.but_play.grid()
-        self.but_stop.grid()
-        self.but_help.grid()
+        but_play.grid()
+        but_stop.grid()
+        but_help.grid()
 
         self.lab_time = ttk.Label(rm, text='00:00')
         self.lab_time.grid()
@@ -97,7 +97,13 @@ class Record(tk.Frame):
         duration = lenMyRecord / self.fs
         time = np.linspace(start=0, stop=duration, num=lenMyRecord)
 
-        fig, ax = plt.subplots()
+        # If the window has been closed, create it again
+        if plt.fignum_exists(self.fig.number):
+            self.ax.clear() # delete the previous plot
+        else:
+            self.fig, self.ax = plt.subplots() # create the window
+
+        fig, ax = self.fig, self.ax
         self.addLoadButton(fig, ax, self.fs, time, myrecording, rm, 'Recording')
         # rm.destroy()
 
@@ -118,7 +124,6 @@ class Record(tk.Frame):
                 self.cm.createControlMenu(self, name, fs, self.selectedAudio)
             plt.close(fig)
             menu.destroy()
-            axload._but_load = but_load # reference to the Button (otherwise the button does nothing)
 
         # Adds a 'Load' button to the figure
         axload = fig.add_axes([0.8, 0.01, 0.09, 0.05]) # [left, bottom, width, height]

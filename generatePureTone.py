@@ -29,7 +29,7 @@ class PureTone(tk.Frame):
         tm = tk.Toplevel()
         tm.resizable(True, True)
         tm.title('Generate pure tone')
-        # tm.iconbitmap('icon.ico')
+        tm.iconbitmap('icons/icon.ico')
         tm.wm_transient(self) # Place the toplevel window at the top
         # self.cm.windowGeometry(tm, 850, 475)
         hm = HelpMenu()
@@ -64,56 +64,56 @@ class PureTone(tk.Frame):
         tm.var_phas = tk.DoubleVar(value=phase)
 
         def updateExpression(event):
-            sign = str(self.ent_offs.get()+' + '+str(self.ent_ampl.get())+' COS(2'+unicodedata.lookup("GREEK SMALL LETTER PI")+' '+str(self.ent_freq.get())+'t + '+str(self.ent_phas.get())+unicodedata.lookup("GREEK SMALL LETTER PI")+')')
+            sign = str(ent_offs.get()+' + '+str(ent_ampl.get())+' COS(2'+unicodedata.lookup("GREEK SMALL LETTER PI")+' '+str(ent_freq.get())+'t + '+str(ent_phas.get())+unicodedata.lookup("GREEK SMALL LETTER PI")+')')
             lab_sign.configure(text=sign)
 
-        self.sca_dura = tk.Scale(tm, from_=0.01, to=30, variable=tm.var_dura, length=500, orient='horizontal', resolution=0.01)
-        self.sca_offs = tk.Scale(tm, from_=-1, to=1, variable=tm.var_offs, length=500, orient='horizontal', tickinterval=1, command=updateExpression, resolution=0.01)
-        self.sca_ampl = tk.Scale(tm, from_=0, to=1, variable=tm.var_ampl, length=500, orient='horizontal', tickinterval=0.1, command=updateExpression, resolution=0.01)
-        self.sca_freq = tk.Scale(tm, from_=0, to=48000/2, variable=tm.var_freq, length=500, orient='horizontal', tickinterval=10000, command=updateExpression)
-        self.sca_phas = tk.Scale(tm, from_=-1, to=1, variable=tm.var_phas, length=500, orient='horizontal', tickinterval=1, command=updateExpression, resolution=0.01)
+        sca_dura = tk.Scale(tm, from_=0.01, to=30, variable=tm.var_dura, length=500, orient='horizontal', resolution=0.01)
+        sca_offs = tk.Scale(tm, from_=-1, to=1, variable=tm.var_offs, length=500, orient='horizontal', tickinterval=1, command=updateExpression, resolution=0.01)
+        sca_ampl = tk.Scale(tm, from_=0, to=1, variable=tm.var_ampl, length=500, orient='horizontal', tickinterval=0.1, command=updateExpression, resolution=0.01)
+        sca_freq = tk.Scale(tm, from_=0, to=48000/2, variable=tm.var_freq, length=500, orient='horizontal', tickinterval=10000, command=updateExpression)
+        sca_phas = tk.Scale(tm, from_=-1, to=1, variable=tm.var_phas, length=500, orient='horizontal', tickinterval=1, command=updateExpression, resolution=0.01)
         
-        self.sca_dura.grid(column=1, row=0, sticky=tk.EW, padx=5, pady=5, columnspan=3)
-        self.sca_offs.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5, columnspan=3)
-        self.sca_ampl.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5, columnspan=3)
-        self.sca_freq.grid(column=1, row=3, sticky=tk.EW, padx=5, pady=5, columnspan=3)
-        self.sca_phas.grid(column=1, row=4, sticky=tk.EW, padx=5, pady=5, columnspan=3)
+        sca_dura.grid(column=1, row=0, sticky=tk.EW, padx=5, pady=5, columnspan=3)
+        sca_offs.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5, columnspan=3)
+        sca_ampl.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5, columnspan=3)
+        sca_freq.grid(column=1, row=3, sticky=tk.EW, padx=5, pady=5, columnspan=3)
+        sca_phas.grid(column=1, row=4, sticky=tk.EW, padx=5, pady=5, columnspan=3)
 
         # ENTRYS
         tm.var_fs = tk.IntVar(value=self.fs)
         vcmd = (tm.register(self.aux.onValidate), '%S', '%s', '%d')
         vcfs = (tm.register(self.aux.onValidateInt), '%S')
 
-        self.ent_dura = ttk.Entry(tm, textvariable=tm.var_dura, validate='key', validatecommand=vcmd)
-        self.ent_offs = ttk.Entry(tm, textvariable=tm.var_offs, validate='key', validatecommand=vcmd)
-        self.ent_ampl = ttk.Entry(tm, textvariable=tm.var_ampl, validate='key', validatecommand=vcmd)
-        self.ent_freq = ttk.Entry(tm, textvariable=tm.var_freq, validate='key', validatecommand=vcmd)
-        self.ent_phas = ttk.Entry(tm, textvariable=tm.var_phas, validate='key', validatecommand=vcmd)
-        self.ent_fs = ttk.Entry(tm, textvariable=tm.var_fs, validate='key', validatecommand=vcfs)
+        ent_dura = ttk.Entry(tm, textvariable=tm.var_dura, validate='key', validatecommand=vcmd)
+        ent_offs = ttk.Entry(tm, textvariable=tm.var_offs, validate='key', validatecommand=vcmd)
+        ent_ampl = ttk.Entry(tm, textvariable=tm.var_ampl, validate='key', validatecommand=vcmd)
+        ent_freq = ttk.Entry(tm, textvariable=tm.var_freq, validate='key', validatecommand=vcmd)
+        ent_phas = ttk.Entry(tm, textvariable=tm.var_phas, validate='key', validatecommand=vcmd)
+        ent_fs = ttk.Entry(tm, textvariable=tm.var_fs, validate='key', validatecommand=vcfs)
 
         def fsEntry(event):
-            fs = int(self.ent_fs.get())
+            fs = int(ent_fs.get())
             if fs > 48000:
                 tm.var_fs.set('48000')
                 text = 'The sample frequency cannot be greater than 48000 Hz.'
                 tk.messagebox.showerror(parent=tm, title='Wrong sample frequency value', message=text)
             else: return True
 
-        self.ent_offs.bind('<Return>', updateExpression)
-        self.ent_ampl.bind('<Return>', updateExpression)
-        self.ent_freq.bind('<Return>', updateExpression)
-        self.ent_phas.bind('<Return>', updateExpression)
-        self.ent_fs.bind('<Return>', fsEntry)
+        ent_offs.bind('<Return>', updateExpression)
+        ent_ampl.bind('<Return>', updateExpression)
+        ent_freq.bind('<Return>', updateExpression)
+        ent_phas.bind('<Return>', updateExpression)
+        ent_fs.bind('<Return>', fsEntry)
 
-        self.ent_dura.grid(column=4, row=0, sticky=tk.EW, padx=5, pady=5)
-        self.ent_offs.grid(column=4, row=1, sticky=tk.EW, padx=5, pady=5)
-        self.ent_ampl.grid(column=4, row=2, sticky=tk.EW, padx=5, pady=5)
-        self.ent_freq.grid(column=4, row=3, sticky=tk.EW, padx=5, pady=5)
-        self.ent_phas.grid(column=4, row=4, sticky=tk.EW, padx=5, pady=5)
-        self.ent_fs.grid(column=4, row=5, sticky=tk.EW, padx=5, pady=5)
+        ent_dura.grid(column=4, row=0, sticky=tk.EW, padx=5, pady=5)
+        ent_offs.grid(column=4, row=1, sticky=tk.EW, padx=5, pady=5)
+        ent_ampl.grid(column=4, row=2, sticky=tk.EW, padx=5, pady=5)
+        ent_freq.grid(column=4, row=3, sticky=tk.EW, padx=5, pady=5)
+        ent_phas.grid(column=4, row=4, sticky=tk.EW, padx=5, pady=5)
+        ent_fs.grid(column=4, row=5, sticky=tk.EW, padx=5, pady=5)
 
         # LABELS
-        sign = str(self.ent_offs.get()+' + '+str(self.ent_ampl.get())+' COS(2'+unicodedata.lookup("GREEK SMALL LETTER PI")+' '+str(self.ent_freq.get())+'t + '+str(self.ent_phas.get())+unicodedata.lookup("GREEK SMALL LETTER PI")+')')
+        sign = str(ent_offs.get()+' + '+str(ent_ampl.get())+' COS(2'+unicodedata.lookup("GREEK SMALL LETTER PI")+' '+str(ent_freq.get())+'t + '+str(ent_phas.get())+unicodedata.lookup("GREEK SMALL LETTER PI")+')')
         lab_dura = ttk.Label(tm, text='Total duration (s)')
         lab_offs = ttk.Label(tm, text='Offset')
         lab_ampl = ttk.Label(tm, text='Amplitude')
@@ -134,28 +134,28 @@ class PureTone(tk.Frame):
         
         # BUTTONS
         def checkValues(but):
-            self.fs = int(self.ent_fs.get()) # sample frequency
+            self.fs = int(ent_fs.get()) # sample frequency
             if fsEntry(self.fs) != True:
                 return
-            if but == 1: self.plotPureTone(tm, lab_sign)
-            elif but == 2: self.saveDefaultValues(list)
+            if but == 1: self.plotPureTone(tm, lab_sign, ent_ampl, ent_freq, ent_phas, ent_dura, ent_offs)
+            elif but == 2: self.saveDefaultValues(list, ent_ampl, ent_freq, ent_phas, ent_dura, ent_offs)
 
-        self.but_gene = ttk.Button(tm, command=lambda: checkValues(1), text='Generate')
-        self.but_save = ttk.Button(tm, command=lambda: checkValues(2), text='Save values as default')
-        self.but_help = ttk.Button(tm, command=lambda: hm.createHelpMenu(self, 1), text='🛈', width=2)
+        but_gene = ttk.Button(tm, command=lambda: checkValues(1), text='Generate')
+        but_save = ttk.Button(tm, command=lambda: checkValues(2), text='Save values as default')
+        but_help = ttk.Button(tm, command=lambda: hm.createHelpMenu(self, 1), text='🛈', width=2)
 
-        self.but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)
-        self.but_save.grid(column=4, row=6, sticky=tk.EW, padx=5, pady=5)
-        self.but_help.grid(column=3, row=7, sticky=tk.E, padx=5, pady=5)
+        but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)
+        but_save.grid(column=4, row=6, sticky=tk.EW, padx=5, pady=5)
+        but_help.grid(column=3, row=7, sticky=tk.E, padx=5, pady=5)
 
         checkValues(1)
 
-    def saveDefaultValues(self, list):
-        amplitude = float(self.ent_ampl.get())
-        frequency = float(self.ent_freq.get())
-        phase = float(self.ent_phas.get())
-        duration = float(self.ent_dura.get())
-        offset = float(self.ent_offs.get())
+    def saveDefaultValues(self, list, ent_ampl, ent_freq, ent_phas, ent_dura, ent_offs):
+        amplitude = float(ent_ampl.get())
+        frequency = float(ent_freq.get())
+        phase = float(ent_phas.get())
+        duration = float(ent_dura.get())
+        offset = float(ent_offs.get())
 
         new_list = [['NOISE','\t duration', list[0][2],'\t amplitude', list[0][4],'\t fs', list[0][6],'\t noise type', list[0][8]],
                 ['PURE TONE','\t duration', duration,'\t amplitude', amplitude,'\t fs', self.fs,'\t offset', offset,'\t frequency', frequency,'\t phase',  phase],
@@ -165,16 +165,16 @@ class PureTone(tk.Frame):
                 ['SPECTROGRAM','\t colormap', list[5][2]]]
         self.aux.saveDefaultAsCsv(new_list)
 
-    def plotPureTone(self, tm, lab_sign):
-        amplitude = float(self.ent_ampl.get())
-        frequency = float(self.ent_freq.get())
-        phase = float(self.ent_phas.get())
-        duration = float(self.ent_dura.get())
-        offset = float(self.ent_offs.get())
+    def plotPureTone(self, tm, lab_sign, ent_ampl, ent_freq, ent_phas, ent_dura, ent_offs):
+        amplitude = float(ent_ampl.get())
+        frequency = float(ent_freq.get())
+        phase = float(ent_phas.get())
+        duration = float(ent_dura.get())
+        offset = float(ent_offs.get())
         samples = int(duration*self.fs)
 
         # Update expression
-        sign = str(self.ent_offs.get()+' + '+str(self.ent_ampl.get())+' COS(2'+unicodedata.lookup("GREEK SMALL LETTER PI")+' '+str(self.ent_freq.get())+'t + '+str(self.ent_phas.get())+unicodedata.lookup("GREEK SMALL LETTER PI")+')')
+        sign = str(ent_offs.get()+' + '+str(ent_ampl.get())+' COS(2'+unicodedata.lookup("GREEK SMALL LETTER PI")+' '+str(ent_freq.get())+'t + '+str(ent_phas.get())+unicodedata.lookup("GREEK SMALL LETTER PI")+')')
         lab_sign.configure(text=sign)
 
         # Check if the frequency is smaller than self.fs/2

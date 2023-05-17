@@ -29,7 +29,7 @@ class FreeAdditionPureTones(tk.Frame):
         fam = tk.Toplevel()
         fam.resizable(True, True)
         fam.title('Free addition of pure tones')
-        # fam.iconbitmap('icon.ico')
+        fam.iconbitmap('icons/icon.ico')
         fam.wm_transient(self) # Place the toplevel window at the top
         # self.cm.windowGeometry(fam, 800, 600)
         hm = HelpMenu()
@@ -133,33 +133,41 @@ class FreeAdditionPureTones(tk.Frame):
         lab_octv.grid(column=0, row=4, sticky=tk.E)
         
         # BUTTONS
-        self.but_gene = ttk.Button(fam, command=lambda: self.plotFAPT(fam), text='Generate')
-        self.but_pian = ttk.Button(fam, command=lambda: self.pianoKeyboard(), text='Show piano')
-        self.but_save = ttk.Button(fam, command=lambda: self.saveDefaultValues(list), text='Save values as default')
-        self.but_help = ttk.Button(fam, command=lambda: hm.createHelpMenu(self, 2), text='🛈', width=2)
+        but_gene = ttk.Button(fam, command=lambda: self.plotFAPT(fam), text='Generate')
+        but_pian = ttk.Button(fam, command=lambda: self.pianoKeyboard(but_pian), text='Show piano')
+        but_save = ttk.Button(fam, command=lambda: self.saveDefaultValues(list), text='Save values as default')
+        but_help = ttk.Button(fam, command=lambda: hm.createHelpMenu(self, 2), text='🛈', width=2)
 
-        self.but_gene.grid(column=6, row=8, sticky=tk.EW, padx=5, pady=5)
-        self.but_pian.grid(column=2, row=4, sticky=tk.EW, padx=5, pady=5)
-        self.but_save.grid(column=6, row=7, sticky=tk.EW, padx=5, pady=5)
-        self.but_help.grid(column=5, row=8, sticky=tk.E, padx=5, pady=5)
+        but_gene.grid(column=6, row=8, sticky=tk.EW, padx=5, pady=5)
+        but_pian.grid(column=2, row=4, sticky=tk.EW, padx=5, pady=5)
+        but_save.grid(column=6, row=7, sticky=tk.EW, padx=5, pady=5)
+        but_help.grid(column=5, row=8, sticky=tk.E, padx=5, pady=5)
 
         self.plotFAPT(fam)
 
-    def saveDefaultValues(self, list):
-        duration = float(self.ent_dura.get())
-        octave = float(self.ent_octv.get())
+    def getFrequencies(self):
         frq1 = float(self.ent_frq1.get())
         frq2 = float(self.ent_frq2.get())
         frq3 = float(self.ent_frq3.get())
         frq4 = float(self.ent_frq4.get())
         frq5 = float(self.ent_frq5.get())
         frq6 = float(self.ent_frq6.get())
+        return frq1, frq2, frq3, frq4, frq5, frq6
+    
+    def getAmplitudes(self):
         amp1 = self.sca_amp1.get()
         amp2 = self.sca_amp2.get()
         amp3 = self.sca_amp3.get()
         amp4 = self.sca_amp4.get()
         amp5 = self.sca_amp5.get()
         amp6 = self.sca_amp6.get()
+        return amp1, amp2, amp3, amp4, amp5, amp6
+
+    def saveDefaultValues(self, list):
+        duration = float(self.ent_dura.get())
+        octave = float(self.ent_octv.get())
+        frq1, frq2, frq3, frq4, frq5, frq6 = self.getFrequencies()
+        amp1, amp2, amp3, amp4, amp5, amp6 = self.getAmplitudes()
 
         new_list = [['NOISE','\t duration', list[0][2],'\t amplitude', list[0][4],'\t fs', list[0][6],'\t noise type', list[0][8]],
                 ['PURE TONE','\t duration', list[1][2],'\t amplitude', list[1][4],'\t fs', list[1][6],'\t offset', list[1][8],'\t frequency', list[1][10],'\t phase',  list[1][12]],
@@ -168,50 +176,6 @@ class FreeAdditionPureTones(tk.Frame):
                 ['FREE ADD OF PT','\t duration', duration,'\t octave', octave,'\t freq1', frq1,'\t freq2', frq2,'\t freq3', frq3,'\t freq4', frq4,'\t freq5', frq5,'\t freq6', frq6,'\t amp1', amp1,'\t amp2', amp2,'\t amp3', amp3,'\t amp4', amp4,'\t amp5', amp5,'\t amp6', amp6],
                 ['SPECTROGRAM','\t colormap', list[5][2]]]
         self.aux.saveDefaultAsCsv(new_list)
-
-    def plotFAPT(self, fam):
-        frq1 = float(self.ent_frq1.get())
-        frq2 = float(self.ent_frq2.get())
-        frq3 = float(self.ent_frq3.get())
-        frq4 = float(self.ent_frq4.get())
-        frq5 = float(self.ent_frq5.get())
-        frq6 = float(self.ent_frq6.get())
-        amp1 = self.sca_amp1.get()
-        amp2 = self.sca_amp2.get()
-        amp3 = self.sca_amp3.get()
-        amp4 = self.sca_amp4.get()
-        amp5 = self.sca_amp5.get()
-        amp6 = self.sca_amp6.get()
-        duration = float(self.ent_dura.get())
-        samples = int(duration*self.fs)
-
-        time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
-        fapt1 = amp1 * (np.sin(2*np.pi * frq1*time))
-        fapt2 = amp2 * (np.sin(2*np.pi * frq2*time))
-        fapt3 = amp3 * (np.sin(2*np.pi * frq3*time))
-        fapt4 = amp4 * (np.sin(2*np.pi * frq4*time))
-        fapt5 = amp5 * (np.sin(2*np.pi * frq5*time))
-        fapt6 = amp6 * (np.sin(2*np.pi * frq6*time))
-        fapt = fapt1+fapt2+fapt3+fapt4+fapt5+fapt6
-
-        # If the window has been closed, create it again
-        if plt.fignum_exists(self.fig.number):
-            self.ax.clear() # delete the previous plot
-        else:
-            self.fig, self.ax = plt.subplots() # create the window
-
-        fig, ax = self.fig, self.ax
-        self.addLoadButton(fig, ax, self.fs, time, fapt, fam, 'Free addition of pure tones')
-        
-        # Plot free addition of pure tones
-        limite = max(abs(fapt))*1.1
-        ax.plot(time, fapt)
-        fig.canvas.manager.set_window_title('Free addition of pure tones')
-        ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
-        ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        ax.grid() # add grid lines
-
-        plt.show()
 
     def notesHarmonics(self, note):
         # Calculate fundamental frequency of the note
@@ -247,17 +211,17 @@ class FreeAdditionPureTones(tk.Frame):
         self.ent_frq6.set(value=round(freq,2))
         self.sca_amp6.set(value=0.17)
 
-    def pianoKeyboard(self):
+    def pianoKeyboard(self, but_pian):
         self.piano = tk.Toplevel()
         self.piano.title("Piano")
         # self.piano.geometry('{}x200'.format(300))
-        self.but_pian.configure(state='disabled')
+        but_pian.configure(state='disabled')
         self.ent_octv.config(state='active')
 
         # If the piano window is closed, reactivate the "show piano" button
         def on_closing():
             self.piano.destroy()
-            self.but_pian.configure(state='active')
+            but_pian.configure(state='active')
             self.ent_octv.config(state='disabled')
         self.piano.protocol("WM_DELETE_WINDOW", on_closing)
 
@@ -296,6 +260,40 @@ class FreeAdditionPureTones(tk.Frame):
         # set the dimensions of the screen and where it is placed
         self.piano.geometry('%dx%d+%d+%d' % (w, h, x, y))
 
+    def plotFAPT(self, fam):
+        duration = float(self.ent_dura.get())
+        samples = int(duration*self.fs)
+        frq1, frq2, frq3, frq4, frq5, frq6 = self.getFrequencies()
+        amp1, amp2, amp3, amp4, amp5, amp6 = self.getAmplitudes()
+
+        time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
+        fapt1 = amp1 * (np.sin(2*np.pi * frq1*time))
+        fapt2 = amp2 * (np.sin(2*np.pi * frq2*time))
+        fapt3 = amp3 * (np.sin(2*np.pi * frq3*time))
+        fapt4 = amp4 * (np.sin(2*np.pi * frq4*time))
+        fapt5 = amp5 * (np.sin(2*np.pi * frq5*time))
+        fapt6 = amp6 * (np.sin(2*np.pi * frq6*time))
+        fapt = fapt1+fapt2+fapt3+fapt4+fapt5+fapt6
+
+        # If the window has been closed, create it again
+        if plt.fignum_exists(self.fig.number):
+            self.ax.clear() # delete the previous plot
+        else:
+            self.fig, self.ax = plt.subplots() # create the window
+
+        fig, ax = self.fig, self.ax
+        self.addLoadButton(fig, ax, self.fs, time, fapt, fam, 'Free addition of pure tones')
+        
+        # Plot free addition of pure tones
+        limite = max(abs(fapt))*1.1
+        ax.plot(time, fapt)
+        fig.canvas.manager.set_window_title('Free addition of pure tones')
+        ax.set(xlim=[0, duration], ylim=[-limite, limite], xlabel='Time (s)', ylabel='Amplitude')
+        ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
+        ax.grid() # add grid lines
+
+        plt.show()
+    
     def addLoadButton(self, fig, ax, fs, time, audio, menu, name):
         # Takes the selected fragment and opens the control menu when clicked
         def load(event):

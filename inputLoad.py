@@ -4,7 +4,7 @@ import numpy as np
 import sounddevice as sd
 import soundfile as sf
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Button, Cursor, SpanSelector
+from matplotlib.widgets import Button, SpanSelector
 from pathlib import Path
 
 from controlMenu import ControlMenu
@@ -28,8 +28,8 @@ class Load(tk.Frame):
             return
 
         # Variables of the wav file
-        audio, audiofs = sf.read(file, dtype='float32')
-        audiotime = np.arange(0, len(audio)/audiofs, 1/audiofs) # Time axis
+        audio, fs = sf.read(file, dtype='float32')
+        time = np.arange(0, len(audio)/fs, 1/fs) # Time axis
 
         # If the file is stereo (2 channels), convert it to mono (1 channel)
         # We are not using wave.open(file, 'rb') because it gives "wave.Error: unknown format: 3" with some wav files
@@ -44,18 +44,18 @@ class Load(tk.Frame):
 
         # Plot the audio file
         figFile, axFile = plt.subplots(figsize=(12,5))
-        axFile.plot(audiotime, audio)
+        axFile.plot(time, audio)
         fileName = Path(file).stem # take only the name of the file without the '.wav' and the path
         figFile.canvas.manager.set_window_title(fileName) # set title to the figure window
         axFile.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        axFile.set(xlim=[0, max(audiotime)], xlabel='Time (s)', ylabel='Waveform', title='Load an audio file')
+        axFile.set(xlim=[0, max(time)], xlabel='Time (s)', ylabel='Waveform', title='Load an audio file')
 
         # Add a 'Load' button that takes the selected fragment and opens the control menu when clicked
         def load(event):
             if self.audioFrag.shape == (1,): # if no fragment has been selected, load the whole signal
-                self.cm.createControlMenu(self, fileName, audiofs, audio)
+                self.cm.createControlMenu(self, fileName, fs, audio)
             else:
-                self.cm.createControlMenu(self, fileName, audiofs, self.audioFrag)
+                self.cm.createControlMenu(self, fileName, fs, self.audioFrag)
             plt.close(figFile) # close the figure of the waveform
 
         axload = figFile.add_axes([0.8, 0.01, 0.09, 0.05])
@@ -65,9 +65,9 @@ class Load(tk.Frame):
 
         # Plays the audio of the selected fragment
         def listenFragment(xmin, xmax):
-            ini, end = np.searchsorted(audiotime, (xmin, xmax))
+            ini, end = np.searchsorted(time, (xmin, xmax))
             self.audioFrag = audio[ini:end+1]
-            sd.play(self.audioFrag, audiofs)
+            sd.play(self.audioFrag, fs)
         
         # Select a fragment with the cursor and play the audio of that fragment
         self.span = SpanSelector(axFile, listenFragment, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)

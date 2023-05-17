@@ -96,7 +96,7 @@ class SignalVisualizer(tk.Frame):
         self.controller = controller
         self.master = master
         self.controller.title('Signal Visualizer')
-        # self.controller.iconbitmap('icon.ico')
+        self.controller.iconbitmap('icons/icon.ico')
         aux = Auxiliar()
         aux.windowGeometry(self.controller, 750, 450)
 

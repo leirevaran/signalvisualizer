@@ -1,6 +1,5 @@
 import tkinter as tk
 import csv
-import matplotlib.pyplot as plt
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -64,16 +63,3 @@ class Auxiliar():
     def bigFrequency(self, freq, fs):
         if freq >= fs/2:
             tk.messagebox.showwarning(title="Big frequency", message="The frequency is greater than or equal to half the value of the sample frequency ("+str(fs/2)+" Hz).") # show warning
-
-    # def openCloseFigure(self, fig, ax, menu):
-    #     # If the window has been closed, create it again
-    #     if plt.fignum_exists(fig.number):
-    #         ax.clear() # delete the previous plot
-    #     else:
-    #         fig, ax = plt.subplots() # create the window
-
-    #     # If the 'generate' menu is closed, close also the generated figure
-    #     def on_closing():
-    #         menu.destroy()
-    #         plt.close(fig)
-    #     menu.protocol("WM_DELETE_WINDOW", on_closing)

@@ -37,7 +37,7 @@ class ControlMenu():
         cm = tk.Toplevel()
         cm.resizable(True, True)
         cm.title('Control menu: ' + self.fileName)
-        # cm.iconbitmap('icon.ico')
+        cm.iconbitmap('icons/icon.ico')
         cm.wm_transient(root) # Place the toplevel window at the top
         hm = HelpMenu()
         self.aux = Auxiliar()
@@ -919,7 +919,11 @@ class ControlMenu():
             ini = self.time[ini_idx] # value of the initial point
             end = self.time[end_idx] # value of the end point
 
-            audioFragWind = self.audio[ini_idx:end_idx]
+            audioFragWind = self.audio[ini_idx:end_idx+1]
+            if len(window) < len(audioFragWind):
+                audioFragWind = audioFragWind[:-1].copy() # delete last element of the numpy array
+            elif len(window) > len(audioFragWind):
+                window = window[:-1].copy() # delete last element of the numpy array
             audioFragWind2 = audioFragWind * window
 
             # Calculate the STFT
@@ -952,7 +956,7 @@ class ControlMenu():
                     # Define the new initial and end points of the window
                     new_midPoint = event.xdata
                     new_midPoint_idx = midPoint_idx
-                    for i in range(self.lenAudio-1):
+                    for i in range(self.lenAudio):
                         if self.time[i] == new_midPoint or (self.time[i] < new_midPoint and self.time[i+1] > new_midPoint):
                             new_midPoint_idx = i
                             break
@@ -963,7 +967,11 @@ class ControlMenu():
                         tk.messagebox.showerror(parent=cm, title="Window out of index", message=text) # show error
                         return
 
-                    new_audioFragWind = self.audio[new_ini_idx:new_end_idx]
+                    new_audioFragWind = self.audio[new_ini_idx:new_end_idx+1]
+                    # if len(window) < len(new_audioFragWind):
+                    #     new_audioFragWind = new_audioFragWind[:-1].copy() # delete last element of the numpy array
+                    # elif len(window) > len(new_audioFragWind):
+                    #     window = window[:-1].copy() # delete last element of the numpy array
                     new_audioFragWind2 = new_audioFragWind * window
                     if choice == 'Spectral Centroid':
                         # recalculate FFT

@@ -16,7 +16,7 @@ class Info(tk.Frame):
         iw = tk.Toplevel()
         iw.resizable(False, False)
         iw.title('Information')
-        # iw.iconbitmap('icon.ico')
+        iw.iconbitmap('icons/icon.ico')
         iw.wm_transient(self) # Place the toplevel window at the top
         # self.cm.windowGeometry(iw, 850, 250)
 

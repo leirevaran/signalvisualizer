@@ -20,7 +20,7 @@ class Spectrogram(tk.Frame):
         cmm = tk.Toplevel()
         cmm.resizable(True, True)
         cmm.title('Choose colormap of the spectrogram')
-        # cmm.iconbitmap('icon.ico')
+        cmm.iconbitmap('icons/icon.ico')
         cmm.wm_transient(self) # Place the toplevel window at the top
         # self.aux.windowGeometry(cmm, 850, 250)
 
@@ -147,22 +147,22 @@ class Spectrogram(tk.Frame):
         # RADIOBUTTONS
         cmm.var_type = tk.IntVar(value=value)
 
-        self.rdb_pusq = tk.Radiobutton(cmm, variable=cmm.var_type, value=1, command=lambda: self.displayOptions(cmm.var_type.get()), text='Perceptually Uniform Sequential')
-        self.rdb_sequ = tk.Radiobutton(cmm, variable=cmm.var_type, value=2, command=lambda: self.displayOptions(cmm.var_type.get()), text='Sequential')
-        self.rdb_seq2 = tk.Radiobutton(cmm, variable=cmm.var_type, value=3, command=lambda: self.displayOptions(cmm.var_type.get()), text='Sequential (2)')
-        self.rdb_dive = tk.Radiobutton(cmm, variable=cmm.var_type, value=4, command=lambda: self.displayOptions(cmm.var_type.get()), text='Diverging')
-        self.rdb_cycl = tk.Radiobutton(cmm, variable=cmm.var_type, value=5, command=lambda: self.displayOptions(cmm.var_type.get()), text='Cyclic')
-        self.rdb_qual = tk.Radiobutton(cmm, variable=cmm.var_type, value=6, command=lambda: self.displayOptions(cmm.var_type.get()), text='Qualitative')
-        self.rdb_misc = tk.Radiobutton(cmm, variable=cmm.var_type, value=7, command=lambda: self.displayOptions(cmm.var_type.get()), text='Miscellaneous')
+        rdb_pusq = tk.Radiobutton(cmm, variable=cmm.var_type, value=1, command=lambda: self.displayOptions(cmm.var_type.get()), text='Perceptually Uniform Sequential')
+        rdb_sequ = tk.Radiobutton(cmm, variable=cmm.var_type, value=2, command=lambda: self.displayOptions(cmm.var_type.get()), text='Sequential')
+        rdb_seq2 = tk.Radiobutton(cmm, variable=cmm.var_type, value=3, command=lambda: self.displayOptions(cmm.var_type.get()), text='Sequential (2)')
+        rdb_dive = tk.Radiobutton(cmm, variable=cmm.var_type, value=4, command=lambda: self.displayOptions(cmm.var_type.get()), text='Diverging')
+        rdb_cycl = tk.Radiobutton(cmm, variable=cmm.var_type, value=5, command=lambda: self.displayOptions(cmm.var_type.get()), text='Cyclic')
+        rdb_qual = tk.Radiobutton(cmm, variable=cmm.var_type, value=6, command=lambda: self.displayOptions(cmm.var_type.get()), text='Qualitative')
+        rdb_misc = tk.Radiobutton(cmm, variable=cmm.var_type, value=7, command=lambda: self.displayOptions(cmm.var_type.get()), text='Miscellaneous')
            
         # positioning Radiobuttons
-        self.rdb_pusq.grid(column=0, row=0, sticky=tk.W)
-        self.rdb_sequ.grid(column=0, row=2, sticky=tk.W)
-        self.rdb_seq2.grid(column=0, row=4, sticky=tk.W)
-        self.rdb_dive.grid(column=0, row=6, sticky=tk.W)
-        self.rdb_cycl.grid(column=0, row=8, sticky=tk.W)
-        self.rdb_qual.grid(column=0, row=10, sticky=tk.W)
-        self.rdb_misc.grid(column=0, row=12, sticky=tk.W)
+        rdb_pusq.grid(column=0, row=0, sticky=tk.W)
+        rdb_sequ.grid(column=0, row=2, sticky=tk.W)
+        rdb_seq2.grid(column=0, row=4, sticky=tk.W)
+        rdb_dive.grid(column=0, row=6, sticky=tk.W)
+        rdb_cycl.grid(column=0, row=8, sticky=tk.W)
+        rdb_qual.grid(column=0, row=10, sticky=tk.W)
+        rdb_misc.grid(column=0, row=12, sticky=tk.W)
 
         # BUTTONS
         self.but_pusq = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[0], cmaps[0][1], gradient))
@@ -275,7 +275,6 @@ class Spectrogram(tk.Frame):
         elif type == 7: 
             choice = cmm.var_misc.get()
 
-        print(choice)
         new_list = [['NOISE','\t duration', list[0][2],'\t amplitude', list[0][4],'\t fs', list[0][6],'\t noise type', list[0][8]],
                 ['PURE TONE','\t duration', list[1][2],'\t amplitude', list[1][4],'\t fs', list[1][6],'\t offset', list[1][8],'\t frequency', list[1][10],'\t phase',  list[1][12]],
                 ['SQUARE WAVE','\t duration', list[2][2],'\t amplitude', list[2][4],'\t fs', list[2][6],'\t offset', list[2][8],'\t frequency', list[2][10],'\t phase', list[2][12],'\t active cycle', list[2][14]],

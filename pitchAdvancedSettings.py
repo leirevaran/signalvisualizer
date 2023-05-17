@@ -49,7 +49,7 @@ class AdvancedSettings():
         adse.geometry('738x420')
         adse.resizable(True, True)
         adse.title('Pitch - Advanced settings')
-        # adse.iconbitmap('icon.ico')
+        adse.iconbitmap('icons/icon.ico')
         self.aux = Auxiliar()
 
         # Adapt the window to different sizes
