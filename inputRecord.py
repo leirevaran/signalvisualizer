@@ -4,7 +4,9 @@ import threading
 import pyaudio
 import matplotlib.pyplot as plt
 import numpy as np
+import sounddevice as sd
 from tkinter import ttk
+from matplotlib.widgets import SpanSelector, Button
 
 from controlMenu import ControlMenu
 from help import HelpMenu
@@ -21,6 +23,7 @@ class Record(tk.Frame):
         self.isrecording = False
         self.fs = 44100
         self.cm = ControlMenu()
+        self.selectedAudio = np.empty(1)
         self.recordMenu()
 
     def recordMenu(self):
@@ -38,6 +41,12 @@ class Record(tk.Frame):
 
         for i in range(2):
             rm.rowconfigure(i, weight=1)
+
+        # If the 'generate' menu is closed, close also the generated figure
+        def on_closing():
+            rm.destroy()
+            plt.close(self.fig)
+        rm.protocol("WM_DELETE_WINDOW", on_closing)
 
         # BUTTONS
         # play = PhotoImage(file='icons/play.png')
@@ -83,14 +92,13 @@ class Record(tk.Frame):
         audio.terminate()
 
     def plotRecording(self, rm):
-        fig, ax = plt.subplots()
-
         myrecording = np.frombuffer(b"".join(self.frames), dtype=np.int16)
         lenMyRecord = len(myrecording)
         duration = lenMyRecord / self.fs
         time = np.linspace(start=0, stop=duration, num=lenMyRecord)
 
-        fig, ax = self.cm.generateWindow(self, fig, ax, self.fs, time, myrecording, rm, 'Recording')
+        fig, ax = plt.subplots()
+        self.addLoadButton(fig, ax, self.fs, time, myrecording, rm, 'Recording')
         # rm.destroy()
 
         # Plot the recording
@@ -100,3 +108,27 @@ class Record(tk.Frame):
         ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
 
         plt.show()
+
+    def addLoadButton(self, fig, ax, fs, time, audio, menu, name):
+        # Takes the selected fragment and opens the control menu when clicked
+        def load(event):
+            if self.selectedAudio.shape == (1,): 
+                self.cm.createControlMenu(self, name, fs, audio)
+            else:
+                self.cm.createControlMenu(self, name, fs, self.selectedAudio)
+            plt.close(fig)
+            menu.destroy()
+            axload._but_load = but_load # reference to the Button (otherwise the button does nothing)
+
+        # Adds a 'Load' button to the figure
+        axload = fig.add_axes([0.8, 0.01, 0.09, 0.05]) # [left, bottom, width, height]
+        but_load = Button(axload, 'Load')
+        but_load.on_clicked(load)
+        axload._but_load = but_load # reference to the Button (otherwise the button does nothing)
+
+        def listenFrag(xmin, xmax):
+            ini, end = np.searchsorted(time, (xmin, xmax))
+            self.selectedAudio = audio[ini:end+1]
+            sd.play(self.selectedAudio, fs)
+            
+        self.span = SpanSelector(ax, listenFrag, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)

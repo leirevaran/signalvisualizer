@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tkinter import ttk
 
-from controlMenu import ControlMenu
+from auxiliar import Auxiliar
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -13,7 +13,7 @@ class Spectrogram(tk.Frame):
     def __init__(self, master, controller):
         tk.Frame.__init__(self, master)
         self.controller = controller
-        self.cm = ControlMenu()
+        self.aux = Auxiliar()
         self.colormapMenu()
 
     def colormapMenu(self):
@@ -22,7 +22,7 @@ class Spectrogram(tk.Frame):
         cmm.title('Choose colormap of the spectrogram')
         # cmm.iconbitmap('icon.ico')
         cmm.wm_transient(self) # Place the toplevel window at the top
-        # self.cm.windowGeometry(cmm, 850, 250)
+        # self.aux.windowGeometry(cmm, 850, 250)
 
         # Adapt the window to different sizes
         for i in range(1):
@@ -66,7 +66,7 @@ class Spectrogram(tk.Frame):
         gradient = np.vstack((gradient, gradient))
 
         # Read the value of the colormap from a csv file
-        list = self.cm.readFromCsv()
+        list = self.aux.readFromCsv()
         choice = list[5][2]
 
         for cmap_category, cmap_list in cmaps:
@@ -282,6 +282,6 @@ class Spectrogram(tk.Frame):
                 ['SAWTOOTH WAVE','\t duration', list[3][2],'\t amplitude', list[3][4],'\t fs', list[3][6],'\t offset', list[3][8],'\t frequency', list[3][10],'\t phase', list[3][12],'\t max position', list[3][14]],
                 ['FREE ADD OF PT','\t duration', list[4][2],'\t octave', list[4][4],'\t freq1', list[4][6],'\t freq2', list[4][8],'\t freq3', list[4][10],'\t freq4', list[4][12],'\t freq5', list[4][14],'\t freq6', list[4][16],'\t amp1', list[4][18],'\t amp2', list[4][20],'\t amp3', list[4][22],'\t amp4', list[4][24],'\t amp5', list[4][26],'\t amp6', list[4][28]],
                 ['SPECTROGRAM','\t colormap', choice]]
-        self.cm.saveDefaultAsCsv(new_list)
+        self.aux.saveDefaultAsCsv(new_list)
         cmm.destroy() # close window
         plt.close('all') # closes all matplotlib figures

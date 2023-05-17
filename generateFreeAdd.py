@@ -1,10 +1,13 @@
 import tkinter as tk
 import matplotlib.pyplot as plt
 import numpy as np
+import sounddevice as sd
 from tkinter import ttk
+from matplotlib.widgets import SpanSelector, Button
 
 from controlMenu import ControlMenu
 from help import HelpMenu
+from auxiliar import Auxiliar
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -17,7 +20,9 @@ class FreeAdditionPureTones(tk.Frame):
         self.master = master
         self.fs = 48000 # sample frequency
         self.cm = ControlMenu()
+        self.aux = Auxiliar()
         self.fig, self.ax = plt.subplots()
+        self.selectedAudio = np.empty(1)
         self.freeAddMenu()
 
     def freeAddMenu(self):
@@ -26,7 +31,7 @@ class FreeAdditionPureTones(tk.Frame):
         fam.title('Free addition of pure tones')
         # fam.iconbitmap('icon.ico')
         fam.wm_transient(self) # Place the toplevel window at the top
-        self.cm.windowGeometry(fam, 800, 600)
+        # self.cm.windowGeometry(fam, 800, 600)
         hm = HelpMenu()
 
         # Adapt the window to different sizes
@@ -36,8 +41,14 @@ class FreeAdditionPureTones(tk.Frame):
         for i in range(4):
             fam.rowconfigure(i, weight=1)
 
+        # If the 'generate' menu is closed, close also the generated figure
+        def on_closing():
+            fam.destroy()
+            plt.close(self.fig)
+        fam.protocol("WM_DELETE_WINDOW", on_closing)
+
         # Read the default values of the atributes from a csv file
-        list = self.cm.readFromCsv()
+        list = self.aux.readFromCsv()
         duration = list[4][2]
         octave = list[4][4]
         freq1, freq2, freq3, freq4, freq5, freq6 = list[4][6], list[4][8], list[4][10], list[4][12], list[4][14], list[4][16]
@@ -77,7 +88,7 @@ class FreeAdditionPureTones(tk.Frame):
         fam.var_frq6 = tk.DoubleVar(value=freq6)
         fam.var_octv = tk.IntVar(value=octave)
 
-        vcmd = (fam.register(self.cm.onValidate), '%S', '%s', '%d')
+        vcmd = (fam.register(self.aux.onValidate), '%S', '%s', '%d')
 
         self.ent_frq1 = ttk.Spinbox(fam, from_=0, to=20000, textvariable=fam.var_frq1, validate='key', width=10)
         self.ent_frq2 = ttk.Spinbox(fam, from_=0, to=20000, textvariable=fam.var_frq2, validate='key', width=10)
@@ -122,7 +133,7 @@ class FreeAdditionPureTones(tk.Frame):
         lab_octv.grid(column=0, row=4, sticky=tk.E)
         
         # BUTTONS
-        self.but_gene = ttk.Button(fam, command=lambda: self.generateFAPT(fam), text='Generate')
+        self.but_gene = ttk.Button(fam, command=lambda: self.plotFAPT(fam), text='Generate')
         self.but_pian = ttk.Button(fam, command=lambda: self.pianoKeyboard(), text='Show piano')
         self.but_save = ttk.Button(fam, command=lambda: self.saveDefaultValues(list), text='Save values as default')
         self.but_help = ttk.Button(fam, command=lambda: hm.createHelpMenu(self, 2), text='🛈', width=2)
@@ -132,7 +143,7 @@ class FreeAdditionPureTones(tk.Frame):
         self.but_save.grid(column=6, row=7, sticky=tk.EW, padx=5, pady=5)
         self.but_help.grid(column=5, row=8, sticky=tk.E, padx=5, pady=5)
 
-        self.generateFAPT(fam)
+        self.plotFAPT(fam)
 
     def saveDefaultValues(self, list):
         duration = float(self.ent_dura.get())
@@ -156,9 +167,9 @@ class FreeAdditionPureTones(tk.Frame):
                 ['SAWTOOTH WAVE','\t duration', list[3][2],'\t amplitude', list[3][4],'\t fs', list[3][6],'\t offset', list[3][8],'\t frequency', list[3][10],'\t phase', list[3][12],'\t max position', list[3][14]],
                 ['FREE ADD OF PT','\t duration', duration,'\t octave', octave,'\t freq1', frq1,'\t freq2', frq2,'\t freq3', frq3,'\t freq4', frq4,'\t freq5', frq5,'\t freq6', frq6,'\t amp1', amp1,'\t amp2', amp2,'\t amp3', amp3,'\t amp4', amp4,'\t amp5', amp5,'\t amp6', amp6],
                 ['SPECTROGRAM','\t colormap', list[5][2]]]
-        self.cm.saveDefaultAsCsv(new_list)
+        self.aux.saveDefaultAsCsv(new_list)
 
-    def generateFAPT(self, fam):
+    def plotFAPT(self, fam):
         frq1 = float(self.ent_frq1.get())
         frq2 = float(self.ent_frq2.get())
         frq3 = float(self.ent_frq3.get())
@@ -183,8 +194,15 @@ class FreeAdditionPureTones(tk.Frame):
         fapt6 = amp6 * (np.sin(2*np.pi * frq6*time))
         fapt = fapt1+fapt2+fapt3+fapt4+fapt5+fapt6
 
-        fig, ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, fapt, fam, 'Free addition of pure tones')
+        # If the window has been closed, create it again
+        if plt.fignum_exists(self.fig.number):
+            self.ax.clear() # delete the previous plot
+        else:
+            self.fig, self.ax = plt.subplots() # create the window
 
+        fig, ax = self.fig, self.ax
+        self.addLoadButton(fig, ax, self.fs, time, fapt, fam, 'Free addition of pure tones')
+        
         # Plot free addition of pure tones
         limite = max(abs(fapt))*1.1
         ax.plot(time, fapt)
@@ -277,3 +295,27 @@ class FreeAdditionPureTones(tk.Frame):
 
         # set the dimensions of the screen and where it is placed
         self.piano.geometry('%dx%d+%d+%d' % (w, h, x, y))
+
+    def addLoadButton(self, fig, ax, fs, time, audio, menu, name):
+        # Takes the selected fragment and opens the control menu when clicked
+        def load(event):
+            if self.selectedAudio.shape == (1,): 
+                self.cm.createControlMenu(self, name, fs, audio)
+            else:
+                self.cm.createControlMenu(self, name, fs, self.selectedAudio)
+            plt.close(fig)
+            menu.destroy()
+            axload._but_load = but_load # reference to the Button (otherwise the button does nothing)
+
+        # Adds a 'Load' button to the figure
+        axload = fig.add_axes([0.8, 0.01, 0.09, 0.05]) # [left, bottom, width, height]
+        but_load = Button(axload, 'Load')
+        but_load.on_clicked(load)
+        axload._but_load = but_load # reference to the Button (otherwise the button does nothing)
+
+        def listenFrag(xmin, xmax):
+            ini, end = np.searchsorted(time, (xmin, xmax))
+            self.selectedAudio = audio[ini:end+1]
+            sd.play(self.selectedAudio, fs)
+            
+        self.span = SpanSelector(ax, listenFrag, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)

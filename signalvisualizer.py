@@ -4,15 +4,14 @@ from matplotlib import backend_bases
 
 from info import Info
 from inputLoad import Load
-from controlMenu import ControlMenu
 from inputRecord import Record
 from generateNoise import Noise
 from generatePureTone import PureTone
 from generateFreeAdd import FreeAdditionPureTones
 from generateSquareWave import SquareWave
 from generateSawtoothWave import SawtoothWave
-# from generateRosenbergPulse import RosenbergPulse
 from optionsSpectrogram import Spectrogram
+from auxiliar import Auxiliar
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -78,10 +77,6 @@ class Start(tk.Tk):
             self.frames['SawtoothWave'] = SawtoothWave(master=self.container, controller=self)
             self.frames['SawtoothWave'].grid(row=0, column=0, sticky="nsew")
             self.show_frame('SawtoothWave')
-        # elif page_name == 'RosenbergPulse':
-        #     self.frames['RosenbergPulse'] = RosenbergPulse(master=self.container, controller=self)
-        #     self.frames['RosenbergPulse'].grid(row=0, column=0, sticky="nsew")
-        #     self.show_frame('RosenbergPulse')
         elif page_name == 'Spectrogram':
             self.frames['Spectrogram'] = Spectrogram(master=self.container, controller=self)
             self.frames['Spectrogram'].grid(row=0, column=0, sticky="nsew")
@@ -102,8 +97,8 @@ class SignalVisualizer(tk.Frame):
         self.master = master
         self.controller.title('Signal Visualizer')
         # self.controller.iconbitmap('icon.ico')
-        self.cm = ControlMenu()
-        self.cm.windowGeometry(self.controller, 750, 450)
+        aux = Auxiliar()
+        aux.windowGeometry(self.controller, 750, 450)
 
         def on_closing():
             if tk.messagebox.askokcancel("Quit", "Do you want to quit?"):
@@ -128,7 +123,6 @@ class SignalVisualizer(tk.Frame):
         knownmenu = tk.Menu(generatemenu, tearoff=0)
         knownmenu.add_command(label="Square wave", command=lambda: self.controller.initialize_frame('SquareWave'))
         knownmenu.add_command(label="Sawtooth wave", command=lambda: self.controller.initialize_frame('SawtoothWave'))
-        # knownmenu.add_command(label="Rosenberg pulse", command=lambda: self.controller.initialize_frame('RosenbergPulse'))
 
         inputmenu = tk.Menu(menubar, tearoff=0)
         inputmenu.add_command(label="Load", command=lambda: self.controller.initialize_frame('Load'))

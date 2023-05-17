@@ -2,10 +2,13 @@ import tkinter as tk
 import colorednoise as cn
 import matplotlib.pyplot as plt
 import numpy as np
+import sounddevice as sd
 from tkinter import ttk
+from matplotlib.widgets import SpanSelector, Button
 
 from controlMenu import ControlMenu
 from help import HelpMenu
+from auxiliar import Auxiliar
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -17,7 +20,9 @@ class Noise(tk.Frame):
         self.controller = controller
         self.master = master
         self.cm = ControlMenu()
+        self.aux = Auxiliar()
         self.fig, self.ax = plt.subplots()
+        self.selectedAudio = np.empty(1)
         self.noiseMenu()
 
     def noiseMenu(self):
@@ -26,7 +31,7 @@ class Noise(tk.Frame):
         nm.title('Generate noise')
         # nm.iconbitmap('icon.ico')
         nm.wm_transient(self) # Place the toplevel window at the top
-        self.cm.windowGeometry(nm, 850, 250)
+        # self.cm.windowGeometry(nm, 850, 250)
         hm = HelpMenu()
 
         # Adapt the window to different sizes
@@ -36,8 +41,14 @@ class Noise(tk.Frame):
         for i in range(4):
             nm.rowconfigure(i, weight=1)
 
+        # If the 'generate' menu is closed, close also the generated figure
+        def on_closing():
+            nm.destroy()
+            plt.close(self.fig)
+        nm.protocol("WM_DELETE_WINDOW", on_closing)
+
         # Read the default values of the atributes from a csv file
-        list = self.cm.readFromCsv()
+        list = self.aux.readFromCsv()
         duration = list[0][2]
         amplitude = list[0][4]
         self.fs = list[0][6]
@@ -53,8 +64,8 @@ class Noise(tk.Frame):
 
         # ENTRYS
         nm.var_fs = tk.IntVar(value=self.fs)
-        vcmd = (nm.register(self.cm.onValidate), '%S', '%s', '%d')
-        vcfs = (nm.register(self.onValidateFs), '%S')
+        vcmd = (nm.register(self.aux.onValidate), '%S', '%s', '%d')
+        vcfs = (nm.register(self.aux.onValidateInt), '%S')
         
         self.ent_ampl = ttk.Entry(nm, textvariable=nm.var_ampl, validate='key', validatecommand=vcmd)
         self.ent_dura = ttk.Entry(nm, textvariable=nm.var_dura, validate='key', validatecommand=vcmd)
@@ -89,7 +100,7 @@ class Noise(tk.Frame):
             self.fs = int(self.ent_fs.get()) # sample frequency
             if fsEntry(self.fs) != True:
                 return
-            if but == 1: self.generateNoise(nm)
+            if but == 1: self.plotNoise(nm)
             elif but == 2: self.saveDefaultValues(nm, list)
 
         self.but_gene = ttk.Button(nm, command=lambda: checkValues(1), text='Generate')
@@ -109,12 +120,6 @@ class Noise(tk.Frame):
 
         checkValues(1)
 
-    # Called when inserting something in the entry of fs. Only lets the user enter numbers.
-    def onValidateFs(self, S):
-        if S.isdigit():
-            return True
-        return False
-
     def saveDefaultValues(self, nm, list):
         choice = nm.var_opts.get()
         amplitude = float(self.sca_ampl.get())
@@ -126,9 +131,9 @@ class Noise(tk.Frame):
                 ['SAWTOOTH WAVE','\t duration', list[3][2],'\t amplitude', list[3][4],'\t fs', list[3][6],'\t offset', list[3][8],'\t frequency', list[3][10],'\t phase', list[3][12],'\t max position', list[3][14]],
                 ['FREE ADD OF PT','\t duration', list[4][2],'\t octave', list[4][4],'\t freq1', list[4][6],'\t freq2', list[4][8],'\t freq3', list[4][10],'\t freq4', list[4][12],'\t freq5', list[4][14],'\t freq6', list[4][16],'\t amp1', list[4][18],'\t amp2', list[4][20],'\t amp3', list[4][22],'\t amp4', list[4][24],'\t amp5', list[4][26],'\t amp6', list[4][28]],
                 ['SPECTROGRAM','\t colormap', list[5][2]]]
-        self.cm.saveDefaultAsCsv(new_list)
+        self.aux.saveDefaultAsCsv(new_list)
 
-    def generateNoise(self, nm):
+    def plotNoise(self, nm):
         choice = nm.var_opts.get()
         amplitude = float(self.sca_ampl.get())
         duration = self.sca_dura.get()
@@ -150,8 +155,15 @@ class Noise(tk.Frame):
         # L2 = [x**2 for x in noise]
         # suma = sum(L2)/np.size(noise)
 
-        fig, ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, noise, nm, choice)
+        # If the window has been closed, create it again
+        if plt.fignum_exists(self.fig.number):
+            self.ax.clear() # delete the previous plot
+        else:
+            self.fig, self.ax = plt.subplots() # create the window
 
+        fig, ax = self.fig, self.ax
+        self.addLoadButton(fig, ax, self.fs, time, noise, nm, choice)
+        
         # Plot the noise
         ax.plot(time, noise)
         fig.canvas.manager.set_window_title(choice)
@@ -159,3 +171,26 @@ class Noise(tk.Frame):
         ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
 
         plt.show()
+
+    def addLoadButton(self, fig, ax, fs, time, audio, menu, name):
+        # Takes the selected fragment and opens the control menu when clicked
+        def load(event):
+            if self.selectedAudio.shape == (1,): 
+                self.cm.createControlMenu(self, name, fs, audio)
+            else:
+                self.cm.createControlMenu(self, name, fs, self.selectedAudio)
+            plt.close(fig)
+            menu.destroy()
+
+        # Adds a 'Load' button to the figure
+        axload = fig.add_axes([0.8, 0.01, 0.09, 0.05]) # [left, bottom, width, height]
+        but_load = Button(axload, 'Load')
+        but_load.on_clicked(load)
+        axload._but_load = but_load # reference to the Button (otherwise the button does nothing)
+
+        def listenFrag(xmin, xmax):
+            ini, end = np.searchsorted(time, (xmin, xmax))
+            self.selectedAudio = audio[ini:end+1]
+            sd.play(self.selectedAudio, fs)
+            
+        self.span = SpanSelector(ax, listenFrag, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)

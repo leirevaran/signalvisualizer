@@ -4,7 +4,7 @@ import numpy as np
 import sounddevice as sd
 import soundfile as sf
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Button, SpanSelector
+from matplotlib.widgets import Button, Cursor, SpanSelector
 from pathlib import Path
 
 from controlMenu import ControlMenu
@@ -50,21 +50,11 @@ class Load(tk.Frame):
         axFile.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         axFile.set(xlim=[0, max(audiotime)], xlabel='Time (s)', ylabel='Waveform', title='Load an audio file')
 
-        # Plays the audio of the selected fragment
-        def listenFragment(xmin, xmax):
-            ini, end = np.searchsorted(audiotime, (xmin, xmax))
-            self.audioFrag = audio[ini:end+1]
-            sd.play(self.audioFrag, audiofs)
-        
-        # Select a fragment with the cursor and play the audio of that fragment
-        span = SpanSelector(axFile, listenFragment, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)
-
         # Add a 'Load' button that takes the selected fragment and opens the control menu when clicked
         def load(event):
             if self.audioFrag.shape == (1,): # if no fragment has been selected, load the whole signal
                 self.cm.createControlMenu(self, fileName, audiofs, audio)
             else:
-                span.clear()
                 self.cm.createControlMenu(self, fileName, audiofs, self.audioFrag)
             plt.close(figFile) # close the figure of the waveform
 
@@ -72,5 +62,14 @@ class Load(tk.Frame):
         but_load = Button(axload, 'Load')
         but_load.on_clicked(load)
         axload._but_save = but_load # reference to the Button (otherwise the button does nothing)
+
+        # Plays the audio of the selected fragment
+        def listenFragment(xmin, xmax):
+            ini, end = np.searchsorted(audiotime, (xmin, xmax))
+            self.audioFrag = audio[ini:end+1]
+            sd.play(self.audioFrag, audiofs)
+        
+        # Select a fragment with the cursor and play the audio of that fragment
+        self.span = SpanSelector(axFile, listenFragment, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)
         
         plt.show() # show the figure

@@ -1,12 +1,15 @@
 import tkinter as tk
 import matplotlib.pyplot as plt
 import numpy as np
+import sounddevice as sd
 import unicodedata
 from tkinter import ttk
 from scipy import signal
+from matplotlib.widgets import SpanSelector, Button, RadioButtons
 
 from controlMenu import ControlMenu
 from help import HelpMenu
+from auxiliar import Auxiliar
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -18,7 +21,9 @@ class SawtoothWave(tk.Frame):
         self.controller = controller
         self.master = master
         self.cm = ControlMenu()
+        self.aux = Auxiliar()
         self.fig, self.ax = plt.subplots()
+        self.selectedAudio = np.empty(1)
         self.sawtoothMenu()
 
     def sawtoothMenu(self):
@@ -27,7 +32,7 @@ class SawtoothWave(tk.Frame):
         stm.title('Generate sawtooth wave')
         # tm.iconbitmap('icon.ico')
         stm.wm_transient(self) # Place the toplevel window at the top
-        self.cm.windowGeometry(stm, 850, 475)
+        # self.cm.windowGeometry(stm, 850, 475)
         hm = HelpMenu()
 
         # Adapt the window to different sizes
@@ -37,8 +42,14 @@ class SawtoothWave(tk.Frame):
         for i in range(7):
             stm.rowconfigure(i, weight=1)
 
+        # If the 'generate' menu is closed, close also the generated figure
+        def on_closing():
+            stm.destroy()
+            plt.close(self.fig)
+        stm.protocol("WM_DELETE_WINDOW", on_closing)
+
         # Read the default values of the atributes from a csv file
-        list = self.cm.readFromCsv()
+        list = self.aux.readFromCsv()
         duration = list[3][2]
         amplitude = list[3][4]
         self.fs = list[3][6]
@@ -71,8 +82,8 @@ class SawtoothWave(tk.Frame):
         
         # ENTRYS
         stm.var_fs = tk.IntVar(value=self.fs)
-        vcmd = (stm.register(self.cm.onValidate), '%S', '%s', '%d')
-        vcfs = (stm.register(self.onValidateFs), '%S')
+        vcmd = (stm.register(self.aux.onValidate), '%S', '%s', '%d')
+        vcfs = (stm.register(self.aux.onValidateInt), '%S')
 
         self.ent_dura = ttk.Entry(stm, textvariable=stm.var_dura, validate='key', validatecommand=vcmd)
         self.ent_offs = ttk.Entry(stm, textvariable=stm.var_offs, validate='key', validatecommand=vcmd)
@@ -122,7 +133,7 @@ class SawtoothWave(tk.Frame):
             self.fs = int(self.ent_fs.get()) # sample frequency
             if fsEntry(self.fs) != True:
                 return
-            if but == 1: self.generateSawtoothWave(stm)
+            if but == 1: self.plotSawtoothWave(stm)
             elif but == 2: self.saveDefaultValues(list)
 
         self.but_gene = ttk.Button(stm, command=lambda: checkValues(1), text='Generate')
@@ -134,12 +145,6 @@ class SawtoothWave(tk.Frame):
         self.but_help.grid(column=0, row=7, sticky=tk.W, padx=5, pady=5)
 
         checkValues(1)
-
-    # Called when inserting something in the entry of fs. Only lets the user enter numbers.
-    def onValidateFs(self, S):
-        if S.isdigit():
-            return True
-        return False
 
     def saveDefaultValues(self, list):
         amplitude = float(self.ent_ampl.get())
@@ -155,9 +160,9 @@ class SawtoothWave(tk.Frame):
                 ['SAWTOOTH WAVE','\t duration', duration,'\t amplitude', amplitude,'\t fs', self.fs,'\t offset', offset,'\t frequency', frequency,'\t phase', phase,'\t max position', maxpos],
                 ['FREE ADD OF PT','\t duration', list[4][2],'\t octave', list[4][4],'\t freq1', list[4][6],'\t freq2', list[4][8],'\t freq3', list[4][10],'\t freq4', list[4][12],'\t freq5', list[4][14],'\t freq6', list[4][16],'\t amp1', list[4][18],'\t amp2', list[4][20],'\t amp3', list[4][22],'\t amp4', list[4][24],'\t amp5', list[4][26],'\t amp6', list[4][28]],
                 ['SPECTROGRAM','\t colormap', list[5][2]]]
-        self.cm.saveDefaultAsCsv(new_list)
+        self.aux.saveDefaultAsCsv(new_list)
 
-    def generateSawtoothWave(self, stm):
+    def plotSawtoothWave(self, stm):
         amplitude = float(self.ent_ampl.get())
         frequency = float(self.ent_freq.get())
         phase = float(self.ent_phas.get())
@@ -167,13 +172,21 @@ class SawtoothWave(tk.Frame):
         samples = int(duration*self.fs)
 
         # Check if the frequency is smaller than self.fs/2
-        self.cm.bigFrequency(frequency, self.fs)
+        self.aux.bigFrequency(frequency, self.fs)
 
         time = np.linspace(start=0, stop=duration, num=samples, endpoint=False)
         sawtooth = amplitude * signal.sawtooth(2*np.pi*frequency*time + phase*np.pi, width=maxpos) + offset * np.ones(len(time))
 
-        fig, ax = self.cm.generateWindow(self, self.fig, self.ax, self.fs, time, sawtooth, stm, 'Sawtooth wave')
+        # If the window has been closed, create it again
+        if plt.fignum_exists(self.fig.number):
+            self.ax.clear() # delete the previous plot
+        else:
+            self.fig, self.ax = plt.subplots() # create the window
 
+        fig, ax = self.fig, self.ax
+        self.addLoadButton(fig, ax, self.fs, time, sawtooth, stm, 'Sawtooth wave')
+        self.addScaleSaturateRadiobuttons(fig, offset)
+        
         # Plot the pure tone
         limite = max(abs(sawtooth))*1.1
         ax.plot(time, sawtooth)
@@ -186,3 +199,49 @@ class SawtoothWave(tk.Frame):
         ax.legend(loc="upper right")
 
         plt.show()
+
+    def addLoadButton(self, fig, ax, fs, time, audio, menu, name):
+        # Takes the selected fragment and opens the control menu when clicked
+        def load(event):
+            if self.selectedAudio.shape == (1,): 
+                self.cm.createControlMenu(self, name, fs, audio)
+            else:
+                self.cm.createControlMenu(self, name, fs, self.selectedAudio)
+            plt.close(fig)
+            menu.destroy()
+            axload._but_load = but_load # reference to the Button (otherwise the button does nothing)
+
+        # Adds a 'Load' button to the figure
+        axload = fig.add_axes([0.8, 0.01, 0.09, 0.05]) # [left, bottom, width, height]
+        but_load = Button(axload, 'Load')
+        but_load.on_clicked(load)
+        axload._but_load = but_load # reference to the Button (otherwise the button does nothing)
+
+        def listenFrag(xmin, xmax):
+            ini, end = np.searchsorted(time, (xmin, xmax))
+            self.selectedAudio = audio[ini:end+1]
+            sd.play(self.selectedAudio, fs)
+            
+        self.span = SpanSelector(ax, listenFrag, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)
+
+    def addScaleSaturateRadiobuttons(self, fig, offset):
+        if offset > 0.5 or offset < -0.5:
+            def exceed(label):
+                options = {'scale': 0, 'saturate': 1}
+                option = options[label]
+                if option == 0:
+                    for i in range(len(self.selectedAudio)):
+                        if self.selectedAudio[i] > 1:
+                            self.selectedAudio[i] = 1
+                        elif self.selectedAudio[i] < -1:
+                            self.selectedAudio[i] = -1
+                elif option == 1:
+                    if max(self.selectedAudio) > 1:
+                        self.selectedAudio = self.selectedAudio/max(abs(self.selectedAudio))
+                    elif min(self.selectedAudio) < -1:
+                        self.selectedAudio = self.selectedAudio/min(abs(self.selectedAudio))
+                rax._radio = radio # reference to the Button (otherwise the button does nothing)
+
+            rax = fig.add_axes([0.75, 0.9, 0.15, 0.1]) # [left, bottom, width, height]
+            radio = RadioButtons(rax, ('scale', 'saturate'))
+            radio.on_clicked(exceed)
