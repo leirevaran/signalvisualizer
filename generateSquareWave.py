@@ -133,8 +133,8 @@ class SquareWave(tk.Frame):
             self.fs = int(ent_fs.get()) # sample frequency
             if fsEntry(self.fs) != True:
                 return
-            if but == 1: self.plotSquareWave(sm, ent_ampl, ent_freq, ent_phas, ent_cycl, ent_dura, ent_offs)
-            elif but == 2: self.saveDefaultValues(list, ent_ampl, ent_freq, ent_phas, ent_cycl, ent_dura, ent_offs)
+            if but == 1: self.plotSquareWave(sm)
+            elif but == 2: self.saveDefaultValues(sm, list)
 
         but_gene = ttk.Button(sm, command=lambda: checkValues(1), text='Generate')
         but_save = ttk.Button(sm, command=lambda: checkValues(2), text='Save values as default')
@@ -146,13 +146,13 @@ class SquareWave(tk.Frame):
 
         checkValues(1)
 
-    def saveDefaultValues(self, list, ent_ampl, ent_freq, ent_phas, ent_cycl, ent_dura, ent_offs):
-        amplitude = float(ent_ampl.get())
-        frequency = float(ent_freq.get())
-        phase = float(ent_phas.get())
-        cycle = float(ent_cycl.get())
-        duration = float(ent_dura.get())
-        offset = float(ent_offs.get())
+    def saveDefaultValues(self, sm, list):
+        amplitude = sm.var_ampl.get()
+        frequency = sm.var_freq.get()
+        phase = sm.var_phas.get()
+        cycle = sm.var_cycl.get()
+        duration = sm.var_dura.get()
+        offset = sm.var_offs.get()
 
         new_list = [['NOISE','\t duration', list[0][2],'\t amplitude', list[0][4],'\t fs', list[0][6],'\t noise type', list[0][8]],
                 ['PURE TONE','\t duration', list[1][2],'\t amplitude', list[1][4],'\t fs', list[1][6],'\t offset', list[1][8],'\t frequency', list[1][10],'\t phase',  list[1][12]],
@@ -162,13 +162,13 @@ class SquareWave(tk.Frame):
                 ['SPECTROGRAM','\t colormap', list[5][2]]]
         self.aux.saveDefaultAsCsv(new_list)
 
-    def plotSquareWave(self, sm, ent_ampl, ent_freq, ent_phas, ent_cycl, ent_dura, ent_offs):
-        amplitude = float(ent_ampl.get())
-        frequency = float(ent_freq.get())
-        phase = float(ent_phas.get())
-        cycle = float(ent_cycl.get())
-        duration = float(ent_dura.get())
-        offset = float(ent_offs.get())
+    def plotSquareWave(self, sm):
+        amplitude = sm.var_ampl.get()
+        frequency = sm.var_freq.get()
+        phase = sm.var_phas.get()
+        cycle = sm.var_cycl.get()
+        duration = sm.var_dura.get()
+        offset = sm.var_offs.get()
         samples = int(duration*self.fs)
 
         # Check if the frequency is smaller than self.fs/2

@@ -14,7 +14,6 @@ class HelpMenu():
         hm.title('Help menu')
         hm.iconbitmap('icons/icon.ico')
         hm.wm_transient(root) # Place the toplevel window at the top
-        # self.windowGeometry(hm, 750, 575)
 
         noise_html = 'html/en/Generate noise/Generatenoise.html'
         puret_html = 'html/en/Generate pure tone/Generatepuretone.html'

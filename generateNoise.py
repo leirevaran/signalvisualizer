@@ -100,8 +100,8 @@ class Noise(tk.Frame):
             self.fs = int(ent_fs.get()) # sample frequency
             if fsEntry(self.fs) != True:
                 return
-            if but == 1: self.plotNoise(nm, sca_ampl, sca_dura)
-            elif but == 2: self.saveDefaultValues(nm, list, sca_ampl, sca_dura)
+            if but == 1: self.plotNoise(nm)
+            elif but == 2: self.saveDefaultValues(nm, list)
 
         but_gene = ttk.Button(nm, command=lambda: checkValues(1), text='Generate')
         but_save = ttk.Button(nm, command=lambda: checkValues(2), text='Save values as default')
@@ -120,10 +120,10 @@ class Noise(tk.Frame):
 
         checkValues(1)
 
-    def saveDefaultValues(self, nm, list, sca_ampl, sca_dura):
+    def saveDefaultValues(self, nm, list):
         choice = nm.var_opts.get()
-        amplitude = float(sca_ampl.get())
-        duration = sca_dura.get()
+        amplitude = nm.var_ampl.get()
+        duration = nm.var_dura.get()
 
         new_list = [['NOISE','\t duration', duration,'\t amplitude', amplitude,'\t fs', self.fs,'\t noise type', choice],
                 ['PURE TONE','\t duration', list[1][2],'\t amplitude', list[1][4],'\t fs', list[1][6],'\t offset', list[1][8],'\t frequency', list[1][10],'\t phase',  list[1][12]],
@@ -133,10 +133,10 @@ class Noise(tk.Frame):
                 ['SPECTROGRAM','\t colormap', list[5][2]]]
         self.aux.saveDefaultAsCsv(new_list)
 
-    def plotNoise(self, nm, sca_ampl, sca_dura):
+    def plotNoise(self, nm):
         choice = nm.var_opts.get()
-        amplitude = float(sca_ampl.get())
-        duration = sca_dura.get()
+        amplitude = nm.var_ampl.get()
+        duration = nm.var_dura.get()
         samples = int(duration*self.fs)
 
         if choice == 'White noise':

@@ -133,8 +133,8 @@ class SawtoothWave(tk.Frame):
             self.fs = int(ent_fs.get()) # sample frequency
             if fsEntry(self.fs) != True:
                 return
-            if but == 1: self.plotSawtoothWave(stm, ent_ampl, ent_freq, ent_phas, ent_maxp, ent_dura, ent_offs)
-            elif but == 2: self.saveDefaultValues(list, ent_ampl, ent_freq, ent_phas, ent_maxp, ent_dura, ent_offs)
+            if but == 1: self.plotSawtoothWave(stm)
+            elif but == 2: self.saveDefaultValues(stm, list)
 
         but_gene = ttk.Button(stm, command=lambda: checkValues(1), text='Generate')
         but_save = ttk.Button(stm, command=lambda: checkValues(2), text='Save values as default')
@@ -146,13 +146,13 @@ class SawtoothWave(tk.Frame):
 
         checkValues(1)
 
-    def saveDefaultValues(self, list, ent_ampl, ent_freq, ent_phas, ent_maxp, ent_dura, ent_offs):
-        amplitude = float(ent_ampl.get())
-        frequency = float(ent_freq.get())
-        phase = float(ent_phas.get())
-        maxpos = float(ent_maxp.get())
-        duration = float(ent_dura.get())
-        offset = float(ent_offs.get())
+    def saveDefaultValues(self, stm, list):
+        amplitude = stm.var_ampl.get()
+        frequency = stm.var_freq.get()
+        phase = stm.var_phas.get()
+        maxpos = stm.var_maxp.get()
+        duration = stm.var_dura.get()
+        offset = stm.var_offs.get()
 
         new_list = [['NOISE','\t duration', list[0][2],'\t amplitude', list[0][4],'\t fs', list[0][6],'\t noise type', list[0][8]],
                 ['PURE TONE','\t duration', list[1][2],'\t amplitude', list[1][4],'\t fs', list[1][6],'\t offset', list[1][8],'\t frequency', list[1][10],'\t phase',  list[1][12]],
@@ -162,13 +162,13 @@ class SawtoothWave(tk.Frame):
                 ['SPECTROGRAM','\t colormap', list[5][2]]]
         self.aux.saveDefaultAsCsv(new_list)
 
-    def plotSawtoothWave(self, stm, ent_ampl, ent_freq, ent_phas, ent_maxp, ent_dura, ent_offs):
-        amplitude = float(ent_ampl.get())
-        frequency = float(ent_freq.get())
-        phase = float(ent_phas.get())
-        maxpos = float(ent_maxp.get())
-        duration = float(ent_dura.get())
-        offset = float(ent_offs.get())
+    def plotSawtoothWave(self, stm):
+        amplitude = stm.var_ampl.get()
+        frequency = stm.var_freq.get()
+        phase = stm.var_phas.get()
+        maxpos = stm.var_maxp.get()
+        duration = stm.var_dura.get()
+        offset = stm.var_offs.get()
         samples = int(duration*self.fs)
 
         # Check if the frequency is smaller than self.fs/2

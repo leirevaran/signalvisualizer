@@ -9,8 +9,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from tkinter import ttk
 from scipy import signal
+from pathlib import Path
 from matplotlib.widgets import Button, Cursor, SpanSelector, MultiCursor
-from matplotlib.backend_bases import MouseButton
+from matplotlib.backend_bases import MouseButton, MouseEvent
 from matplotlib.patches import Rectangle
 from scipy.io.wavfile import write
 
@@ -32,9 +33,8 @@ class ControlMenu():
         self.duration = max(self.time) # duration of the audio (s)
         self.lenAudio = len(self.audio) # length of the audio array
 
-        self.plotFT() # show the figure of the FT
-
         cm = tk.Toplevel()
+        self.plotFT(cm) # show the figure of the FT
         cm.resizable(True, True)
         cm.title('Control menu: ' + self.fileName)
         cm.iconbitmap('icons/icon.ico')
@@ -141,22 +141,22 @@ class ControlMenu():
         # Called when inserting a value in the entry of the window length and pressing enter
         def windowLengthEntry(event):
             # Show an error and stop if the inserted window size is incorrect
-            windSize = float(ent_size.get())
-            overlap = float(ent_over.get())
+            windSize = cm.var_size.get()
+            overlap = cm.var_over.get()
             if windSize > self.duration or windSize == 0:
                 # Reset widgets
                 cm.var_size.set(0.03)
-                cm.opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
-                self.updateOptionMenu(dd_nfft, cm.var_nfft, cm.opt_nfft)
+                cm.opt_nfft = [2**9, 2**10, 2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19]
+                self.updateOptionMenu(cm, dd_nfft)
                 if windSize > self.duration: # The window size can't be greater than the duration of the signal
                     text = "The window size can't be greater than the duration of the signal (" + str(round(self.duration, 2)) + "s)."
                     tk.messagebox.showerror(parent=cm, title="Window size too long", message=text) # show error
                 elif windSize == 0: # The window size must be a positive number
                     tk.messagebox.showerror(parent=cm, title="Wrong window size value", message="The chosen value for the window size must be a positive number.") # show error
-            elif overlap >= windSize: # The window size must always be greater than the overlap
+            elif windSize < overlap: # The window size must always be greater than the overlap
+                cm.var_size.set(overlap+0.01)
                 text2 = "The window size must always be greater than the overlap (" + str(overlap) + "s)."
                 tk.messagebox.showerror(parent=cm, title="Wrong overlap value", message=text2) # show error
-                cm.var_over.set('0.01')
             # Change the values of nfft to be always greater than the window size
             else: 
                 windSizeSamp = windSize * self.fs # window size in samples
@@ -170,21 +170,21 @@ class ControlMenu():
                         cm.opt_nfft[len(cm.opt_nfft)-1] = 2**last
                         last += 1
                         first += 1
-                    self.updateOptionMenu(dd_nfft, cm.var_nfft, cm.opt_nfft)
+                    self.updateOptionMenu(cm, dd_nfft)
                 else: # Adds smaller values to the nfft list if possible
                     first = int(math.log2(nfft)) - 1
                     while 2**first > windSizeSamp:
                         for a in range(len(cm.opt_nfft)-1, 0, -1):
                             cm.opt_nfft[a] = cm.opt_nfft[a-1]
                         cm.opt_nfft[0] = 2**first
+                        self.updateOptionMenu(cm, dd_nfft)
                         first -= 1
-                    self.updateOptionMenu(dd_nfft, cm.var_nfft, cm.opt_nfft)
                 return True
             
         def overlapEntry(event):
             # Show an error and stop if the inserted overlap is incorrect
-            overlap = float(ent_over.get())
-            windSize = float(ent_size.get())
+            overlap = cm.var_over.get()
+            windSize = cm.var_size.get()
             if overlap > self.duration or overlap >= windSize:
                 cm.var_over.set('0.01') # Reset widget
                 if overlap > self.duration: # The overlap can't be greater than the duration of the signal
@@ -197,8 +197,8 @@ class ControlMenu():
 
         def minfreqEntry(event):
             # The minimum frequency must be >= 0 and smaller than the maximum frequency
-            minfreq = float(ent_minf.get())
-            maxfreq = float(ent_maxf.get())
+            minfreq = cm.var_minf.get()
+            maxfreq = cm.var_maxf.get()
             if minfreq >= maxfreq:
                 cm.var_minf.set('0') # Reset widget
                 text = "The minimum frequency must be smaller than the maximum frequency (" + str(maxfreq) + "Hz)."
@@ -207,8 +207,8 @@ class ControlMenu():
 
         def maxfreqEntry(event):
             # The maximum frequency must be <= self.fs/2 and greater than the minimum frequency
-            minfreq = float(ent_minf.get())
-            maxfreq = float(ent_maxf.get())
+            minfreq = cm.var_minf.get()
+            maxfreq = cm.var_maxf.get()
             if maxfreq > self.fs/2 or maxfreq <= minfreq:
                 cm.var_maxf.set(self.fs/2) # Reset widget
                 if maxfreq > self.fs/2:
@@ -220,8 +220,8 @@ class ControlMenu():
             else: return True
 
         def minpitchEntry(event):
-            minPitch = float(ent_minp.get())
-            maxPitch = float(ent_maxp.get())
+            minPitch = cm.var_minp.get()
+            maxPitch = cm.var_maxp.get()
             if minPitch >= maxPitch:
                 cm.var_minp.set('75.0') # Reset widget
                 cm.var_maxp.set('600.0') # Reset widget
@@ -230,8 +230,8 @@ class ControlMenu():
             else: return True
 
         def maxpitchEntry(event):
-            minPitch = float(ent_minp.get())
-            maxPitch = float(ent_maxp.get())
+            minPitch = cm.var_minp.get()
+            maxPitch = cm.var_maxp.get()
             if maxPitch <= minPitch:
                 cm.var_minp.set('75.0') # Reset widget
                 cm.var_maxp.set('600.0') # Reset widget
@@ -240,7 +240,7 @@ class ControlMenu():
             else: return True
 
         def betaEntry(event):
-            beta = float(ent_beta.get())
+            beta = cm.var_beta.get()
             if beta < 0 or beta > 14:
                 cm.var_beta.set('0') # Reset widget
                 text = "The value of beta must be a number between 0 and 14."
@@ -282,8 +282,8 @@ class ControlMenu():
         # Checks if all the values inserted by the user are correct
         def checkValues():
             choice = cm.var_opts.get()
-            windSize = float(ent_size.get()) # window size in seconds
-            overlap = float(ent_over.get()) # overlap in seconds
+            windSize = cm.var_size.get() # window size in seconds
+            overlap = cm.var_over.get() # overlap in seconds
             minfreq = cm.var_minf.get()
             maxfreq = cm.var_maxf.get()
             beta = cm.var_beta.get()
@@ -303,7 +303,7 @@ class ControlMenu():
             elif choice == 'Pitch' and (minpitchEntry(minpitch) != True or maxpitchEntry(maxpitch) != True):
                 return
             
-            self.plotFigure(cm, windSize, overlap, minfreq, maxfreq, beta, minpitch, maxpitch)
+            self.plotFigure(cm, choice, windSize, overlap, minfreq, maxfreq, beta, minpitch, maxpitch)
 
         but_adse = ttk.Button(cm, state='disabled', command=lambda: self.adse.advancedSettings(), text='Advanced settings')
         but_freq = ttk.Button(cm, state='disabled', command=lambda: self.plotFiltFreqResponse(cm), text='Filter Frequency Response')
@@ -323,7 +323,7 @@ class ControlMenu():
         # OPTION MENUS
         cm.options = ('FT','STFT', 'Spectrogram','STFT + Spect', 'Short-Time-Energy', 'Pitch', 'Spectral Centroid', 'Filtering')
         cm.opt_wind = ('Bartlett','Blackman', 'Hamming','Hanning', 'Kaiser')
-        cm.opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
+        cm.opt_nfft = [2**9, 2**10, 2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19]
         cm.opt_meth = ('Autocorrelation', 'Cross-correlation', 'Subharmonics', 'Spinet')
         cm.opt_filt = ('Butterworth','Elliptic', 'Chebyshev I', 'Chebyshev II', 'FIR least-squares')
         cm.opt_pass = ('Lowpass','Highpass', 'Bandpass', 'Bandstop')
@@ -338,9 +338,6 @@ class ControlMenu():
         # Called when changing the main option (FT, STFT, etc.) for disabling or activating widgets
         def displayOptions(choice):
             # Reset widgets
-            opt_nfft = [2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19, 2**20, 2**21, 2**22, 2**23]
-            self.updateOptionMenu(dd_nfft, cm.var_nfft, opt_nfft)
-
             if choice == 'FT' or choice == 'STFT' or choice == 'Pitch' or choice == 'Filtering': 
                 ent_over.config(state='disabled')
             else: ent_over.config(state='normal')
@@ -433,12 +430,12 @@ class ControlMenu():
 
     # METHODS
     # Updates the OptionMenu 'om' with the option list 'opt' and variable 'var' passed as a parameter
-    def updateOptionMenu(self, om, var, opt):
-        menu = om["menu"]
+    def updateOptionMenu(self, cm, dd_nfft):
+        menu = dd_nfft["menu"]
         menu.delete(0, "end")
-        for o in opt:
-            menu.add_command(label=o, command=lambda value=o: var.set(value))
-        var.set(opt[0])
+        for o in cm.opt_nfft:
+            menu.add_command(label=o, command=lambda value=o: cm.var_nfft.set(value))
+        cm.var_nfft.set(cm.opt_nfft[0])
 
     def yticks(self, minfreq, maxfreq):
         freq = maxfreq-minfreq
@@ -487,12 +484,14 @@ class ControlMenu():
         axsave._but_save = but_save # reference to the Button (otherwise the button does nothing)
 
     # Used for saving a waveform as a wav or csv file
-    def saveasWavCsv(self, fig, x, y, dist, fs):
+    def saveasWavCsv(self, cm, fig, x, y, dist, fs):
         def save(event):
             file = tk.filedialog.asksaveasfilename(title='Save', defaultextension=".wav", filetypes=(("wav files","*.wav"),("csv files","*.csv"),))
             if file is None or file == '':
                 return
             if file.endswith('wav'):
+                self.fileName = Path(file).stem # take only the name of the file without the '.wav' and the path
+                cm.title('Control menu: ' + self.fileName) # update the name of the window
                 scaled = np.int16(y/np.max(np.abs(y)) * 32767)
                 write(file, fs, scaled) # generates a wav file in the selected folder
             elif file.endswith('.csv'):
@@ -534,10 +533,10 @@ class ControlMenu():
         return signal.convolve(sig**2, window**2, mode='same')
     
     # Plots the waveform and the Fast Fourier Transform (FFT) of the fragment
-    def plotFT(self):
+    def plotFT(self, cm):
         self.figFragFT, axFragFT = plt.subplots(2, figsize=(12,6))
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-        self.figFragFT.canvas.manager.set_window_title('FT')
+        self.figFragFT.canvas.manager.set_window_title(self.fileName+'-FT')
 
         fft = np.fft.fft(self.audio) / self.lenAudio # Normalize amplitude
         fft2 = fft[range(int(self.lenAudio/2))] # Exclude sampling frequency
@@ -556,7 +555,7 @@ class ControlMenu():
         axFragFT[1].plot(frequencies, 20*np.log10(abs(fft2)))
         axFragFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Fourier Transform')
 
-        self.saveasWavCsv(self.figFragFT, self.time, self.audio, 0.5, self.fs) # save waveform as csv
+        self.saveasWavCsv(cm, self.figFragFT, self.time, self.audio, 0.5, self.fs) # save waveform as csv
         self.saveasCsv(self.figFragFT, frequencies, 20*np.log10(abs(fft2)), 0.05, 'FT') # save FT as csv
 
         # TO-DO: connect figFrag with w1Button in signalVisualizer
@@ -564,10 +563,11 @@ class ControlMenu():
         self.span = self.createSpanSelector(axFragFT[0]) # Select a fragment with the cursor and play the audio of that fragment
         self.figFragFT.show() # show the figure
 
-    def plotSTFT(self, stft, frequencies, windType, windSize, nfftUser):
+    def plotSTFT(self, cm, stft, frequencies, title):
         figFragSTFT, axFragSTFT = plt.subplots(2, figsize=(12,6))
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-        figFragSTFT.canvas.manager.set_window_title('STFT-Window_'+ str(windType) +'_'+ str(windSize) +'s-Nfft_'+ str(nfftUser)) # set title to the figure window
+        # figFragSTFT.canvas.manager.set_window_title(str(self.fileName)+'-STFT-Window_'+ str(windType) +'_'+ str(windSize) +'s-Nfft_'+ str(nfftUser)) # set title to the figure window
+        figFragSTFT.canvas.manager.set_window_title(str(self.fileName)+'-STFT-'+title) # set title to the figure window
 
         axFragSTFT[0].plot(self.time, self.audio)
         axFragSTFT[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
@@ -575,7 +575,7 @@ class ControlMenu():
         line1, = axFragSTFT[1].plot(frequencies, 20*np.log10(abs(stft)))
         axFragSTFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Short Time Fourier Transform')
 
-        self.saveasWavCsv(figFragSTFT, self.time, self.audio, 0.5, self.fs) # save waveform as csv
+        self.saveasWavCsv(cm, figFragSTFT, self.time, self.audio, 0.5, self.fs) # save waveform as csv
         self.saveasCsv(figFragSTFT, frequencies, 20*np.log10(abs(stft)), 0.05, 'STFT') # save FT as csv
         
         self.cursor = Cursor(axFragSTFT[0], horizOn=False, useblit=True, color='black', linewidth=1)
@@ -583,10 +583,11 @@ class ControlMenu():
 
         return axFragSTFT, line1
 
-    def plotSTFTspect(self, stft, frequencies, window, windType, windSize, windSizeSampInt, nfftUser, overlap, minfreq, maxfreq, hopSize, cmap, draw):
+    def plotSTFTspect(self, cm, stft, frequencies, window, windSizeSampInt, nfftUser, minfreq, maxfreq, hopSize, cmap, draw, title):
         figFragSTFTSpect, axFragSTFTSpect = plt.subplots(3, figsize=(12,6))
         plt.subplots_adjust(hspace=.6) # to avoid overlapping between xlabel and title
-        figFragSTFTSpect.canvas.manager.set_window_title('STFT+Spectrogram-Window_'+ str(windType) +'_'+ str(windSize) +'s-Nfft_'+ str(nfftUser) +'-Overlap_'+ str(overlap) +'s-MinFreq_'+ str(minfreq) + 'Hz-MaxFreq_'+ str(maxfreq) + 'Hz') # set title to the figure window
+        # figFragSTFTSpect.canvas.manager.set_window_title('STFT+Spectrogram-Window_'+ str(windType) +'_'+ str(windSize) +'s-Nfft_'+ str(nfftUser) +'-Overlap_'+ str(overlap) +'s-MinFreq_'+ str(minfreq) + 'Hz-MaxFreq_'+ str(maxfreq) + 'Hz') # set title to the figure window
+        figFragSTFTSpect.canvas.manager.set_window_title(str(self.fileName)+'-STFT+Spectrogram-'+title)
 
         # Calculate the linear/mel spectrogram
         if draw == 1: # linear
@@ -608,7 +609,7 @@ class ControlMenu():
         line1, = axFragSTFTSpect[1].plot(frequencies, 20*np.log10(abs(stft)))
         axFragSTFTSpect[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Short Time Fourier Transform')
 
-        self.saveasWavCsv(figFragSTFTSpect, self.time, self.audio, 0.65, self.fs) # save waveform as csv
+        self.saveasWavCsv(cm, figFragSTFTSpect, self.time, self.audio, 0.65, self.fs) # save waveform as csv
         self.saveasCsv(figFragSTFTSpect, frequencies, 20*np.log10(abs(stft)), 0.35, 'STFT') # save STFT as csv
         
         self.multicursor = MultiCursor(figFragSTFTSpect.canvas, (axFragSTFTSpect[0], axFragSTFTSpect[2]), color='black', lw=1)
@@ -616,14 +617,18 @@ class ControlMenu():
 
         return axFragSTFTSpect, line1
 
-    def plotSC(self, audioFragWind2, window, windType, windSize, windSizeSampInt, nfftUser, overlap, overlapSamp, minfreq, maxfreq, hopSize, cmap, draw):
+    def plotSC(self, cm, audioFragWind2, window, windSizeSampInt, nfftUser, overlapSamp, minfreq, maxfreq, hopSize, cmap, draw, title):
         figFragSC, axFragSC = plt.subplots(3, figsize=(12,6))
         plt.subplots_adjust(hspace=.6) # to avoid overlapping between xlabel and title
-        figFragSC.canvas.manager.set_window_title('SpectralCentroid-Window_'+ str(windType) +'_'+ str(windSize) +'s-Nfft_'+ str(nfftUser)  +'-Overlap_'+ str(overlap) +'s-MinFreq_'+ str(minfreq) + 'Hz-MaxFreq_'+ str(maxfreq) + 'Hz') # set title to the figure window
+        # figFragSC.canvas.manager.set_window_title('SpectralCentroid-Window_'+ str(windType) +'_'+ str(windSize) +'s-Nfft_'+ str(nfftUser)  +'-Overlap_'+ str(overlap) +'s-MinFreq_'+ str(minfreq) + 'Hz-MaxFreq_'+ str(maxfreq) + 'Hz') # set title to the figure window
+        figFragSC.canvas.manager.set_window_title(str(self.fileName)+'SpectralCentroid'+title)
 
         # Calculate the spectral centroid in the FFT as a vertical line
         spectralC = self.calculateSC(audioFragWind2)
         scValue = str(round(spectralC, 2)) # take only two decimals
+
+        print('\n', self.audio, '\n')
+        # if self.audio esta en int, pasarlo a float (para que funcionen los recording, que son de tipo int)
 
         # Calculate the spectral centroid in the log power linear/mel spectrogram
         sc = librosa.feature.spectral_centroid(y=self.audio, sr=self.fs, n_fft=nfftUser, hop_length=hopSize, window=window, win_length=windSizeSampInt)
@@ -648,7 +653,7 @@ class ControlMenu():
         line1, = axFragSC[2].plot(times, sc.T, color='w') # draw the white line
         axFragSC[2].set(xlim=[0, self.duration], title='log Power spectrogram')
 
-        self.saveasWavCsv(figFragSC, self.time, self.audio, 0.65, self.fs) # save waveform as csv
+        self.saveasWavCsv(cm, figFragSC, self.time, self.audio, 0.65, self.fs) # save waveform as csv
         self.saveasCsv(figFragSC, times, sc.T, 0.05, 'SC') # save the white line as csv
         
         self.multicursor = MultiCursor(figFragSC.canvas, (axFragSC[0], axFragSC[2]), color='black', lw=1)
@@ -656,10 +661,11 @@ class ControlMenu():
 
         return axFragSC, line1
 
-    def plotSpectrogram(self, window, windType, windSize, windSizeSampInt, nfftUser, overlap, minfreq, maxfreq, hopSize, cmap, draw):
+    def plotSpectrogram(self, cm, window, windSizeSampInt, nfftUser, minfreq, maxfreq, hopSize, cmap, draw, title):
         figFragSpect, axFragSpect = plt.subplots(2, figsize=(12,6))
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-        figFragSpect.canvas.manager.set_window_title('Spectrogram-Window_'+ str(windType) +'_'+ str(windSize) +'s-Nfft_'+ str(nfftUser) +'-Overlap_'+ str(overlap) +'s-MinFreq_'+ str(minfreq) + 'Hz-MaxFreq_'+ str(maxfreq) + 'Hz') # set title to the figure window
+        # figFragSpect.canvas.manager.set_window_title('Spectrogram-Window_'+ str(windType) +'_'+ str(windSize) +'s-Nfft_'+ str(nfftUser) +'-Overlap_'+ str(overlap) +'s-MinFreq_'+ str(minfreq) + 'Hz-MaxFreq_'+ str(maxfreq) + 'Hz') # set title to the figure window
+        figFragSpect.canvas.manager.set_window_title(str(self.fileName)+'-Spectrogram-'+title)
 
         # Calculate the linear/mel spectrogram
         if draw == 1: # linear
@@ -679,16 +685,17 @@ class ControlMenu():
         axFragSpect[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         axFragSpect[0].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
 
-        self.saveasWavCsv(figFragSpect, self.time, self.audio, 0.5, self.fs) # save waveform as csv
+        self.saveasWavCsv(cm, figFragSpect, self.time, self.audio, 0.5, self.fs) # save waveform as csv
 
         self.multicursor = MultiCursor(figFragSpect.canvas, (axFragSpect[0], axFragSpect[1]), color='black', lw=1)
         self.span = self.createSpanSelector(axFragSpect[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
 
-    def plotSTE(self, windType, windType1, windSize, windSizeSampInt, overlap, beta):
+    def plotSTE(self, cm, windType1, windSizeSampInt, title):
         figFragSTE, axFragSTE = plt.subplots(2, figsize=(12,6))
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-        figFragSTE.canvas.manager.set_window_title('ShortTimeEnergy-Window_'+ str(windType) +'_'+ str(windSize) +'s-Overlap_'+ str(overlap) +'s-Beta_'+ str(beta)) # set title to the figure window
+        # figFragSTE.canvas.manager.set_window_title('ShortTimeEnergy-Window_'+ str(windType) +'_'+ str(windSize) +'s-Overlap_'+ str(overlap) +'s-Beta_'+ str(beta)) # set title to the figure window
+        figFragSTE.canvas.manager.set_window_title(str(self.fileName)+'-STE-'+title)
 
         # Calculate the Short-Time-Energy
         signal = np.array(self.audio, dtype=float)
@@ -701,7 +708,7 @@ class ControlMenu():
         axFragSTE[1].plot(time, ste)
         axFragSTE[1].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude (dB)', title='Short Time Energy')
 
-        self.saveasWavCsv(figFragSTE, self.time, self.audio, 0.5, self.fs) # save waveform as csv
+        self.saveasWavCsv(cm, figFragSTE, self.time, self.audio, 0.5, self.fs) # save waveform as csv
         self.saveasCsv(figFragSTE, time, ste, 0.05, 'STE') # save STE as csv
 
         self.span = self.createSpanSelector(axFragSTE[0]) # Select a fragment with the cursor and play the audio of that fragment
@@ -779,7 +786,7 @@ class ControlMenu():
         axFragPitch[1].plot(pitch.xs(), pitch_values, draw)
         axFragPitch[1].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Pitch measurement overtime')
 
-        self.saveasWavCsv(figFragPitch, self.time, self.audio, 0.5, self.fs) # save waveform as csv
+        self.saveasWavCsv(cm, figFragPitch, self.time, self.audio, 0.5, self.fs) # save waveform as csv
         self.saveasCsv(figFragPitch, pitch.xs(), pitch_values, 0.05, 'Pitch') # save Pitch as csv        
 
         self.span = self.createSpanSelector(axFragPitch[0]) # Select a fragment with the cursor and play the audio of that fragment
@@ -844,7 +851,7 @@ class ControlMenu():
         axFragFilt[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         axFragFilt[0].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
 
-        self.saveasWavCsv(figFragFilt, self.time, self.audio, 0.5, self.fs) # save waveform as csv
+        self.saveasWavCsv(cm, figFragFilt, self.time, self.audio, 0.5, self.fs) # save waveform as csv
 
         self.span = self.createSpanSelector(axFragFilt[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
@@ -870,11 +877,10 @@ class ControlMenu():
         plt.show() # show the figure
 
     # Called when pressing the 'Plot' button
-    def plotFigure(self, cm, windSize, overlap, minfreq, maxfreq, beta, minpitch, maxpitch):
+    def plotFigure(self, cm, choice, windSize, overlap, minfreq, maxfreq, beta, minpitch, maxpitch):
         list = self.aux.readFromCsv()
         cmap = mpl.colormaps[list[5][2]]
-        ## VALUES GIVEN BY THE USER (that were not created in checkValues())
-        choice = cm.var_opts.get()
+        # Values given by the user (that were not created in checkValues())
         windType = cm.var_wind.get()
         nfftUser = cm.var_nfft.get()
         draw = cm.var_draw.get()
@@ -883,6 +889,11 @@ class ControlMenu():
         windSizeSampInt = int(windSizeSamp)
         overlapSamp = int(overlap * self.fs) # overlap in samples (int)
         hopSize = windSizeSampInt-overlapSamp
+
+        title1 = 'Window_'+ str(windType) +'_'+ str(windSize) +'s-Nfft_'+ str(nfftUser) +'-Overlap_'+ str(overlap) +'s'
+        titleSpec = '-MinFreq_'+ str(minfreq) + 'Hz-MaxFreq_'+ str(maxfreq) + 'Hz'
+        titleSTFT = 'Window_'+ str(windType) +'_'+ str(windSize) +'s-Nfft_'+ str(nfftUser)
+        titleSTE = 'Window_'+ str(windType) +'_'+ str(windSize) +'s-Overlap_'+ str(overlap) +'s-Beta_'+ str(beta)
 
         # Apply the window type to the window
         if windType == 'Bartlett':
@@ -904,7 +915,7 @@ class ControlMenu():
         if choice == 'FT':
             if plt.fignum_exists(self.figFragFT.number):
                 plt.close(self.figFragFT.number) # close the figure of the FT
-            self.plotFT() # create the figure of the FT (again)
+            self.plotFT(cm) # create the figure of the FT (again)
 
         elif choice == 'STFT' or choice == 'STFT + Spect' or choice == 'Spectral Centroid':
             # The window is in the middle of the waveform by default
@@ -920,9 +931,10 @@ class ControlMenu():
             end = self.time[end_idx] # value of the end point
 
             audioFragWind = self.audio[ini_idx:end_idx+1]
-            if len(window) < len(audioFragWind):
+            lenWindow = len(window)
+            if lenWindow < len(audioFragWind):
                 audioFragWind = audioFragWind[:-1].copy() # delete last element of the numpy array
-            elif len(window) > len(audioFragWind):
+            elif lenWindow > len(audioFragWind):
                 window = window[:-1].copy() # delete last element of the numpy array
             audioFragWind2 = audioFragWind * window
 
@@ -932,14 +944,14 @@ class ControlMenu():
             frequencies = values * self.fs / nfftUser
 
             if choice == 'STFT':
-                axFragSTFT, line1 = self.plotSTFT(stft, frequencies, windType, windSize, nfftUser)
+                axFragSTFT, line1 = self.plotSTFT(cm, stft, frequencies, titleSTFT)
                 ax0 = axFragSTFT[0]
             elif choice == 'STFT + Spect':
-                axFragSTFTSpect, line1 = self.plotSTFTspect(stft, frequencies, window, windType, windSize, windSizeSampInt, nfftUser, overlap, minfreq, maxfreq, hopSize, cmap, draw)
+                axFragSTFTSpect, line1 = self.plotSTFTspect(cm, stft, frequencies, window, windSizeSampInt, nfftUser, minfreq, maxfreq, hopSize, cmap, draw, title1+titleSpec)
                 midLineSpect = axFragSTFTSpect[2].axvline(x=midPoint, color='black', linewidth='0.5', fillstyle='full') # line in the middle (spectrogram)
                 ax0 = axFragSTFTSpect[0]
             elif choice == 'Spectral Centroid':
-                axFragSC, line1 = self.plotSC(audioFragWind2, window, windType, windSize, windSizeSampInt, nfftUser, overlap, overlapSamp, minfreq, maxfreq, hopSize, cmap, draw)
+                axFragSC, line1 = self.plotSC(cm, audioFragWind2, window, windSizeSampInt, nfftUser, overlapSamp, minfreq, maxfreq, hopSize, cmap, draw, title1+titleSpec)
                 midLineSpectSC = axFragSC[2].axvline(x=midPoint, color='black', linewidth='0.5', fillstyle='full') # line in the middle (spectrogram)
                 ax0 = axFragSC[0]
 
@@ -949,11 +961,15 @@ class ControlMenu():
             ax0.add_artist(rectangle) # draw the rectangle
             midLine = ax0.axvline(x=midPoint, color='black', linewidth='0.5', fillstyle='full', zorder=2) # line in the middle
 
+            def get_window():
+                return window
+
             # If the user changes the position of the window, recalculate the STFT/FFT
             def on_click(event):
+                window = get_window()
                 # if the user does left click in the waveform
                 if event.button is MouseButton.LEFT and (choice == 'STFT' and event.inaxes == axFragSTFT[0]) or (choice == 'STFT + Spect' and event.inaxes == axFragSTFTSpect[0]) or (choice == 'Spectral Centroid' and event.inaxes == axFragSC[0]):
-                    # Define the new initial and end points of the window
+                     # Define the new initial and end points of the window
                     new_midPoint = event.xdata
                     new_midPoint_idx = midPoint_idx
                     for i in range(self.lenAudio):
@@ -966,13 +982,14 @@ class ControlMenu():
                         text = "At that point the window gets out of index."
                         tk.messagebox.showerror(parent=cm, title="Window out of index", message=text) # show error
                         return
-
+                    
                     new_audioFragWind = self.audio[new_ini_idx:new_end_idx+1]
-                    # if len(window) < len(new_audioFragWind):
-                    #     new_audioFragWind = new_audioFragWind[:-1].copy() # delete last element of the numpy array
-                    # elif len(window) > len(new_audioFragWind):
-                    #     window = window[:-1].copy() # delete last element of the numpy array
+                    if lenWindow < len(new_audioFragWind):
+                        new_audioFragWind = new_audioFragWind[:-1].copy() # delete last element of the numpy array
+                    elif lenWindow > len(new_audioFragWind):
+                        window = window[:-1].copy() # delete last element of the numpy array
                     new_audioFragWind2 = new_audioFragWind * window
+
                     if choice == 'Spectral Centroid':
                         # recalculate FFT
                         axFragSC[1].clear()
@@ -1009,9 +1026,9 @@ class ControlMenu():
             plt.show() # show the figure
 
         elif choice == 'Spectrogram':
-            self.plotSpectrogram(window, windType, windSize, windSizeSampInt, nfftUser, overlap, minfreq, maxfreq, hopSize, cmap, draw)
+            self.plotSpectrogram(cm, window, windSizeSampInt, nfftUser, minfreq, maxfreq, hopSize, cmap, draw, title1+titleSpec)
         elif choice == 'Short-Time-Energy':
-            self.plotSTE(windType, windType1, windSize, windSizeSampInt, overlap, beta)
+            self.plotSTE(cm, windType1, windSizeSampInt, titleSTE)
         elif choice == 'Pitch':
             self.plotPitch(cm, minpitch, maxpitch)
         elif choice == 'Filtering':

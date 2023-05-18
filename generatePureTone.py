@@ -137,8 +137,8 @@ class PureTone(tk.Frame):
             self.fs = int(ent_fs.get()) # sample frequency
             if fsEntry(self.fs) != True:
                 return
-            if but == 1: self.plotPureTone(tm, lab_sign, ent_ampl, ent_freq, ent_phas, ent_dura, ent_offs)
-            elif but == 2: self.saveDefaultValues(list, ent_ampl, ent_freq, ent_phas, ent_dura, ent_offs)
+            if but == 1: self.plotPureTone(tm, lab_sign, ent_ampl, ent_freq, ent_phas, ent_offs)
+            elif but == 2: self.saveDefaultValues(tm, list)
 
         but_gene = ttk.Button(tm, command=lambda: checkValues(1), text='Generate')
         but_save = ttk.Button(tm, command=lambda: checkValues(2), text='Save values as default')
@@ -150,12 +150,12 @@ class PureTone(tk.Frame):
 
         checkValues(1)
 
-    def saveDefaultValues(self, list, ent_ampl, ent_freq, ent_phas, ent_dura, ent_offs):
-        amplitude = float(ent_ampl.get())
-        frequency = float(ent_freq.get())
-        phase = float(ent_phas.get())
-        duration = float(ent_dura.get())
-        offset = float(ent_offs.get())
+    def saveDefaultValues(self, tm, list):
+        amplitude = tm.var_ampl.get()
+        frequency = tm.var_freq.get()
+        phase = tm.var_phas.get()
+        duration = tm.var_dura.get()
+        offset = tm.var_offs.get()
 
         new_list = [['NOISE','\t duration', list[0][2],'\t amplitude', list[0][4],'\t fs', list[0][6],'\t noise type', list[0][8]],
                 ['PURE TONE','\t duration', duration,'\t amplitude', amplitude,'\t fs', self.fs,'\t offset', offset,'\t frequency', frequency,'\t phase',  phase],
@@ -165,12 +165,12 @@ class PureTone(tk.Frame):
                 ['SPECTROGRAM','\t colormap', list[5][2]]]
         self.aux.saveDefaultAsCsv(new_list)
 
-    def plotPureTone(self, tm, lab_sign, ent_ampl, ent_freq, ent_phas, ent_dura, ent_offs):
-        amplitude = float(ent_ampl.get())
-        frequency = float(ent_freq.get())
-        phase = float(ent_phas.get())
-        duration = float(ent_dura.get())
-        offset = float(ent_offs.get())
+    def plotPureTone(self, tm, lab_sign, ent_ampl, ent_freq, ent_phas, ent_offs):
+        amplitude = tm.var_ampl.get()
+        frequency = tm.var_freq.get()
+        phase = tm.var_phas.get()
+        duration = tm.var_dura.get()
+        offset = tm.var_offs.get()
         samples = int(duration*self.fs)
 
         # Update expression

@@ -185,21 +185,21 @@ class AdvancedSettings():
         but_apply.grid(column=3, row=11, sticky=tk.EW, padx=5, pady=5)
 
     def apply(self, adse):
-        self.silenth = float(adse.var_sith.get())
-        self.voiceth = float(adse.var_voth.get())
-        self.octcost = float(adse.var_octc.get())
-        self.ocjumpc = float(adse.var_ocjc.get())
-        self.vuncost = float(adse.var_vunc.get())
-        self.veryacc = float(adse.var_accu.get())
+        self.silenth = adse.var_sith.get()
+        self.voiceth = adse.var_voth.get()
+        self.octcost = adse.var_octc.get()
+        self.ocjumpc = adse.var_ocjc.get()
+        self.vuncost = adse.var_vunc.get()
+        self.veryacc = adse.var_accu.get()
 
-        self.maxcomp = float(adse.var_mxfc.get())
+        self.maxcomp = adse.var_mxfc.get()
         self.maxsubh = adse.var_subh.get()
-        self.compfac = float(adse.var_cmpf.get())
+        self.compfac = adse.var_cmpf.get()
         self.pntsoct = adse.var_ptso.get()
 
-        self.windlen = float(adse.var_winl.get())
-        self.minfilt = float(adse.var_mnfi.get())
-        self.maxfilt = float(adse.var_mxfi.get())
+        self.windlen = adse.var_winl.get()
+        self.minfilt = adse.var_mnfi.get()
+        self.maxfilt = adse.var_mxfi.get()
         self.filters = adse.var_filt.get()
 
         self.maxcand = adse.var_cand.get()

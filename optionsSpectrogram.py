@@ -118,42 +118,92 @@ class Spectrogram(tk.Frame):
         cmm.var_misc = tk.StringVar()
 
         # creating option menus
-        self.dd_pusq = ttk.OptionMenu(cmm, cmm.var_pusq, cmm.opt_pusq[idx1], *cmm.opt_pusq)
-        self.dd_sequ = ttk.OptionMenu(cmm, cmm.var_sequ, cmm.opt_sequ[idx2], *cmm.opt_sequ)
-        self.dd_seq2 = ttk.OptionMenu(cmm, cmm.var_seq2, cmm.opt_seq2[idx3], *cmm.opt_seq2)
-        self.dd_dive = ttk.OptionMenu(cmm, cmm.var_dive, cmm.opt_dive[idx4], *cmm.opt_dive)
-        self.dd_cycl = ttk.OptionMenu(cmm, cmm.var_cycl, cmm.opt_cycl[idx5], *cmm.opt_cycl)
-        self.dd_qual = ttk.OptionMenu(cmm, cmm.var_qual, cmm.opt_qual[idx6], *cmm.opt_qual)
-        self.dd_misc = ttk.OptionMenu(cmm, cmm.var_misc, cmm.opt_misc[idx7], *cmm.opt_misc)
+        dd_pusq = ttk.OptionMenu(cmm, cmm.var_pusq, cmm.opt_pusq[idx1], *cmm.opt_pusq)
+        dd_sequ = ttk.OptionMenu(cmm, cmm.var_sequ, cmm.opt_sequ[idx2], *cmm.opt_sequ)
+        dd_seq2 = ttk.OptionMenu(cmm, cmm.var_seq2, cmm.opt_seq2[idx3], *cmm.opt_seq2)
+        dd_dive = ttk.OptionMenu(cmm, cmm.var_dive, cmm.opt_dive[idx4], *cmm.opt_dive)
+        dd_cycl = ttk.OptionMenu(cmm, cmm.var_cycl, cmm.opt_cycl[idx5], *cmm.opt_cycl)
+        dd_qual = ttk.OptionMenu(cmm, cmm.var_qual, cmm.opt_qual[idx6], *cmm.opt_qual)
+        dd_misc = ttk.OptionMenu(cmm, cmm.var_misc, cmm.opt_misc[idx7], *cmm.opt_misc)
 
         # size of the OptionMenus
-        self.dd_pusq.config(width=18)
-        self.dd_sequ.config(width=18)
-        self.dd_seq2.config(width=18)
-        self.dd_dive.config(width=18)
-        self.dd_cycl.config(width=18)
-        self.dd_qual.config(width=18)
-        self.dd_misc.config(width=18)
+        dd_pusq.config(width=18)
+        dd_sequ.config(width=18)
+        dd_seq2.config(width=18)
+        dd_dive.config(width=18)
+        dd_cycl.config(width=18)
+        dd_qual.config(width=18)
+        dd_misc.config(width=18)
 
         # positioning OptionMenus
-        self.dd_pusq.grid(column=0, row=1, sticky=tk.EW, padx=5)
-        self.dd_sequ.grid(column=0, row=3, sticky=tk.EW, padx=5)
-        self.dd_seq2.grid(column=0, row=5, sticky=tk.EW, padx=5)
-        self.dd_dive.grid(column=0, row=7, sticky=tk.EW, padx=5)
-        self.dd_cycl.grid(column=0, row=9, sticky=tk.EW, padx=5)
-        self.dd_qual.grid(column=0, row=11, sticky=tk.EW, padx=5)
-        self.dd_misc.grid(column=0, row=13, sticky=tk.EW, padx=5)
+        dd_pusq.grid(column=0, row=1, sticky=tk.EW, padx=5)
+        dd_sequ.grid(column=0, row=3, sticky=tk.EW, padx=5)
+        dd_seq2.grid(column=0, row=5, sticky=tk.EW, padx=5)
+        dd_dive.grid(column=0, row=7, sticky=tk.EW, padx=5)
+        dd_cycl.grid(column=0, row=9, sticky=tk.EW, padx=5)
+        dd_qual.grid(column=0, row=11, sticky=tk.EW, padx=5)
+        dd_misc.grid(column=0, row=13, sticky=tk.EW, padx=5)
 
         # RADIOBUTTONS
         cmm.var_type = tk.IntVar(value=value)
 
-        rdb_pusq = tk.Radiobutton(cmm, variable=cmm.var_type, value=1, command=lambda: self.displayOptions(cmm.var_type.get()), text='Perceptually Uniform Sequential')
-        rdb_sequ = tk.Radiobutton(cmm, variable=cmm.var_type, value=2, command=lambda: self.displayOptions(cmm.var_type.get()), text='Sequential')
-        rdb_seq2 = tk.Radiobutton(cmm, variable=cmm.var_type, value=3, command=lambda: self.displayOptions(cmm.var_type.get()), text='Sequential (2)')
-        rdb_dive = tk.Radiobutton(cmm, variable=cmm.var_type, value=4, command=lambda: self.displayOptions(cmm.var_type.get()), text='Diverging')
-        rdb_cycl = tk.Radiobutton(cmm, variable=cmm.var_type, value=5, command=lambda: self.displayOptions(cmm.var_type.get()), text='Cyclic')
-        rdb_qual = tk.Radiobutton(cmm, variable=cmm.var_type, value=6, command=lambda: self.displayOptions(cmm.var_type.get()), text='Qualitative')
-        rdb_misc = tk.Radiobutton(cmm, variable=cmm.var_type, value=7, command=lambda: self.displayOptions(cmm.var_type.get()), text='Miscellaneous')
+        def displayOptions(type):
+            if type == 1: 
+                dd_pusq.config(state='active')
+                but_pusq.configure(state='active')
+            else: 
+                dd_pusq.config(state='disabled')
+                but_pusq.configure(state='disabled')
+
+            if type == 2: 
+                dd_sequ.config(state='active')
+                but_sequ.configure(state='active')
+            else: 
+                dd_sequ.config(state='disabled')
+                but_sequ.configure(state='disabled')
+
+            if type == 3: 
+                dd_seq2.config(state='active')
+                but_seq2.configure(state='active')
+            else: 
+                dd_seq2.config(state='disabled')
+                but_seq2.configure(state='disabled')
+
+            if type == 4: 
+                dd_dive.config(state='active')
+                but_dive.configure(state='active')
+            else: 
+                dd_dive.config(state='disabled')
+                but_dive.configure(state='disabled')
+
+            if type == 5: 
+                dd_cycl.config(state='active')
+                but_cycl.configure(state='active')
+            else: 
+                dd_cycl.config(state='disabled')
+                but_cycl.configure(state='disabled')
+
+            if type == 6: 
+                dd_qual.config(state='active')
+                but_qual.configure(state='active')
+            else: 
+                dd_qual.config(state='disabled')
+                but_qual.configure(state='disabled')
+
+            if type == 7: 
+                dd_misc.config(state='active')
+                but_misc.configure(state='active')
+            else: 
+                dd_misc.config(state='disabled')
+                but_misc.configure(state='disabled')
+
+        rdb_pusq = tk.Radiobutton(cmm, variable=cmm.var_type, value=1, command=lambda: displayOptions(cmm.var_type.get()), text='Perceptually Uniform Sequential')
+        rdb_sequ = tk.Radiobutton(cmm, variable=cmm.var_type, value=2, command=lambda: displayOptions(cmm.var_type.get()), text='Sequential')
+        rdb_seq2 = tk.Radiobutton(cmm, variable=cmm.var_type, value=3, command=lambda: displayOptions(cmm.var_type.get()), text='Sequential (2)')
+        rdb_dive = tk.Radiobutton(cmm, variable=cmm.var_type, value=4, command=lambda: displayOptions(cmm.var_type.get()), text='Diverging')
+        rdb_cycl = tk.Radiobutton(cmm, variable=cmm.var_type, value=5, command=lambda: displayOptions(cmm.var_type.get()), text='Cyclic')
+        rdb_qual = tk.Radiobutton(cmm, variable=cmm.var_type, value=6, command=lambda: displayOptions(cmm.var_type.get()), text='Qualitative')
+        rdb_misc = tk.Radiobutton(cmm, variable=cmm.var_type, value=7, command=lambda: displayOptions(cmm.var_type.get()), text='Miscellaneous')
            
         # positioning Radiobuttons
         rdb_pusq.grid(column=0, row=0, sticky=tk.W)
@@ -165,77 +215,27 @@ class Spectrogram(tk.Frame):
         rdb_misc.grid(column=0, row=12, sticky=tk.W)
 
         # BUTTONS
-        self.but_pusq = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[0], cmaps[0][1], gradient))
-        self.but_sequ = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[1], cmaps[1][1], gradient))
-        self.but_seq2 = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[2], cmaps[2][1], gradient))
-        self.but_dive = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[3], cmaps[3][1], gradient))
-        self.but_cycl = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[4], cmaps[4][1], gradient))
-        self.but_qual = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[5], cmaps[5][1], gradient))
-        self.but_misc = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[6], cmaps[6][1], gradient))
-        self.but_save = ttk.Button(cmm, text='Save changes', command=lambda: self.setColormap(cmm, list))
+        but_pusq = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[0], cmaps[0][1], gradient))
+        but_sequ = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[1], cmaps[1][1], gradient))
+        but_seq2 = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[2], cmaps[2][1], gradient))
+        but_dive = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[3], cmaps[3][1], gradient))
+        but_cycl = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[4], cmaps[4][1], gradient))
+        but_qual = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[5], cmaps[5][1], gradient))
+        but_misc = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[6], cmaps[6][1], gradient))
+        but_save = ttk.Button(cmm, text='Save changes', command=lambda: self.setColormap(cmm, list))
 
         # positioning Buttons
-        self.but_pusq.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5)
-        self.but_sequ.grid(column=1, row=3, sticky=tk.EW, padx=5, pady=5)
-        self.but_seq2.grid(column=1, row=5, sticky=tk.EW, padx=5, pady=5)
-        self.but_dive.grid(column=1, row=7, sticky=tk.EW, padx=5, pady=5)
-        self.but_cycl.grid(column=1, row=9, sticky=tk.EW, padx=5, pady=5)
-        self.but_qual.grid(column=1, row=11, sticky=tk.EW, padx=5, pady=5)
-        self.but_misc.grid(column=1, row=13, sticky=tk.EW, padx=5, pady=5)
-        self.but_save.grid(column=1, row=15, sticky=tk.EW, padx=5, pady=5)
+        but_pusq.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5)
+        but_sequ.grid(column=1, row=3, sticky=tk.EW, padx=5, pady=5)
+        but_seq2.grid(column=1, row=5, sticky=tk.EW, padx=5, pady=5)
+        but_dive.grid(column=1, row=7, sticky=tk.EW, padx=5, pady=5)
+        but_cycl.grid(column=1, row=9, sticky=tk.EW, padx=5, pady=5)
+        but_qual.grid(column=1, row=11, sticky=tk.EW, padx=5, pady=5)
+        but_misc.grid(column=1, row=13, sticky=tk.EW, padx=5, pady=5)
+        but_save.grid(column=1, row=15, sticky=tk.EW, padx=5, pady=5)
 
         # Put the readen value from the csv file as the default value
-        self.displayOptions(value)
-
-    def displayOptions(self, type):
-        if type == 1: 
-            self.dd_pusq.config(state='active')
-            self.but_pusq.configure(state='active')
-        else: 
-            self.dd_pusq.config(state='disabled')
-            self.but_pusq.configure(state='disabled')
-
-        if type == 2: 
-            self.dd_sequ.config(state='active')
-            self.but_sequ.configure(state='active')
-        else: 
-            self.dd_sequ.config(state='disabled')
-            self.but_sequ.configure(state='disabled')
-
-        if type == 3: 
-            self.dd_seq2.config(state='active')
-            self.but_seq2.configure(state='active')
-        else: 
-            self.dd_seq2.config(state='disabled')
-            self.but_seq2.configure(state='disabled')
-
-        if type == 4: 
-            self.dd_dive.config(state='active')
-            self.but_dive.configure(state='active')
-        else: 
-            self.dd_dive.config(state='disabled')
-            self.but_dive.configure(state='disabled')
-
-        if type == 5: 
-            self.dd_cycl.config(state='active')
-            self.but_cycl.configure(state='active')
-        else: 
-            self.dd_cycl.config(state='disabled')
-            self.but_cycl.configure(state='disabled')
-
-        if type == 6: 
-            self.dd_qual.config(state='active')
-            self.but_qual.configure(state='active')
-        else: 
-            self.dd_qual.config(state='disabled')
-            self.but_qual.configure(state='disabled')
-
-        if type == 7: 
-            self.dd_misc.config(state='active')
-            self.but_misc.configure(state='active')
-        else: 
-            self.dd_misc.config(state='disabled')
-            self.but_misc.configure(state='disabled')
+        displayOptions(value)
 
     def plot_color_gradients(self, cmap_category, cmap_list, gradient):
         # Create figure and adjust figure height to number of colormaps

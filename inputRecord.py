@@ -105,7 +105,6 @@ class Record(tk.Frame):
 
         fig, ax = self.fig, self.ax
         self.addLoadButton(fig, ax, self.fs, time, myrecording, rm, 'Recording')
-        # rm.destroy()
 
         # Plot the recording
         ax.plot(time, myrecording)
