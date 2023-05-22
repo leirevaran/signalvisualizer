@@ -9,41 +9,6 @@ windll.shcore.SetProcessDpiAwareness(1)
 
 class AdvancedSettings():
 
-    def createVariables(self):
-        # Create variables for the advanced settings of Pitch
-        self.maxcand = 15 # max number of candidates
-        self.drawing = 1 # drawing style
-        # Autocorrelation / Cross-correlation
-        self.silenth = 0.03 # silence treshold
-        self.voiceth = 0.45 # voicing treshold
-        self.octcost = 0.01 # octave cost
-        self.ocjumpc = 0.35 # octave jump cost
-        self.vuncost = 0.14 # voiced unvoiced cost
-        self.veryacc = 0 # very accurate
-        # Subharmonics
-        self.maxcomp = 1250 # max frequency component
-        self.maxsubh = 15 # max number of subharmonics
-        self.compfac = 0.84 # compression factor
-        self.pntsoct = 48 # number of points per octave
-        # Spinet
-        self.windlen = 0.04 # window length
-        self.minfilt = 70 # min filter frequency
-        self.maxfilt = 5000 # max filter frequency
-        self.filters = 250 # number of filters
-
-    def getVariables(self):
-        return self.maxcand, self.drawing
-    
-    def getAutocorrelationVars(self):
-        return self.silenth, self.voiceth, self.octcost, self.ocjumpc, self.vuncost, self.veryacc
-    
-    def getSubharmonicsVars(self):
-        return self.maxcomp, self.maxsubh, self.compfac, self.pntsoct
-    
-    def getSpinetVars(self):
-        return self.windlen, self.minfilt, self.maxfilt, self.filters
-    
-    # PITCH - ADVANCED SETTINGS WINDOW
     def advancedSettings(self):
         adse = tk.Toplevel()
         adse.geometry('738x420')
@@ -58,8 +23,6 @@ class AdvancedSettings():
 
         for i in range(11):
             adse.rowconfigure(i, weight=1)
-
-        self.createVariables()
 
         # LABELS (adse)
         lab_aucc = tk.Label(adse, text='Autocorrelation / Cross-correlation', bd=6, font=('TkDefaultFont', 10))
@@ -108,23 +71,23 @@ class AdvancedSettings():
         lab_draw.grid(column=2, row=9, sticky=tk.E)
 
         # ENTRYS (adse)
-        adse.var_sith = tk.DoubleVar(value=self.silenth)
-        adse.var_voth = tk.DoubleVar(value=self.voiceth)
-        adse.var_octc = tk.DoubleVar(value=self.octcost)
-        adse.var_ocjc = tk.DoubleVar(value=self.ocjumpc)
-        adse.var_vunc = tk.DoubleVar(value=self.vuncost)
+        adse.var_sith = tk.DoubleVar(value=0.03)
+        adse.var_voth = tk.DoubleVar(value=0.45)
+        adse.var_octc = tk.DoubleVar(value=0.01)
+        adse.var_ocjc = tk.DoubleVar(value=0.35)
+        adse.var_vunc = tk.DoubleVar(value=0.14)
 
-        adse.var_mxfc = tk.DoubleVar(value=self.maxcomp)
-        adse.var_subh = tk.IntVar(value=self.maxsubh)
-        adse.var_cmpf = tk.DoubleVar(value=self.compfac)
-        adse.var_ptso = tk.IntVar(value=self.pntsoct)
+        adse.var_mxfc = tk.DoubleVar(value=1250)
+        adse.var_subh = tk.IntVar(value=15)
+        adse.var_cmpf = tk.DoubleVar(value=0.84)
+        adse.var_ptso = tk.IntVar(value=48)
 
-        adse.var_winl = tk.DoubleVar(value=self.windlen)
-        adse.var_mnfi = tk.DoubleVar(value=self.minfilt)
-        adse.var_mxfi = tk.DoubleVar(value=self.maxfilt)
-        adse.var_filt = tk.IntVar(value=self.filters)
+        adse.var_winl = tk.DoubleVar(value=0.04)
+        adse.var_mnfi = tk.DoubleVar(value=70)
+        adse.var_mxfi = tk.DoubleVar(value=5000)
+        adse.var_filt = tk.IntVar(value=250)
 
-        adse.var_cand = tk.IntVar(value=self.maxcand)
+        adse.var_cand = tk.IntVar(value=15)
 
         vcmd = (adse.register(self.aux.onValidate), '%S', '%s', '%d')
 
@@ -166,12 +129,12 @@ class AdvancedSettings():
         ent_cand.grid(column=3, row=8, sticky=tk.EW, padx=5, pady=5)
 
         # CHECKBOX (adse)
-        adse.var_accu = tk.StringVar(value=self.veryacc)
+        adse.var_accu = tk.StringVar(value=0)
         chk_accu = tk.Checkbutton(adse, text='Very accurate', variable=adse.var_accu)
         chk_accu.grid(column=1, row=6, sticky=tk.W)
 
         # RADIOBUTTONS (adse)
-        adse.var_draw = tk.IntVar(value=self.drawing)
+        adse.var_draw = tk.IntVar(value=1)
         
         rdb_curv = tk.Radiobutton(adse, text='curve', variable=adse.var_draw, value=1)
         rdb_spec = tk.Radiobutton(adse, text='speckles', variable=adse.var_draw, value=2)
@@ -206,3 +169,38 @@ class AdvancedSettings():
         self.drawing = adse.var_draw.get()
 
         adse.destroy()
+
+    def getVariables(self):
+        return self.maxcand, self.drawing
+    
+    def getAutocorrelationVars(self):
+        return self.silenth, self.voiceth, self.octcost, self.ocjumpc, self.vuncost, self.veryacc
+    
+    def getSubharmonicsVars(self):
+        return self.maxcomp, self.maxsubh, self.compfac, self.pntsoct
+    
+    def getSpinetVars(self):
+        return self.windlen, self.minfilt, self.maxfilt, self.filters
+
+    # Used when the user hasn't opened the advanced settings' window
+    def createVariables(self):
+        # Create variables for the advanced settings of Pitch
+        self.maxcand = 15 # max number of candidates
+        self.drawing = 1 # drawing style
+        # Autocorrelation / Cross-correlation
+        self.silenth = 0.03 # silence treshold
+        self.voiceth = 0.45 # voicing treshold
+        self.octcost = 0.01 # octave cost
+        self.ocjumpc = 0.35 # octave jump cost
+        self.vuncost = 0.14 # voiced unvoiced cost
+        self.veryacc = 0 # very accurate
+        # Subharmonics
+        self.maxcomp = 1250 # max frequency component
+        self.maxsubh = 15 # max number of subharmonics
+        self.compfac = 0.84 # compression factor
+        self.pntsoct = 48 # number of points per octave
+        # Spinet
+        self.windlen = 0.04 # window length
+        self.minfilt = 70 # min filter frequency
+        self.maxfilt = 5000 # max filter frequency
+        self.filters = 250 # number of filters

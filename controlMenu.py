@@ -63,6 +63,7 @@ class ControlMenu():
         lab_wind = tk.Label(cm, text='Window')
         lab_nfft = tk.Label(cm, text='nfft')
         lab_meth = tk.Label(cm, text='Method')
+        lab_type = tk.Label(cm, text='Filter type')
 
         # Labels of Entrys
         lab_size = tk.Label(cm, text='Window length (s)')
@@ -83,7 +84,7 @@ class ControlMenu():
         lab_filt = tk.Label(cm, text='Filtering', bd=6, font=('TkDefaultFont', 10))
         lab_sten = tk.Label(cm, text='Short-Time-Energy', bd=6, font=('TkDefaultFont', 10))
 
-        #Labels of radio buttons
+        # Labels of Radiobuttons
         lab_draw = tk.Label(cm, text='Drawing style')
         
         # positioning Labels
@@ -91,6 +92,7 @@ class ControlMenu():
         lab_wind.grid(column=0, row=1, sticky=tk.E)
         lab_nfft.grid(column=0, row=3, sticky=tk.E)
         lab_meth.grid(column=0, row=10, sticky=tk.E)
+        lab_type.grid(column=2, row=2, sticky=tk.E)
 
         lab_size.grid(column=0, row=2, sticky=tk.E)
         lab_over.grid(column=0, row=4, sticky=tk.E)
@@ -99,10 +101,10 @@ class ControlMenu():
         lab_draw.grid(column=0, row=8, sticky=tk.E)
         lab_minp.grid(column=0, row=11, sticky=tk.E)
         lab_maxp.grid(column=0, row=12, sticky=tk.E)
-        lab_fund.grid(column=2, row=2, sticky=tk.E)
-        lab_cent.grid(column=2, row=3, sticky=tk.E)
-        lab_cut1.grid(column=2, row=4, sticky=tk.E)
-        lab_cut2.grid(column=2, row=5, sticky=tk.E)
+        lab_fund.grid(column=2, row=3, sticky=tk.E)
+        lab_cent.grid(column=2, row=4, sticky=tk.E)
+        lab_cut1.grid(column=2, row=5, sticky=tk.E)
+        lab_cut2.grid(column=2, row=6, sticky=tk.E)
         lab_beta.grid(column=2, row=11, sticky=tk.E)
         lab_fshz.grid(column=3, row=13, sticky=tk.EW)
 
@@ -239,6 +241,52 @@ class ControlMenu():
                 tk.messagebox.showerror(parent=cm, title="Pitch ceiling too small", message=text) # show error
             else: return True
 
+        def fundfreqEntry(event):
+            fundfreq = cm.var_fund.get()
+            if fundfreq < 1:
+                cm.var_fund.set('1')
+                text = "The minimum value of the fundamental frequency response is 1."
+                tk.messagebox.showerror(parent=cm, title="Fundamental frequency response too small", message=text) # show error
+            elif fundfreq > (self.fs/2): # max fundfreq = (self.fs/2)-(max(anchura de banda)/2) (?)
+                cm.var_fund.set(self.fs/2)
+                text = "The maximum frequency can't be greater than the half of the sample frequency (" + str(self.fs/2) + "Hz)."
+                tk.messagebox.showerror(parent=cm, title="Fundamental frequency response too big", message=text) # show error
+            else: return True
+        
+        def centerEntry(event):
+            center = cm.var_cent.get()
+            fcut1 = cm.var_cut1.get()
+            fcut2 = cm.var_cut2.get()
+            if center <= fcut1 or center >= fcut2:
+                cm.var_cent.set(int((fcut1+fcut2)/2))
+                text = "The center frequency must be a value between fcut1 (" + str(fcut1) + ") and fcut2 (" + str(fcut2) + ")."
+                tk.messagebox.showerror(parent=cm, title="Wrong center frequency value", message=text) # show error
+            else: return True
+        
+        def fcut1Entry(event):
+            center = cm.var_cent.get()
+            fcut1 = cm.var_cut1.get()
+            fcut2 = cm.var_cut2.get()
+            if fcut1 >= fcut2 or fcut1 >= center:
+                c1 = fcut2-center
+                c1 = center-c1
+                cm.var_cut1.set(c1)
+                text = "Fcut1 must be a smaller value than center (" + str(center) + ") and fcut2 (" + str(fcut2) + ")."
+                tk.messagebox.showerror(parent=cm, title="Wrong fcut1 value", message=text) # show error
+            else: return True
+        
+        def fcut2Entry(event):
+            center = cm.var_cent.get()
+            fcut1 = cm.var_cut1.get()
+            fcut2 = cm.var_cut2.get()
+            if fcut2 <= fcut1 or fcut2 <= center:
+                c2 = center-fcut1
+                c2 = center+c2
+                cm.var_cut1.set(c2)
+                text = "Fcut2 must be a greater value than center (" + str(center) + ") and fcut1 (" + str(fcut1) + ")."
+                tk.messagebox.showerror(parent=cm, title="Wrong fcut2 value", message=text) # show error
+            else: return True
+
         def betaEntry(event):
             beta = cm.var_beta.get()
             if beta < 0 or beta > 14:
@@ -254,6 +302,10 @@ class ControlMenu():
         ent_maxf.bind('<Return>', maxfreqEntry)
         ent_minp.bind('<Return>', minpitchEntry)
         ent_maxp.bind('<Return>', maxpitchEntry)
+        ent_fund.bind('<Return>', fundfreqEntry)
+        ent_cent.bind('<Return>', centerEntry)
+        ent_cut1.bind('<Return>', fcut1Entry)
+        ent_cut2.bind('<Return>', fcut2Entry)
         ent_beta.bind('<Return>', betaEntry)
 
         # positioning Entrys
@@ -263,10 +315,10 @@ class ControlMenu():
         ent_maxf.grid(column=1, row=7, sticky=tk.EW, padx=5, pady=5)
         ent_minp.grid(column=1, row=11, sticky=tk.EW, padx=5, pady=5)
         ent_maxp.grid(column=1, row=12, sticky=tk.EW, padx=5, pady=5)
-        ent_fund.grid(column=3, row=2, sticky=tk.EW, padx=5, pady=5)
-        ent_cent.grid(column=3, row=3, sticky=tk.EW, padx=5, pady=5)
-        ent_cut1.grid(column=3, row=4, sticky=tk.EW, padx=5, pady=5)
-        ent_cut2.grid(column=3, row=5, sticky=tk.EW, padx=5, pady=5)
+        ent_fund.grid(column=3, row=3, sticky=tk.EW, padx=5, pady=5)
+        ent_cent.grid(column=3, row=4, sticky=tk.EW, padx=5, pady=5)
+        ent_cut1.grid(column=3, row=5, sticky=tk.EW, padx=5, pady=5)
+        ent_cut2.grid(column=3, row=6, sticky=tk.EW, padx=5, pady=5)
         ent_beta.grid(column=3, row=11, sticky=tk.EW, padx=5, pady=5)
 
         # RADIOBUTTONS
@@ -289,12 +341,17 @@ class ControlMenu():
             beta = cm.var_beta.get()
             minpitch = cm.var_minp.get()
             maxpitch = cm.var_maxp.get()
+            fundfreq = cm.var_fund.get()
+            center = cm.var_cent.get()
+            fcut1 = cm.var_cut1.get()
+            fcut2 = cm.var_cut2.get()
 
             if choice == 'STFT' or choice == 'STFT + Spect' or choice == 'Spectral Centroid' or choice == 'Spectrogram' or choice == 'Filtering' or choice == 'Short-Time-Energy':
-                if choice == 'Short-Time-Energy':
-                    if betaEntry(beta)!=True:
-                        return
-                elif minfreqEntry(minfreq)!=True or maxfreqEntry(maxfreq)!=True:
+                if choice == 'Short-Time-Energy' and betaEntry(beta)!=True:
+                    return
+                if minfreqEntry(minfreq)!=True or maxfreqEntry(maxfreq)!=True:
+                    return
+                if choice == 'Filtering' and (fundfreqEntry(fundfreq)!=True or centerEntry(center)!=True or fcut1Entry(fcut1)!=True or fcut2Entry(fcut2)!=True):
                     return
                 if choice != 'Filtering' and windowLengthEntry(windSize) != True:
                     return
@@ -303,7 +360,7 @@ class ControlMenu():
             elif choice == 'Pitch' and (minpitchEntry(minpitch) != True or maxpitchEntry(maxpitch) != True):
                 return
             
-            self.plotFigure(cm, choice, windSize, overlap, minfreq, maxfreq, beta, minpitch, maxpitch)
+            self.plotFigure(cm, choice, windSize, overlap, minfreq, maxfreq, beta)
 
         but_adse = ttk.Button(cm, state='disabled', command=lambda: self.adse.advancedSettings(), text='Advanced settings')
         but_freq = ttk.Button(cm, state='disabled', command=lambda: self.plotFiltFreqResponse(cm), text='Filter Frequency Response')
@@ -325,8 +382,8 @@ class ControlMenu():
         cm.opt_wind = ('Bartlett','Blackman', 'Hamming','Hanning', 'Kaiser')
         cm.opt_nfft = [2**9, 2**10, 2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19]
         cm.opt_meth = ('Autocorrelation', 'Cross-correlation', 'Subharmonics', 'Spinet')
-        cm.opt_filt = ('Butterworth','Elliptic', 'Chebyshev I', 'Chebyshev II', 'FIR least-squares')
         cm.opt_pass = ('Lowpass','Highpass', 'Bandpass', 'Bandstop')
+        cm.opt_filt = ('Butterworth','Elliptic', 'Chebyshev I', 'Chebyshev II', 'FIR least-squares')
 
         cm.var_opts = tk.StringVar()
         cm.var_wind = tk.StringVar()
@@ -337,7 +394,6 @@ class ControlMenu():
 
         # Called when changing the main option (FT, STFT, etc.) for disabling or activating widgets
         def displayOptions(choice):
-            # Reset widgets
             if choice == 'FT' or choice == 'STFT' or choice == 'Pitch' or choice == 'Filtering': 
                 ent_over.config(state='disabled')
             else: ent_over.config(state='normal')
@@ -368,6 +424,7 @@ class ControlMenu():
                 # but_fisi.configure(state='disabled')
 
             if choice == 'Pitch':
+                self.adse.createVariables() # create the variables of advanced settings
                 dd_meth.config(state='active')
                 ent_minp.config(state='normal')
                 ent_maxp.config(state='normal')
@@ -409,24 +466,24 @@ class ControlMenu():
         dd_wind = ttk.OptionMenu(cm, cm.var_wind, cm.opt_wind[0], *cm.opt_wind)
         dd_nfft = ttk.OptionMenu(cm, cm.var_nfft, cm.opt_nfft[0], *cm.opt_nfft)
         dd_meth = ttk.OptionMenu(cm, cm.var_meth, cm.opt_meth[0], *cm.opt_meth)
-        dd_filt = ttk.OptionMenu(cm, cm.var_filt, cm.opt_filt[0], *cm.opt_filt)
         dd_pass = ttk.OptionMenu(cm, cm.var_pass, cm.opt_pass[0], *cm.opt_pass)
+        dd_filt = ttk.OptionMenu(cm, cm.var_filt, cm.opt_filt[0], *cm.opt_filt)
 
         # size of the OptionMenus
         dd_opts.config(width=16)
         dd_wind.config(width=18, state='disabled')
         dd_nfft.config(width=18, state='disabled')
         dd_meth.config(width=18, state='disabled')
-        dd_filt.config(width=18, state='disabled')
         dd_pass.config(width=18, state='disabled')
+        dd_filt.config(width=18, state='disabled')
 
         # positioning OptionMenus
         dd_opts.grid(column=2, row=0, sticky=tk.EW, padx=5)
         dd_wind.grid(column=1, row=1, sticky=tk.EW, padx=5)
         dd_nfft.grid(column=1, row=3, sticky=tk.EW, padx=5)
         dd_meth.grid(column=1, row=10, sticky=tk.EW, padx=5)
-        dd_filt.grid(column=3, row=6, sticky=tk.EW, padx=5)
-        dd_pass.grid(column=3, row=7, sticky=tk.EW, padx=5)
+        dd_pass.grid(column=3, row=2, sticky=tk.EW, padx=5)
+        dd_filt.grid(column=3, row=7, sticky=tk.EW, padx=5)
 
     # METHODS
     # Updates the OptionMenu 'om' with the option list 'opt' and variable 'var' passed as a parameter
@@ -455,11 +512,10 @@ class ControlMenu():
 
     # Convert the numpy array containing the audio into a wav file
     def saveasWav(self, audio, fs):
-        scaled = np.int16(audio/np.max(np.abs(audio)) * 32767)
         file = tk.filedialog.asksaveasfilename(title='Save file', defaultextension=".wav", filetypes=(("wav files","*.wav"),))
         if file is None or file == '':
             return
-        write(file, fs, scaled) # generates a wav file in the selected folder
+        write(file, fs, audio) # generates a wav file in the selected folder
         return file
     
     # Save the values of 'x' and 'y' axis of a plot as a csv file
@@ -492,8 +548,7 @@ class ControlMenu():
             if file.endswith('wav'):
                 self.fileName = Path(file).stem # take only the name of the file without the '.wav' and the path
                 cm.title('Control menu: ' + self.fileName) # update the name of the window
-                scaled = np.int16(y/np.max(np.abs(y)) * 32767)
-                write(file, fs, scaled) # generates a wav file in the selected folder
+                write(file, fs, y) # generates a wav file in the selected folder
             elif file.endswith('.csv'):
                 with open(file, 'w', newline='') as csvfile:
                     writer = csv.writer(csvfile)
@@ -566,7 +621,6 @@ class ControlMenu():
     def plotSTFT(self, cm, stft, frequencies, title):
         figFragSTFT, axFragSTFT = plt.subplots(2, figsize=(12,6))
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-        # figFragSTFT.canvas.manager.set_window_title(str(self.fileName)+'-STFT-Window_'+ str(windType) +'_'+ str(windSize) +'s-Nfft_'+ str(nfftUser)) # set title to the figure window
         figFragSTFT.canvas.manager.set_window_title(str(self.fileName)+'-STFT-'+title) # set title to the figure window
 
         axFragSTFT[0].plot(self.time, self.audio)
@@ -586,8 +640,7 @@ class ControlMenu():
     def plotSTFTspect(self, cm, stft, frequencies, window, windSizeSampInt, nfftUser, minfreq, maxfreq, hopSize, cmap, draw, title):
         figFragSTFTSpect, axFragSTFTSpect = plt.subplots(3, figsize=(12,6))
         plt.subplots_adjust(hspace=.6) # to avoid overlapping between xlabel and title
-        # figFragSTFTSpect.canvas.manager.set_window_title('STFT+Spectrogram-Window_'+ str(windType) +'_'+ str(windSize) +'s-Nfft_'+ str(nfftUser) +'-Overlap_'+ str(overlap) +'s-MinFreq_'+ str(minfreq) + 'Hz-MaxFreq_'+ str(maxfreq) + 'Hz') # set title to the figure window
-        figFragSTFTSpect.canvas.manager.set_window_title(str(self.fileName)+'-STFT+Spectrogram-'+title)
+        figFragSTFTSpect.canvas.manager.set_window_title(str(self.fileName)+'-STFT+Spectrogram-'+title) # set title to the figure window
 
         # Calculate the linear/mel spectrogram
         if draw == 1: # linear
@@ -620,15 +673,11 @@ class ControlMenu():
     def plotSC(self, cm, audioFragWind2, window, windSizeSampInt, nfftUser, overlapSamp, minfreq, maxfreq, hopSize, cmap, draw, title):
         figFragSC, axFragSC = plt.subplots(3, figsize=(12,6))
         plt.subplots_adjust(hspace=.6) # to avoid overlapping between xlabel and title
-        # figFragSC.canvas.manager.set_window_title('SpectralCentroid-Window_'+ str(windType) +'_'+ str(windSize) +'s-Nfft_'+ str(nfftUser)  +'-Overlap_'+ str(overlap) +'s-MinFreq_'+ str(minfreq) + 'Hz-MaxFreq_'+ str(maxfreq) + 'Hz') # set title to the figure window
-        figFragSC.canvas.manager.set_window_title(str(self.fileName)+'SpectralCentroid'+title)
+        figFragSC.canvas.manager.set_window_title(str(self.fileName)+'SpectralCentroid'+title) # set title to the figure window
 
         # Calculate the spectral centroid in the FFT as a vertical line
         spectralC = self.calculateSC(audioFragWind2)
         scValue = str(round(spectralC, 2)) # take only two decimals
-
-        print('\n', self.audio, '\n')
-        # if self.audio esta en int, pasarlo a float (para que funcionen los recording, que son de tipo int)
 
         # Calculate the spectral centroid in the log power linear/mel spectrogram
         sc = librosa.feature.spectral_centroid(y=self.audio, sr=self.fs, n_fft=nfftUser, hop_length=hopSize, window=window, win_length=windSizeSampInt)
@@ -664,8 +713,7 @@ class ControlMenu():
     def plotSpectrogram(self, cm, window, windSizeSampInt, nfftUser, minfreq, maxfreq, hopSize, cmap, draw, title):
         figFragSpect, axFragSpect = plt.subplots(2, figsize=(12,6))
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-        # figFragSpect.canvas.manager.set_window_title('Spectrogram-Window_'+ str(windType) +'_'+ str(windSize) +'s-Nfft_'+ str(nfftUser) +'-Overlap_'+ str(overlap) +'s-MinFreq_'+ str(minfreq) + 'Hz-MaxFreq_'+ str(maxfreq) + 'Hz') # set title to the figure window
-        figFragSpect.canvas.manager.set_window_title(str(self.fileName)+'-Spectrogram-'+title)
+        figFragSpect.canvas.manager.set_window_title(str(self.fileName)+'-Spectrogram-'+title) # set title to the figure window
 
         # Calculate the linear/mel spectrogram
         if draw == 1: # linear
@@ -694,8 +742,7 @@ class ControlMenu():
     def plotSTE(self, cm, windType1, windSizeSampInt, title):
         figFragSTE, axFragSTE = plt.subplots(2, figsize=(12,6))
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-        # figFragSTE.canvas.manager.set_window_title('ShortTimeEnergy-Window_'+ str(windType) +'_'+ str(windSize) +'s-Overlap_'+ str(overlap) +'s-Beta_'+ str(beta)) # set title to the figure window
-        figFragSTE.canvas.manager.set_window_title(str(self.fileName)+'-STE-'+title)
+        figFragSTE.canvas.manager.set_window_title(str(self.fileName)+'-STE-'+title) # set title to the figure window
 
         # Calculate the Short-Time-Energy
         signal = np.array(self.audio, dtype=float)
@@ -714,9 +761,10 @@ class ControlMenu():
         self.span = self.createSpanSelector(axFragSTE[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
 
-    def plotPitch(self, cm, minpitch, maxpitch):
-        # Pitch
+    def plotPitch(self, cm):
         method = cm.var_meth.get()
+        minpitch = cm.var_minp.get()
+        maxpitch = cm.var_maxp.get()
         maxCandidates, drawStyle = self.adse.getVariables()
         
         figFragPitch, axFragPitch = plt.subplots(2, figsize=(12,6))
@@ -724,17 +772,14 @@ class ControlMenu():
         figFragPitch.canvas.manager.set_window_title('Pitch-Method_'+ str(method) +'-PitchFloor_'+ str(minpitch) + 'Hz-PitchCeiling_'+ str(maxpitch) + 'Hz') # set title to the figure window
 
         # Convert the numpy array containing the audio fragment into a wav file
-        # wavFile = self.saveasWav(self.audio, self.fs)
-        scaled = np.int16(self.audio/np.max(np.abs(self.audio)) * 32767)
-        wavFile = 'wav/frag.wav'
-        write(wavFile, self.fs, scaled) # generates a wav file in the current folder
+        write('wav/frag.wav', self.fs, self.audio) # generates a wav file in the current folder
 
         silenceTh, voiceTh, octaveCost, octJumpCost, vcdUnvcdCost, accurate = self.adse.getAutocorrelationVars()
         if accurate == 1: accurate_bool = True
         else: accurate_bool = False
 
         # Calculate the pitch of the generated wav file using parselmouth
-        snd = parselmouth.Sound(wavFile)
+        snd = parselmouth.Sound('wav/frag.wav')
         if method == 'Autocorrelation':
             pitch = snd.to_pitch_ac(pitch_floor=minpitch,
                                     max_number_of_candidates=maxCandidates,
@@ -792,23 +837,16 @@ class ControlMenu():
         self.span = self.createSpanSelector(axFragPitch[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
 
-    def designFilter(self, cm):
-        fundfreq = cm.var_fund.get()
-        centfreq = cm.var_cent.get()
-        fcut1 = cm.var_cut1.get()
-        fcut2 = cm.var_cut2.get()
-        filter = cm.var_filt.get()
-        type = cm.var_pass.get()
-
+    def designFilter(self, fundfreq, center, fcut1, fcut2):
         # Design filter
         cuttoff_freq = fundfreq
-        samp_rate = centfreq
-        norm_pass = cuttoff_freq/(samp_rate/2)
+        # samp_rate = centfreq
+        norm_pass = cuttoff_freq/(self.fs/2)
         norm_stop = 1.5*norm_pass
 
         if filter == 'Butterworth':
-            N, Wn = signal.buttord(wp=norm_pass, ws=norm_stop, gpass=fcut1, gstop=fcut2, fs=self.fs)
-            b, a = signal.butter(N, Wn, btype=type, fs=self.fs)
+            N, Wn = signal.buttord(wp=1000, ws=1200, gpass=3, gstop=40, fs=self.fs)
+            b, a = signal.butter(N, Wn, btype='lowpass', fs=self.fs)
         elif filter == 'Elliptic':
             N, Wn = signal.ellipord(wp=norm_pass, ws=norm_stop, gpass=fcut1, gstop=fcut2, fs=self.fs)
             b, a = signal.ellip(N, 5, 40, Wn, btype=type, fs=self.fs)
@@ -822,32 +860,42 @@ class ControlMenu():
         #     coeffs = signal.firls(fs=self.audiofs)
 
         zi = signal.lfilter_zi(b, a)
-        digitalFilter, _ = signal.lfilter(b, a, self.audio, zi=zi*self.audio[0])
+        filteredSignal, _ = signal.lfilter(b, a, self.audio, zi=zi*self.audio[0])
 
-        return digitalFilter, b, a
+        return filteredSignal, b, a
 
     def plotFiltering(self, cm, minfreq, maxfreq, cmap, draw):
+        fundfreq = cm.var_fund.get()
+        center = cm.var_cent.get()
+        fcut1 = cm.var_cut1.get()
+        fcut2 = cm.var_cut2.get()
+        filter = cm.var_filt.get()
+        type = cm.var_pass.get()
+
         figFragFilt, axFragFilt = plt.subplots(2, figsize=(12,6))
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
         figFragFilt.canvas.manager.set_window_title('Filtering') # set title to the figure window
+        figFragFilt.canvas.manager.set_window_title('Filtering-FundFreqMultiplication'+ str(fundfreq) +'-Center_'+ str(center) + '-Fcut1'+ str(fcut1) + 'Hz-Fcut2'+ str(fcut2) + 'Hz' + '-Filter'+ str(filter) + 'Hz') # set title to the figure window
 
-        digitalFilter, _, _ = self.designFilter(cm)
+
+        filteredSignal, _, _ = self.designFilter(fundfreq, center, fcut1, fcut2)
+        # convert filteredsignal to numpy array
 
         # Calculate the linear/mel spectrogram filtered
         if draw == 1: # linear
-            linear = librosa.stft(digitalFilter, center=True, dtype=None, pad_mode='constant')
+            linear = librosa.stft(filteredSignal, center=True, dtype=None, pad_mode='constant')
             linear_dB = librosa.amplitude_to_db(np.abs(linear), ref=np.max)
             img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.fs, fmin=minfreq, fmax=maxfreq, ax=axFragFilt[1], cmap=cmap)
             axFragFilt[1].set(xlim=[0, self.duration], ylim=[minfreq, maxfreq], title='Spectrogram')
         else: # mel
-            mel = librosa.feature.melspectrogram(y=digitalFilter, sr=self.fs, fmin=minfreq, fmax=maxfreq)
+            mel = librosa.feature.melspectrogram(y=filteredSignal, sr=self.fs, fmin=minfreq, fmax=maxfreq)
             mel_dB = librosa.power_to_db(mel)
             img = librosa.display.specshow(mel_dB, x_axis='time', y_axis='mel', sr=self.fs, fmin=minfreq, fmax=maxfreq, ax=axFragFilt[1], cmap=cmap)
             axFragFilt[1].set(xlim=[0, self.duration], ylim=[minfreq, maxfreq], title='Mel-frequency spectrogram')
         self.yticks(minfreq, maxfreq) # represent the numbers of y axis
         self.colorBar(figFragFilt, 0.3, img)
 
-        axFragFilt[0].plot(self.time, digitalFilter)
+        axFragFilt[0].plot(self.time, filteredSignal)
         axFragFilt[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         axFragFilt[0].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
 
@@ -856,12 +904,12 @@ class ControlMenu():
         self.span = self.createSpanSelector(axFragFilt[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
 
-    def plotFiltFreqResponse(self, cm):
+    def plotFiltFreqResponse(self, fundfreq, center, fcut1, fcut2):
         figFragFFR, axFragFFR = plt.subplots(2, figsize=(12,6))
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
         figFragFFR.canvas.manager.set_window_title('Filter frequency response') # set title to the figure window
 
-        _, b, a = self.designFilter(cm)
+        _, b, a = self.designFilter(fundfreq, center, fcut1, fcut2)
 
         # Calculate the filter frequency response
         # w, h = signal.freqz(b, a)
@@ -877,7 +925,7 @@ class ControlMenu():
         plt.show() # show the figure
 
     # Called when pressing the 'Plot' button
-    def plotFigure(self, cm, choice, windSize, overlap, minfreq, maxfreq, beta, minpitch, maxpitch):
+    def plotFigure(self, cm, choice, windSize, overlap, minfreq, maxfreq, beta):
         list = self.aux.readFromCsv()
         cmap = mpl.colormaps[list[5][2]]
         # Values given by the user (that were not created in checkValues())
@@ -1030,6 +1078,6 @@ class ControlMenu():
         elif choice == 'Short-Time-Energy':
             self.plotSTE(cm, windType1, windSizeSampInt, titleSTE)
         elif choice == 'Pitch':
-            self.plotPitch(cm, minpitch, maxpitch)
+            self.plotPitch(cm)
         elif choice == 'Filtering':
             self.plotFiltering(cm, minfreq, maxfreq, cmap, draw)

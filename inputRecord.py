@@ -4,9 +4,11 @@ import threading
 import pyaudio
 import matplotlib.pyplot as plt
 import numpy as np
+import soundfile as sf
 import sounddevice as sd
 from tkinter import ttk
 from matplotlib.widgets import SpanSelector, Button
+from scipy.io.wavfile import write
 
 from controlMenu import ControlMenu
 from help import HelpMenu
@@ -92,10 +94,13 @@ class Record(tk.Frame):
         audio.terminate()
 
     def plotRecording(self, rm):
-        myrecording = np.frombuffer(b"".join(self.frames), dtype=np.int16)
-        lenMyRecord = len(myrecording)
+        recInt = np.frombuffer(b"".join(self.frames), dtype=np.int16) # it must be int16, not float
+        lenMyRecord = len(recInt)
         duration = lenMyRecord / self.fs
         time = np.linspace(start=0, stop=duration, num=lenMyRecord)
+        # Convert myrecording to float
+        write('wav/recording.wav', self.fs, recInt) # generates a wav file in the current folder
+        recFloat, _ = sf.read('wav/recording.wav', dtype='float32')
 
         # If the window has been closed, create it again
         if plt.fignum_exists(self.fig.number):
@@ -104,10 +109,10 @@ class Record(tk.Frame):
             self.fig, self.ax = plt.subplots() # create the window
 
         fig, ax = self.fig, self.ax
-        self.addLoadButton(fig, ax, self.fs, time, myrecording, rm, 'Recording')
+        self.addLoadButton(fig, ax, self.fs, time, recFloat, rm, 'Recording')
 
         # Plot the recording
-        ax.plot(time, myrecording)
+        ax.plot(time, recInt)
         fig.canvas.manager.set_window_title('Record')
         ax.set(xlim=[0, duration], xlabel='Time (s)', ylabel='Amplitude')
         ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0

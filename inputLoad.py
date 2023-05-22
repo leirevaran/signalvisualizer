@@ -17,19 +17,17 @@ class Load(tk.Frame):
     def __init__(self, master, controller):
         tk.Frame.__init__(self, master)
         self.controller = controller
-        self.audioFrag = np.empty(1)
+        self.selectedAudio = np.empty(1)
         self.cm = ControlMenu()
-        self.loadAudioFile()
+        self.loadAudio()
 
-    def loadAudioFile(self):
+    def loadAudio(self):
         # Ask the user to select a .wav file
         file = tk.filedialog.askopenfilename(title="Open file", filetypes=(("wav files","*.wav"),)) # select audio file
         if file == '': # if no file has been selected
             return
 
-        # Variables of the wav file
         audio, fs = sf.read(file, dtype='float32')
-        time = np.arange(0, len(audio)/fs, 1/fs) # Time axis
 
         # If the file is stereo (2 channels), convert it to mono (1 channel)
         # We are not using wave.open(file, 'rb') because it gives "wave.Error: unknown format: 3" with some wav files
@@ -42,34 +40,41 @@ class Load(tk.Frame):
                 audio = np.sum(audio, axis=1) # from stereo to mono
                 audio = audio * ampMax / np.ndarray.max(abs(audio)) # normalize and leave with the max amplitude
 
-        # Plot the audio file
+        self.plotAudio(file, audio, fs)
+
+    def plotAudio(self, file, audio, fs):
         figFile, axFile = plt.subplots(figsize=(12,5))
-        axFile.plot(time, audio)
         fileName = Path(file).stem # take only the name of the file without the '.wav' and the path
         figFile.canvas.manager.set_window_title(fileName) # set title to the figure window
+        
+        time = np.arange(0, len(audio)/fs, 1/fs) # Time axis
+        self.addLoadButton(figFile, axFile, fs, time, audio, fileName)
+
+        # Plot the audio file
+        axFile.plot(time, audio)
         axFile.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
         axFile.set(xlim=[0, max(time)], xlabel='Time (s)', ylabel='Waveform', title='Load an audio file')
 
-        # Add a 'Load' button that takes the selected fragment and opens the control menu when clicked
-        def load(event):
-            if self.audioFrag.shape == (1,): # if no fragment has been selected, load the whole signal
-                self.cm.createControlMenu(self, fileName, fs, audio)
-            else:
-                self.cm.createControlMenu(self, fileName, fs, self.audioFrag)
-            plt.close(figFile) # close the figure of the waveform
+        plt.show() # show the figure
 
-        axload = figFile.add_axes([0.8, 0.01, 0.09, 0.05])
+    def addLoadButton(self, fig, ax, fs, time, audio, name):
+        # Takes the selected fragment and opens the control menu when clicked
+        def load(event):
+            if self.selectedAudio.shape == (1,): 
+                self.cm.createControlMenu(self, name, fs, audio)
+            else:
+                self.cm.createControlMenu(self, name, fs, self.selectedAudio)
+            plt.close(fig)
+
+        # Adds a 'Load' button to the figure
+        axload = fig.add_axes([0.8, 0.01, 0.09, 0.05]) # [left, bottom, width, height]
         but_load = Button(axload, 'Load')
         but_load.on_clicked(load)
-        axload._but_save = but_load # reference to the Button (otherwise the button does nothing)
+        axload._but_load = but_load # reference to the Button (otherwise the button does nothing)
 
-        # Plays the audio of the selected fragment
-        def listenFragment(xmin, xmax):
+        def listenFrag(xmin, xmax):
             ini, end = np.searchsorted(time, (xmin, xmax))
-            self.audioFrag = audio[ini:end+1]
-            sd.play(self.audioFrag, fs)
-        
-        # Select a fragment with the cursor and play the audio of that fragment
-        self.span = SpanSelector(axFile, listenFragment, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)
-        
-        plt.show() # show the figure
+            self.selectedAudio = audio[ini:end+1]
+            sd.play(self.selectedAudio, fs)
+            
+        self.span = SpanSelector(ax, listenFrag, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)
