@@ -8,7 +8,6 @@ from scipy import signal
 from matplotlib.widgets import SpanSelector, Button, RadioButtons
 
 from controlMenu import ControlMenu
-from help import HelpMenu
 from auxiliar import Auxiliar
 
 # To avoid blurry fonts
@@ -33,7 +32,6 @@ class SquareWave(tk.Frame):
         sm.iconbitmap('icons/icon.ico')
         sm.wm_transient(self) # Place the toplevel window at the top
         # self.cm.windowGeometry(sm, 850, 500)
-        hm = HelpMenu()
 
         # Adapt the window to different sizes
         for i in range(4):
@@ -59,7 +57,7 @@ class SquareWave(tk.Frame):
         cycle = list[2][14]
 
         # SCALES
-        sm.var_dura = tk.IntVar(value=duration)
+        sm.var_dura = tk.DoubleVar(value=duration)
         sm.var_offs = tk.DoubleVar(value=offset)
         sm.var_ampl = tk.DoubleVar(value=amplitude)
         sm.var_freq = tk.IntVar(value=frequency)
@@ -138,7 +136,7 @@ class SquareWave(tk.Frame):
 
         but_gene = ttk.Button(sm, command=lambda: checkValues(1), text='Generate')
         but_save = ttk.Button(sm, command=lambda: checkValues(2), text='Save values as default')
-        but_help = ttk.Button(sm, command=lambda: hm.createHelpMenu(self, 3), text='🛈', width=2)
+        but_help = ttk.Button(sm, command=lambda: self.controller.help.createHelpMenu(self, 3), text='🛈', width=2)
 
         but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)
         but_save.grid(column=3, row=7, sticky=tk.EW, padx=5, pady=5)

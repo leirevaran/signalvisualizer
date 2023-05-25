@@ -11,7 +11,6 @@ from matplotlib.widgets import SpanSelector, Button
 from scipy.io.wavfile import write
 
 from controlMenu import ControlMenu
-from help import HelpMenu
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -35,7 +34,6 @@ class Record(tk.Frame):
         rm.title('Record')
         rm.iconbitmap('icons/icon.ico')
         rm.wm_transient(self) # Place the toplevel window at the top
-        hm = HelpMenu()
 
         # Adapt the window to different sizes
         for i in range(1):
@@ -56,7 +54,7 @@ class Record(tk.Frame):
         # but_reco = tk.Button(rm, text='🎤', font=('Arial', 100, 'bold'), command=lambda: self.clickHandler())
         but_play = ttk.Button(rm, command=lambda: self.startrecording(), text='Start recording')
         but_stop = ttk.Button(rm, command=lambda: self.stoprecording(rm), text='Stop recording')
-        but_help = ttk.Button(rm, command=lambda: hm.createHelpMenu(self, 7), text='🛈', width=2)
+        but_help = ttk.Button(rm, command=lambda: self.controller.help.createHelpMenu(self, 7), text='🛈', width=2)
 
         but_play.grid()
         but_stop.grid()
@@ -98,7 +96,7 @@ class Record(tk.Frame):
         lenMyRecord = len(recInt)
         duration = lenMyRecord / self.fs
         time = np.linspace(start=0, stop=duration, num=lenMyRecord)
-        # Convert myrecording to float
+        # Convert the recording into float
         write('wav/recording.wav', self.fs, recInt) # generates a wav file in the current folder
         recFloat, _ = sf.read('wav/recording.wav', dtype='float32')
 

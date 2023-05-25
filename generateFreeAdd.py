@@ -6,7 +6,6 @@ from tkinter import ttk
 from matplotlib.widgets import SpanSelector, Button
 
 from controlMenu import ControlMenu
-from help import HelpMenu
 from auxiliar import Auxiliar
 
 # To avoid blurry fonts
@@ -32,7 +31,6 @@ class FreeAdditionPureTones(tk.Frame):
         fam.iconbitmap('icons/icon.ico')
         fam.wm_transient(self) # Place the toplevel window at the top
         # self.cm.windowGeometry(fam, 800, 600)
-        hm = HelpMenu()
 
         # Adapt the window to different sizes
         for i in range(6):
@@ -61,7 +59,7 @@ class FreeAdditionPureTones(tk.Frame):
         fam.var_amp4 = tk.DoubleVar(value=ampl4)
         fam.var_amp5 = tk.DoubleVar(value=ampl5)
         fam.var_amp6 = tk.DoubleVar(value=ampl6)
-        fam.var_dura = tk.IntVar(value=duration)
+        fam.var_dura = tk.DoubleVar(value=duration)
 
         sca_amp1 = tk.Scale(fam, from_=1, to=0, variable=fam.var_amp1, length=300, orient='vertical', resolution=0.01)
         sca_amp2 = tk.Scale(fam, from_=1, to=0, variable=fam.var_amp2, length=300, orient='vertical', resolution=0.01)
@@ -136,7 +134,7 @@ class FreeAdditionPureTones(tk.Frame):
         but_gene = ttk.Button(fam, command=lambda: self.plotFAPT(fam), text='Generate')
         but_pian = ttk.Button(fam, command=lambda: self.pianoKeyboard(fam, but_pian, ent_octv), text='Show piano')
         but_save = ttk.Button(fam, command=lambda: self.saveDefaultValues(fam, list), text='Save values as default')
-        but_help = ttk.Button(fam, command=lambda: hm.createHelpMenu(self, 2), text='🛈', width=2)
+        but_help = ttk.Button(fam, command=lambda: self.controller.help.createHelpMenu(self, 2), text='🛈', width=2)
 
         but_gene.grid(column=6, row=8, sticky=tk.EW, padx=5, pady=5)
         but_pian.grid(column=2, row=4, sticky=tk.EW, padx=5, pady=5)

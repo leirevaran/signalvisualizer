@@ -7,7 +7,6 @@ from tkinter import ttk
 from matplotlib.widgets import SpanSelector, Button, RadioButtons
 
 from controlMenu import ControlMenu
-from help import HelpMenu
 from auxiliar import Auxiliar
 
 # To avoid blurry fonts
@@ -32,7 +31,6 @@ class PureTone(tk.Frame):
         tm.iconbitmap('icons/icon.ico')
         tm.wm_transient(self) # Place the toplevel window at the top
         # self.cm.windowGeometry(tm, 850, 475)
-        hm = HelpMenu()
 
         # Adapt the window to different sizes
         for i in range(4):
@@ -57,7 +55,7 @@ class PureTone(tk.Frame):
         phase = list[1][12]
 
         # SCALES
-        tm.var_dura = tk.IntVar(value=duration)
+        tm.var_dura = tk.DoubleVar(value=duration)
         tm.var_offs = tk.DoubleVar(value=offset)
         tm.var_ampl = tk.DoubleVar(value=amplitude)
         tm.var_freq = tk.IntVar(value=frequency)
@@ -142,7 +140,7 @@ class PureTone(tk.Frame):
 
         but_gene = ttk.Button(tm, command=lambda: checkValues(1), text='Generate')
         but_save = ttk.Button(tm, command=lambda: checkValues(2), text='Save values as default')
-        but_help = ttk.Button(tm, command=lambda: hm.createHelpMenu(self, 1), text='🛈', width=2)
+        but_help = ttk.Button(tm, command=lambda: self.controller.help.createHelpMenu(self, 1), text='🛈', width=2)
 
         but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)
         but_save.grid(column=4, row=6, sticky=tk.EW, padx=5, pady=5)

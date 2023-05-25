@@ -8,7 +8,6 @@ from scipy import signal
 from matplotlib.widgets import SpanSelector, Button, RadioButtons
 
 from controlMenu import ControlMenu
-from help import HelpMenu
 from auxiliar import Auxiliar
 
 # To avoid blurry fonts
@@ -33,7 +32,6 @@ class SawtoothWave(tk.Frame):
         stm.iconbitmap('icons/icon.ico')
         stm.wm_transient(self) # Place the toplevel window at the top
         # self.cm.windowGeometry(stm, 850, 475)
-        hm = HelpMenu()
 
         # Adapt the window to different sizes
         for i in range(4):
@@ -59,7 +57,7 @@ class SawtoothWave(tk.Frame):
         maxpos = list[3][14]
 
         # SCALES
-        stm.var_dura = tk.IntVar(value=duration)
+        stm.var_dura = tk.DoubleVar(value=duration)
         stm.var_offs = tk.DoubleVar(value=offset)
         stm.var_ampl = tk.DoubleVar(value=amplitude)
         stm.var_freq = tk.IntVar(value=frequency)
@@ -138,7 +136,7 @@ class SawtoothWave(tk.Frame):
 
         but_gene = ttk.Button(stm, command=lambda: checkValues(1), text='Generate')
         but_save = ttk.Button(stm, command=lambda: checkValues(2), text='Save values as default')
-        but_help = ttk.Button(stm, command=lambda: hm.createHelpMenu(self, 4), text='🛈', width=2)
+        but_help = ttk.Button(stm, command=lambda: self.controller.help.createHelpMenu(self, 4), text='🛈', width=2)
 
         but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)
         but_save.grid(column=3, row=7, sticky=tk.EW, padx=5, pady=5)

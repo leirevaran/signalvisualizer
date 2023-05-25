@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib import backend_bases
 
 from info import Info
+from help import Help
 from inputLoad import Load
 from inputRecord import Record
 from generateNoise import Noise
@@ -39,6 +40,7 @@ class Start(tk.Tk):
 
         self.frames = {}
         self.initialize_frame('SignalVisualizer')
+        self.help = Help(master=self.container, controller=self)
 
     def initialize_frame(self, page_name):
         if page_name == 'SignalVisualizer':

@@ -1,6 +1,5 @@
 import tkinter as tk
 import math
-import csv
 import librosa, librosa.display 
 import parselmouth
 import numpy as np
@@ -9,13 +8,11 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from tkinter import ttk
 from scipy import signal
-from pathlib import Path
-from matplotlib.widgets import Button, Cursor, SpanSelector, MultiCursor
+from matplotlib.widgets import Cursor, SpanSelector, MultiCursor
 from matplotlib.backend_bases import MouseButton, MouseEvent
 from matplotlib.patches import Rectangle
 from scipy.io.wavfile import write
 
-from help import HelpMenu
 from auxiliar import Auxiliar
 from pitchAdvancedSettings import AdvancedSettings
 
@@ -33,15 +30,15 @@ class ControlMenu():
         self.duration = max(self.time) # duration of the audio (s)
         self.lenAudio = len(self.audio) # length of the audio array
 
+        self.aux = Auxiliar()
+        self.adse = AdvancedSettings()
+
         cm = tk.Toplevel()
         self.plotFT(cm) # show the figure of the FT
         cm.resizable(True, True)
-        cm.title('Control menu: ' + self.fileName)
+        cm.title(self.fileName)
         cm.iconbitmap('icons/icon.ico')
         cm.wm_transient(root) # Place the toplevel window at the top
-        hm = HelpMenu()
-        self.aux = Auxiliar()
-        self.adse = AdvancedSettings()
         # self.aux.windowGeometry(cm, 750, 575)
 
         # Adapt the window to different sizes
@@ -367,7 +364,7 @@ class ControlMenu():
         but_rese = ttk.Button(cm, state='disabled', text='Reset Signal')
         # but_fisi = ttk.Button(cm, state='disabled', text='Filter Signal')
         but_plot = ttk.Button(cm, command=lambda: checkValues(), text='Plot')
-        but_help = ttk.Button(cm, command=lambda: hm.createHelpMenu(cm, 8), text='🛈', width=2)
+        but_help = ttk.Button(cm, command=lambda: self.controller.help.createHelpMenu(cm, 8), text='🛈', width=2)
 
         # positioning Buttons
         but_adse.grid(column=1, row=13, sticky=tk.EW, padx=5, pady=5)
@@ -485,7 +482,11 @@ class ControlMenu():
         dd_pass.grid(column=3, row=2, sticky=tk.EW, padx=5)
         dd_filt.grid(column=3, row=7, sticky=tk.EW, padx=5)
 
-    # METHODS
+
+    ###########
+    # METHODS #
+    ###########
+
     # Updates the OptionMenu 'om' with the option list 'opt' and variable 'var' passed as a parameter
     def updateOptionMenu(self, cm, dd_nfft):
         menu = dd_nfft["menu"]
@@ -510,58 +511,6 @@ class ControlMenu():
         sub_ax = plt.axes([0.91, 0.12, 0.02, x]) # add a small custom axis (left, bottom, width, height)
         fig.colorbar(img, cax=sub_ax, format='%+2.0f dB') # %4.2e, {x:.2e}
 
-    # Convert the numpy array containing the audio into a wav file
-    def saveasWav(self, audio, fs):
-        file = tk.filedialog.asksaveasfilename(title='Save file', defaultextension=".wav", filetypes=(("wav files","*.wav"),))
-        if file is None or file == '':
-            return
-        write(file, fs, audio) # generates a wav file in the selected folder
-        return file
-    
-    # Save the values of 'x' and 'y' axis of a plot as a csv file
-    def saveasCsv(self, fig, x, y, dist, opt):
-        def save(event):
-            file = tk.filedialog.asksaveasfilename(title='Save', defaultextension=".csv", filetypes=(("csv files","*.csv"),))
-            if file is None or file == '':
-                return
-            with open(file, 'w', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(["x", "y"])
-                for i in range(len(x)):
-                    if opt == 'SC':
-                        writer.writerow([x[i], y[i][0]])
-                    else:
-                        writer.writerow([x[i], y[i]])
-
-        # Adds a 'Save' button to the figure
-        axsave = fig.add_axes([0.91, dist, 0.05, 0.04]) # [left, bottom, width, height]
-        but_save = Button(axsave, 'Save')
-        but_save.on_clicked(save)
-        axsave._but_save = but_save # reference to the Button (otherwise the button does nothing)
-
-    # Used for saving a waveform as a wav or csv file
-    def saveasWavCsv(self, cm, fig, x, y, dist, fs):
-        def save(event):
-            file = tk.filedialog.asksaveasfilename(title='Save', defaultextension=".wav", filetypes=(("wav files","*.wav"),("csv files","*.csv"),))
-            if file is None or file == '':
-                return
-            if file.endswith('wav'):
-                self.fileName = Path(file).stem # take only the name of the file without the '.wav' and the path
-                cm.title('Control menu: ' + self.fileName) # update the name of the window
-                write(file, fs, y) # generates a wav file in the selected folder
-            elif file.endswith('.csv'):
-                with open(file, 'w', newline='') as csvfile:
-                    writer = csv.writer(csvfile)
-                    writer.writerow(["x", "y"])
-                    for i in range(len(x)):
-                        writer.writerow([x[i], y[i]])
-
-        # Adds a 'Save' button to the figure
-        axsave = fig.add_axes([0.91, dist, 0.05, 0.04]) # [left, bottom, width, height]
-        but_save = Button(axsave, 'Save')
-        but_save.on_clicked(save)
-        axsave._but_save = but_save # reference to the Button (otherwise the button does nothing)
-
     def createSpanSelector(self, ax):
         # Plays the audio of the selected fragment of the fragment
         def listenFragFrag(xmin, xmax):
@@ -572,9 +521,43 @@ class ControlMenu():
         span = SpanSelector(ax, listenFragFrag, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)
         return span
     
+
+    #####################
+    # CALCULATE METHODS #
+    #####################
+
+    def calculateWaveform(self, ax):
+        ax.plot(self.time, self.audio)
+        ax.axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
+        ax.set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
+
+    
     def calculateSTFT(self, audioFragWindow, nfft):
         stft = np.fft.fft(audioFragWindow, nfft)
         return stft[range(int(nfft/2))]
+    
+    
+    def calculateSpectrogram(self, cm, audio, ax, window, windSizeSampInt, hopSize, cmap):
+        nfftUser = cm.var_nfft.get()
+        draw = cm.var_draw.get()
+        minfreq = cm.var_minf.get()
+        maxfreq = cm.var_maxf.get()
+
+        # Calculate the linear/mel spectrogram
+        if draw == 1: # linear
+            linear = librosa.stft(audio, n_fft=nfftUser, hop_length=hopSize, win_length=windSizeSampInt, window=window, center=True, dtype=None, pad_mode='constant')
+            linear_dB = librosa.amplitude_to_db(np.abs(linear), ref=np.max)
+            img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.fs, fmin=minfreq, fmax=maxfreq, ax=ax, hop_length=hopSize, cmap=cmap)
+            ax.set(xlim=[0, self.duration], ylim=[minfreq, maxfreq], title='Linear spectrogram')
+        else: # mel
+            mel = librosa.feature.melspectrogram(y=audio, sr=self.fs, win_length=windSizeSampInt, n_fft=nfftUser, window=window, fmin=minfreq, fmax=maxfreq, hop_length=hopSize)
+            mel_dB = librosa.power_to_db(mel)
+            img = librosa.display.specshow(mel_dB, x_axis='time', y_axis='mel', sr=self.fs, fmin=minfreq, fmax=maxfreq, ax=ax, hop_length=hopSize, cmap=cmap)
+            ax.set(xlim=[0, self.duration], ylim=[minfreq, maxfreq], title='Mel-frequency spectrogram')
+        self.yticks(minfreq, maxfreq) # represent the numbers of y axis
+        
+        return img
+    
     
     def calculateSC(self, audioFragWindow):
         magnitudes = np.abs(np.fft.rfft(audioFragWindow)) # magnitudes of positive frequencies
@@ -582,195 +565,14 @@ class ControlMenu():
         freqs = np.abs(np.fft.fftfreq(length, 1.0/self.fs)[:length//2+1]) # positive frequencies
         return np.sum(magnitudes*freqs)/np.sum(magnitudes) # return weighted mean
     
+    
     def calculateSTE(self, sig, win, windSizeSampInt):
         window1 = signal.get_window(win, windSizeSampInt)
         window = window1 / len(window1)
         return signal.convolve(sig**2, window**2, mode='same')
     
-    # Plots the waveform and the Fast Fourier Transform (FFT) of the fragment
-    def plotFT(self, cm):
-        self.figFragFT, axFragFT = plt.subplots(2, figsize=(12,6))
-        plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-        self.figFragFT.canvas.manager.set_window_title(self.fileName+'-FT')
-
-        fft = np.fft.fft(self.audio) / self.lenAudio # Normalize amplitude
-        fft2 = fft[range(int(self.lenAudio/2))] # Exclude sampling frequency
-        values = np.arange(int(self.lenAudio/2))
-        frequencies = values / (self.lenAudio/self.fs) # values / time period
-
-        # 'self.time' and 'self.audio' need to have the same first dimension
-        if len(self.time) < len(self.audio):
-            self.audio = self.audio[:-1].copy() # delete last element of the numpy array
-        elif len(self.time) > len(self.audio):
-            self.time = self.time[:-1].copy() # delete last element of the numpy array
-
-        axFragFT[0].plot(self.time, self.audio)
-        axFragFT[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        axFragFT[0].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-        axFragFT[1].plot(frequencies, 20*np.log10(abs(fft2)))
-        axFragFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Fourier Transform')
-
-        self.saveasWavCsv(cm, self.figFragFT, self.time, self.audio, 0.5, self.fs) # save waveform as csv
-        self.saveasCsv(self.figFragFT, frequencies, 20*np.log10(abs(fft2)), 0.05, 'FT') # save FT as csv
-
-        # TO-DO: connect figFrag with w1Button in signalVisualizer
-
-        self.span = self.createSpanSelector(axFragFT[0]) # Select a fragment with the cursor and play the audio of that fragment
-        self.figFragFT.show() # show the figure
-
-    def plotSTFT(self, cm, stft, frequencies, title):
-        figFragSTFT, axFragSTFT = plt.subplots(2, figsize=(12,6))
-        plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-        figFragSTFT.canvas.manager.set_window_title(str(self.fileName)+'-STFT-'+title) # set title to the figure window
-
-        axFragSTFT[0].plot(self.time, self.audio)
-        axFragSTFT[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        axFragSTFT[0].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-        line1, = axFragSTFT[1].plot(frequencies, 20*np.log10(abs(stft)))
-        axFragSTFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Short Time Fourier Transform')
-
-        self.saveasWavCsv(cm, figFragSTFT, self.time, self.audio, 0.5, self.fs) # save waveform as csv
-        self.saveasCsv(figFragSTFT, frequencies, 20*np.log10(abs(stft)), 0.05, 'STFT') # save FT as csv
-        
-        self.cursor = Cursor(axFragSTFT[0], horizOn=False, useblit=True, color='black', linewidth=1)
-        self.span = self.createSpanSelector(axFragSTFT[0]) # Select a fragment with the cursor and play the audio of that fragment
-
-        return axFragSTFT, line1
-
-    def plotSTFTspect(self, cm, stft, frequencies, window, windSizeSampInt, nfftUser, minfreq, maxfreq, hopSize, cmap, draw, title):
-        figFragSTFTSpect, axFragSTFTSpect = plt.subplots(3, figsize=(12,6))
-        plt.subplots_adjust(hspace=.6) # to avoid overlapping between xlabel and title
-        figFragSTFTSpect.canvas.manager.set_window_title(str(self.fileName)+'-STFT+Spectrogram-'+title) # set title to the figure window
-
-        # Calculate the linear/mel spectrogram
-        if draw == 1: # linear
-            linear = librosa.stft(self.audio, n_fft=nfftUser, hop_length=hopSize, win_length=windSizeSampInt, window=window, center=True, dtype=None, pad_mode='constant')
-            linear_dB = librosa.amplitude_to_db(np.abs(linear), ref=np.max)
-            img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.fs, fmin=minfreq, fmax=maxfreq, ax=axFragSTFTSpect[2], hop_length=hopSize, cmap=cmap)
-            axFragSTFTSpect[2].set(xlim=[0, self.duration], ylim=[minfreq, maxfreq], title='Spectrogram')
-        else: # mel
-            mel = librosa.feature.melspectrogram(y=self.audio, sr=self.fs, win_length=windSizeSampInt, n_fft=nfftUser, window=window, fmin=minfreq, fmax=maxfreq, hop_length=hopSize)
-            mel_dB = librosa.power_to_db(mel)
-            img = librosa.display.specshow(mel_dB, x_axis='time', y_axis='mel', sr=self.fs, fmin=minfreq, fmax=maxfreq, ax=axFragSTFTSpect[2], hop_length=hopSize, cmap=cmap)
-            axFragSTFTSpect[2].set(xlim=[0, self.duration], title='Mel-frequency spectrogram')
-        self.yticks(minfreq, maxfreq) # represent the numbers of y axis
-        self.colorBar(figFragSTFTSpect, 0.17, img)
-
-        axFragSTFTSpect[0].plot(self.time, self.audio)
-        axFragSTFTSpect[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        axFragSTFTSpect[0].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-        line1, = axFragSTFTSpect[1].plot(frequencies, 20*np.log10(abs(stft)))
-        axFragSTFTSpect[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Short Time Fourier Transform')
-
-        self.saveasWavCsv(cm, figFragSTFTSpect, self.time, self.audio, 0.65, self.fs) # save waveform as csv
-        self.saveasCsv(figFragSTFTSpect, frequencies, 20*np.log10(abs(stft)), 0.35, 'STFT') # save STFT as csv
-        
-        self.multicursor = MultiCursor(figFragSTFTSpect.canvas, (axFragSTFTSpect[0], axFragSTFTSpect[2]), color='black', lw=1)
-        self.span = self.createSpanSelector(axFragSTFTSpect[0]) # Select a fragment with the cursor and play the audio of that fragment
-
-        return axFragSTFTSpect, line1
-
-    def plotSC(self, cm, audioFragWind2, window, windSizeSampInt, nfftUser, overlapSamp, minfreq, maxfreq, hopSize, cmap, draw, title):
-        figFragSC, axFragSC = plt.subplots(3, figsize=(12,6))
-        plt.subplots_adjust(hspace=.6) # to avoid overlapping between xlabel and title
-        figFragSC.canvas.manager.set_window_title(str(self.fileName)+'SpectralCentroid'+title) # set title to the figure window
-
-        # Calculate the spectral centroid in the FFT as a vertical line
-        spectralC = self.calculateSC(audioFragWind2)
-        scValue = str(round(spectralC, 2)) # take only two decimals
-
-        # Calculate the spectral centroid in the log power linear/mel spectrogram
-        sc = librosa.feature.spectral_centroid(y=self.audio, sr=self.fs, n_fft=nfftUser, hop_length=hopSize, window=window, win_length=windSizeSampInt)
-        times = librosa.times_like(sc, sr=self.fs, hop_length=hopSize, n_fft=nfftUser)
-        if draw == 1: # linear
-            linear = librosa.stft(self.audio, n_fft=nfftUser, hop_length=hopSize, win_length=windSizeSampInt, window=window, center=True, dtype=None, pad_mode='constant')
-            linear_dB = librosa.amplitude_to_db(np.abs(linear), ref=np.max)
-            img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.fs, win_length=windSizeSampInt, fmin=minfreq, fmax=maxfreq, ax=axFragSC[2], hop_length=hopSize, cmap=cmap)
-        else: # mel
-            mag, phase = librosa.magphase(librosa.stft(self.audio, n_fft=nfftUser, hop_length=hopSize, win_length=windSizeSampInt, window=window, center=True, dtype=None, pad_mode='constant')) # magnitude of the spectrogram
-            mag_dB = librosa.amplitude_to_db(mag, ref=np.max)
-            img = librosa.display.specshow(mag_dB, x_axis='time', y_axis='log', sr=self.fs, win_length=windSizeSampInt, fmin=minfreq, fmax=maxfreq, ax=axFragSC[2], hop_length=hopSize, cmap=cmap)
-        self.yticks(minfreq, maxfreq) # represent the numbers of y axis
-        self.colorBar(figFragSC, 0.17, img)
-
-        axFragSC[0].plot(self.time, self.audio)
-        axFragSC[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        axFragSC[0].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-        psd, freqs = axFragSC[1].psd(audioFragWind2, NFFT=windSizeSampInt, pad_to=nfftUser, Fs=self.fs, window=window, noverlap=overlapSamp)
-        axFragSC[1].axvline(x=spectralC, color='r', linewidth='1') # draw a vertical line in x=value of the spectral centroid
-        axFragSC[1].set(xlim=[0, max(freqs)], xlabel='Frequency (Hz)', ylabel='Power spectral density (dB/Hz)', title='Power spectral density using fft, spectral centroid value is '+ scValue)
-        line1, = axFragSC[2].plot(times, sc.T, color='w') # draw the white line
-        axFragSC[2].set(xlim=[0, self.duration], title='log Power spectrogram')
-
-        self.saveasWavCsv(cm, figFragSC, self.time, self.audio, 0.65, self.fs) # save waveform as csv
-        self.saveasCsv(figFragSC, times, sc.T, 0.05, 'SC') # save the white line as csv
-        
-        self.multicursor = MultiCursor(figFragSC.canvas, (axFragSC[0], axFragSC[2]), color='black', lw=1)
-        self.span = self.createSpanSelector(axFragSC[0]) # Select a fragment with the cursor and play the audio of that fragment
-
-        return axFragSC, line1
-
-    def plotSpectrogram(self, cm, window, windSizeSampInt, nfftUser, minfreq, maxfreq, hopSize, cmap, draw, title):
-        figFragSpect, axFragSpect = plt.subplots(2, figsize=(12,6))
-        plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-        figFragSpect.canvas.manager.set_window_title(str(self.fileName)+'-Spectrogram-'+title) # set title to the figure window
-
-        # Calculate the linear/mel spectrogram
-        if draw == 1: # linear
-            linear = librosa.stft(self.audio, n_fft=nfftUser, hop_length=hopSize, win_length=windSizeSampInt, window=window, center=True, dtype=None, pad_mode='constant')
-            linear_dB = librosa.amplitude_to_db(np.abs(linear), ref=np.max)
-            img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.fs, fmin=minfreq, fmax=maxfreq, ax=axFragSpect[1], hop_length=hopSize, cmap=cmap)
-            axFragSpect[1].set(xlim=[0, self.duration], ylim=[minfreq, maxfreq], title='Linear spectrogram')
-        else: # mel
-            mel = librosa.feature.melspectrogram(y=self.audio, sr=self.fs, win_length=windSizeSampInt, n_fft=nfftUser, window=window, fmin=minfreq, fmax=maxfreq, hop_length=hopSize)
-            mel_dB = librosa.power_to_db(mel)
-            img = librosa.display.specshow(mel_dB, x_axis='time', y_axis='mel', sr=self.fs, fmin=minfreq, fmax=maxfreq, ax=axFragSpect[1], hop_length=hopSize, cmap=cmap)
-            axFragSpect[1].set(xlim=[0, self.duration], ylim=[minfreq, maxfreq], title='Mel-frequency spectrogram')
-        self.yticks(minfreq, maxfreq) # represent the numbers of y axis
-        self.colorBar(figFragSpect, 0.3, img)
-
-        axFragSpect[0].plot(self.time, self.audio)
-        axFragSpect[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        axFragSpect[0].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-
-        self.saveasWavCsv(cm, figFragSpect, self.time, self.audio, 0.5, self.fs) # save waveform as csv
-
-        self.multicursor = MultiCursor(figFragSpect.canvas, (axFragSpect[0], axFragSpect[1]), color='black', lw=1)
-        self.span = self.createSpanSelector(axFragSpect[0]) # Select a fragment with the cursor and play the audio of that fragment
-        plt.show() # show the figure
-
-    def plotSTE(self, cm, windType1, windSizeSampInt, title):
-        figFragSTE, axFragSTE = plt.subplots(2, figsize=(12,6))
-        plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-        figFragSTE.canvas.manager.set_window_title(str(self.fileName)+'-STE-'+title) # set title to the figure window
-
-        # Calculate the Short-Time-Energy
-        signal = np.array(self.audio, dtype=float)
-        time = np.arange(len(signal)) * (1.0/self.fs)
-        ste = self.calculateSTE(signal, windType1, windSizeSampInt)
-
-        axFragSTE[0].plot(self.time, self.audio)
-        axFragSTE[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        axFragSTE[0].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-        axFragSTE[1].plot(time, ste)
-        axFragSTE[1].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude (dB)', title='Short Time Energy')
-
-        self.saveasWavCsv(cm, figFragSTE, self.time, self.audio, 0.5, self.fs) # save waveform as csv
-        self.saveasCsv(figFragSTE, time, ste, 0.05, 'STE') # save STE as csv
-
-        self.span = self.createSpanSelector(axFragSTE[0]) # Select a fragment with the cursor and play the audio of that fragment
-        plt.show() # show the figure
-
-    def plotPitch(self, cm):
-        method = cm.var_meth.get()
-        minpitch = cm.var_minp.get()
-        maxpitch = cm.var_maxp.get()
-        maxCandidates, drawStyle = self.adse.getVariables()
-        
-        figFragPitch, axFragPitch = plt.subplots(2, figsize=(12,6))
-        plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
-        figFragPitch.canvas.manager.set_window_title('Pitch-Method_'+ str(method) +'-PitchFloor_'+ str(minpitch) + 'Hz-PitchCeiling_'+ str(maxpitch) + 'Hz') # set title to the figure window
-
+    
+    def calculatePitch(self, method, minpitch, maxpitch, maxCandidates):
         # Convert the numpy array containing the audio fragment into a wav file
         write('wav/frag.wav', self.fs, self.audio) # generates a wav file in the current folder
 
@@ -820,36 +622,200 @@ class ControlMenu():
         pitch_values = pitch.selected_array['frequency'] # extract selected pitch contour
         pitch_values[pitch_values==0] = np.nan # replace unvoiced samples by NaN to not plot
 
+        return pitch, pitch_values
+    
+
+    ################
+    # PLOT METHODS #
+    ################
+    
+    # Plots the waveform and the Fast Fourier Transform (FFT) of the fragment
+    def plotFT(self, cm):
+        self.figFragFT, axFragFT = plt.subplots(2, figsize=(12,6))
+        plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
+        self.figFragFT.canvas.manager.set_window_title(self.fileName+'-FT')
+
+        fft = np.fft.fft(self.audio) / self.lenAudio # Normalize amplitude
+        fft2 = fft[range(int(self.lenAudio/2))] # Exclude sampling frequency
+        values = np.arange(int(self.lenAudio/2))
+        frequencies = values / (self.lenAudio/self.fs) # values / time period
+
+        # 'self.time' and 'self.audio' need to have the same first dimension
+        if len(self.time) < len(self.audio):
+            self.audio = self.audio[:-1].copy() # delete last element of the numpy array
+        elif len(self.time) > len(self.audio):
+            self.time = self.time[:-1].copy() # delete last element of the numpy array
+
+        self.calculateWaveform(axFragFT[0])
+        axFragFT[1].plot(frequencies, 20*np.log10(abs(fft2)))
+        axFragFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Fourier Transform')
+
+        self.aux.saveasWavCsv(cm, self.figFragFT, self.time, self.audio, 0.5, self.fs) # save waveform as csv
+        self.aux.saveasCsv(self.figFragFT, frequencies, 20*np.log10(abs(fft2)), 0.05, 'FT') # save FT as csv
+
+        # TO-DO: connect figFrag with w1Button in signalVisualizer
+
+        self.span = self.createSpanSelector(axFragFT[0]) # Select a fragment with the cursor and play the audio of that fragment
+        self.figFragFT.show() # show the figure
+
+    
+
+    def plotSTFT(self, cm, stft, frequencies, title):
+        figFragSTFT, axFragSTFT = plt.subplots(2, figsize=(12,6))
+        plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
+        figFragSTFT.canvas.manager.set_window_title(str(self.fileName)+'-STFT-'+title) # set title to the figure window
+
+        self.calculateWaveform(axFragSTFT[0])
+        line1, = axFragSTFT[1].plot(frequencies, 20*np.log10(abs(stft)))
+        axFragSTFT[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Short Time Fourier Transform')
+
+        self.aux.saveasWavCsv(cm, figFragSTFT, self.time, self.audio, 0.5, self.fs) # save waveform as csv
+        self.aux.saveasCsv(figFragSTFT, frequencies, 20*np.log10(abs(stft)), 0.05, 'STFT') # save FT as csv
+        
+        self.cursor = Cursor(axFragSTFT[0], horizOn=False, useblit=True, color='black', linewidth=1)
+        self.span = self.createSpanSelector(axFragSTFT[0]) # Select a fragment with the cursor and play the audio of that fragment
+
+        return axFragSTFT, line1
+    
+
+
+    def plotSpectrogram(self, cm, window, windSizeSampInt, hopSize, cmap, title):
+        figFragSpect, axFragSpect = plt.subplots(2, figsize=(12,6))
+        plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
+        figFragSpect.canvas.manager.set_window_title(str(self.fileName)+'-Spectrogram-'+title) # set title to the figure window
+
+        # Calculate the linear/mel spectrogram
+        img = self.calculateSpectrogram(cm, self.audio, axFragSpect[1], window, windSizeSampInt, hopSize, cmap)
+        self.colorBar(figFragSpect, 0.3, img)
+
+        self.calculateWaveform(axFragSpect[0])
+        self.aux.saveasWavCsv(cm, figFragSpect, self.time, self.audio, 0.5, self.fs) # save waveform as csv
+
+        self.multicursor = MultiCursor(figFragSpect.canvas, (axFragSpect[0], axFragSpect[1]), color='black', lw=1)
+        self.span = self.createSpanSelector(axFragSpect[0]) # Select a fragment with the cursor and play the audio of that fragment
+        plt.show() # show the figure
+
+
+
+    def plotSTFTspect(self, cm, stft, frequencies, window, windSizeSampInt, hopSize, cmap, title):
+        figFragSTFTSpect, axFragSTFTSpect = plt.subplots(3, figsize=(12,6))
+        plt.subplots_adjust(hspace=.6) # to avoid overlapping between xlabel and title
+        figFragSTFTSpect.canvas.manager.set_window_title(str(self.fileName)+'-STFT+Spectrogram-'+title) # set title to the figure window
+
+        # Calculate the linear/mel spectrogram
+        img = self.calculateSpectrogram(cm, self.audio, axFragSTFTSpect[2], window, windSizeSampInt, hopSize, cmap)
+        self.colorBar(figFragSTFTSpect, 0.17, img)
+
+        self.calculateWaveform(axFragSTFTSpect[0])
+        line1, = axFragSTFTSpect[1].plot(frequencies, 20*np.log10(abs(stft)))
+        axFragSTFTSpect[1].set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)', title='Short Time Fourier Transform')
+
+        self.aux.saveasWavCsv(cm, figFragSTFTSpect, self.time, self.audio, 0.65, self.fs) # save waveform as csv
+        self.aux.saveasCsv(figFragSTFTSpect, frequencies, 20*np.log10(abs(stft)), 0.35, 'STFT') # save STFT as csv
+        
+        self.multicursor = MultiCursor(figFragSTFTSpect.canvas, (axFragSTFTSpect[0], axFragSTFTSpect[2]), color='black', lw=1)
+        self.span = self.createSpanSelector(axFragSTFTSpect[0]) # Select a fragment with the cursor and play the audio of that fragment
+
+        return axFragSTFTSpect, line1
+
+
+
+    def plotSC(self, cm, audioFragWind2, window, windSizeSampInt, nfftUser, overlapSamp, hopSize, cmap, title):
+        figFragSC, axFragSC = plt.subplots(3, figsize=(12,6))
+        plt.subplots_adjust(hspace=.6) # to avoid overlapping between xlabel and title
+        figFragSC.canvas.manager.set_window_title(str(self.fileName)+'-SpectralCentroid-'+title) # set title to the figure window
+
+        # Calculate the spectral centroid in the FFT as a vertical line
+        spectralC = self.calculateSC(audioFragWind2)
+        scValue = str(round(spectralC, 2)) # take only two decimals
+
+        # Calculate the spectral centroid in the log power linear/mel spectrogram
+        sc = librosa.feature.spectral_centroid(y=self.audio, sr=self.fs, n_fft=nfftUser, hop_length=hopSize, window=window, win_length=windSizeSampInt)
+        times = librosa.times_like(sc, sr=self.fs, hop_length=hopSize, n_fft=nfftUser)
+        
+        # Calculate the linear/mel spectrogram
+        img = self.calculateSpectrogram(cm, self.audio, axFragSC[2], window, windSizeSampInt, hopSize, cmap)
+        self.colorBar(figFragSC, 0.17, img)
+
+        self.calculateWaveform(axFragSC[0])
+        _, freqs = axFragSC[1].psd(audioFragWind2, NFFT=windSizeSampInt, pad_to=nfftUser, Fs=self.fs, window=window, noverlap=overlapSamp)
+        axFragSC[1].axvline(x=spectralC, color='r', linewidth='1') # draw a vertical line in x=value of the spectral centroid
+        axFragSC[1].set(xlim=[0, max(freqs)], xlabel='Frequency (Hz)', ylabel='Power spectral density (dB/Hz)', title='Power spectral density using fft, spectral centroid value is '+ scValue)
+        line1, = axFragSC[2].plot(times, sc.T, color='w') # draw the white line
+        axFragSC[2].set(xlim=[0, self.duration], title='log Power spectrogram')
+
+        self.aux.saveasWavCsv(cm, figFragSC, self.time, self.audio, 0.65, self.fs) # save waveform as csv
+        self.aux.saveasCsv(figFragSC, times, sc.T, 0.05, 'SC') # save the white line as csv
+        
+        self.multicursor = MultiCursor(figFragSC.canvas, (axFragSC[0], axFragSC[2]), color='black', lw=1)
+        self.span = self.createSpanSelector(axFragSC[0]) # Select a fragment with the cursor and play the audio of that fragment
+
+        return axFragSC, line1
+    
+
+
+    def plotSTE(self, cm, windType1, windSizeSampInt, title):
+        figFragSTE, axFragSTE = plt.subplots(2, figsize=(12,6))
+        plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
+        figFragSTE.canvas.manager.set_window_title(str(self.fileName)+'-STE-'+title) # set title to the figure window
+
+        # Calculate the Short-Time-Energy
+        signal = np.array(self.audio, dtype=float)
+        time = np.arange(len(signal)) * (1.0/self.fs)
+        ste = self.calculateSTE(signal, windType1, windSizeSampInt)
+
+        self.calculateWaveform(axFragSTE[0])
+        axFragSTE[1].plot(time, ste)
+        axFragSTE[1].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude (dB)', title='Short Time Energy')
+
+        self.aux.saveasWavCsv(cm, figFragSTE, self.time, self.audio, 0.5, self.fs) # save waveform as csv
+        self.aux.saveasCsv(figFragSTE, time, ste, 0.05, 'STE') # save STE as csv
+
+        self.span = self.createSpanSelector(axFragSTE[0]) # Select a fragment with the cursor and play the audio of that fragment
+        plt.show() # show the figure
+
+
+
+    def plotPitch(self, cm):
+        method = cm.var_meth.get()
+        minpitch = cm.var_minp.get()
+        maxpitch = cm.var_maxp.get()
+        maxCandidates, drawStyle = self.adse.getVariables()
+        
+        figFragPitch, axFragPitch = plt.subplots(2, figsize=(12,6))
+        plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
+        figFragPitch.canvas.manager.set_window_title('Pitch-Method_'+ str(method) +'-PitchFloor_'+ str(minpitch) + 'Hz-PitchCeiling_'+ str(maxpitch) + 'Hz') # set title to the figure window
+
+        pitch, pitch_values = self.calculatePitch(method, minpitch, maxpitch, maxCandidates)
+
         self.multicursor = MultiCursor(figFragPitch.canvas, (axFragPitch[0], axFragPitch[1]), color='black', lw=1)
 
         if drawStyle == 1: draw = '-'
         else: draw = 'o'
 
-        axFragPitch[0].plot(self.time, self.audio)
-        axFragPitch[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        axFragPitch[0].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
+        self.calculateWaveform(axFragPitch[0])
         axFragPitch[1].plot(pitch.xs(), pitch_values, draw)
         axFragPitch[1].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Frequency (Hz)', title='Pitch measurement overtime')
 
-        self.saveasWavCsv(cm, figFragPitch, self.time, self.audio, 0.5, self.fs) # save waveform as csv
-        self.saveasCsv(figFragPitch, pitch.xs(), pitch_values, 0.05, 'Pitch') # save Pitch as csv        
+        self.aux.saveasWavCsv(cm, figFragPitch, self.time, self.audio, 0.5, self.fs) # save waveform as csv
+        self.aux.saveasCsv(figFragPitch, pitch.xs(), pitch_values, 0.05, 'Pitch') # save Pitch as csv        
 
         self.span = self.createSpanSelector(axFragPitch[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
 
-    def designFilter(self, fundfreq, center, fcut1, fcut2):
+
+
+    def designFilter(self, fundfreq, center, fcut1, fcut2, filter, type):
         # Design filter
-        cuttoff_freq = fundfreq
-        # samp_rate = centfreq
-        norm_pass = cuttoff_freq/(self.fs/2)
+        norm_pass = fundfreq/(self.fs/2)
         norm_stop = 1.5*norm_pass
 
         if filter == 'Butterworth':
             N, Wn = signal.buttord(wp=1000, ws=1200, gpass=3, gstop=40, fs=self.fs)
-            b, a = signal.butter(N, Wn, btype='lowpass', fs=self.fs)
+            b, a = signal.butter(24, Wn=2000, btype='lowpass', fs=self.fs)
         elif filter == 'Elliptic':
-            N, Wn = signal.ellipord(wp=norm_pass, ws=norm_stop, gpass=fcut1, gstop=fcut2, fs=self.fs)
-            b, a = signal.ellip(N, 5, 40, Wn, btype=type, fs=self.fs)
+            N, Wn = signal.ellipord(wp=1000, ws=1001, gpass=3, gstop=40, fs=self.fs)
+            b, a = signal.ellip(N, 3, 40, Wn, btype=type, fs=self.fs)
         elif filter == 'Chebyshev I':
             N, Wn = signal.cheb1ord(wp=norm_pass, ws=norm_stop, gpass=fcut1, gstop=fcut2, fs=self.fs)
             b, a = signal.cheby1(N, 5, Wn, btype=type, fs=self.fs)
@@ -859,47 +825,31 @@ class ControlMenu():
         # elif filter == 'FIR least-squares':
         #     coeffs = signal.firls(fs=self.audiofs)
 
-        zi = signal.lfilter_zi(b, a)
-        filteredSignal, _ = signal.lfilter(b, a, self.audio, zi=zi*self.audio[0])
+        filteredSignal = signal.lfilter(b, a, self.audio)
 
-        return filteredSignal, b, a
+        return filteredSignal
 
-    def plotFiltering(self, cm, minfreq, maxfreq, cmap, draw):
+    def plotFiltering(self, cm, window, windSizeSampInt, hopSize, cmap):
         fundfreq = cm.var_fund.get()
         center = cm.var_cent.get()
         fcut1 = cm.var_cut1.get()
         fcut2 = cm.var_cut2.get()
-        filter = cm.var_filt.get()
-        type = cm.var_pass.get()
+        filter = cm.var_filt.get() # butterworth, elliptic...
+        type = cm.var_pass.get() # lowpass, bandpass...
 
         figFragFilt, axFragFilt = plt.subplots(2, figsize=(12,6))
         plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
         figFragFilt.canvas.manager.set_window_title('Filtering') # set title to the figure window
-        figFragFilt.canvas.manager.set_window_title('Filtering-FundFreqMultiplication'+ str(fundfreq) +'-Center_'+ str(center) + '-Fcut1'+ str(fcut1) + 'Hz-Fcut2'+ str(fcut2) + 'Hz' + '-Filter'+ str(filter) + 'Hz') # set title to the figure window
+        figFragFilt.canvas.manager.set_window_title('Filtering-FundFreqMult_'+ str(fundfreq) +'-Center_'+ str(center) + '-Fcut1_'+ str(fcut1) + 'Hz-Fcut2_'+ str(fcut2) + 'Hz' + '-Filter_'+ str(filter)) # set title to the figure window
 
+        filteredSignal = self.designFilter(fundfreq, center, fcut1, fcut2, filter, type)
 
-        filteredSignal, _, _ = self.designFilter(fundfreq, center, fcut1, fcut2)
-        # convert filteredsignal to numpy array
-
-        # Calculate the linear/mel spectrogram filtered
-        if draw == 1: # linear
-            linear = librosa.stft(filteredSignal, center=True, dtype=None, pad_mode='constant')
-            linear_dB = librosa.amplitude_to_db(np.abs(linear), ref=np.max)
-            img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.fs, fmin=minfreq, fmax=maxfreq, ax=axFragFilt[1], cmap=cmap)
-            axFragFilt[1].set(xlim=[0, self.duration], ylim=[minfreq, maxfreq], title='Spectrogram')
-        else: # mel
-            mel = librosa.feature.melspectrogram(y=filteredSignal, sr=self.fs, fmin=minfreq, fmax=maxfreq)
-            mel_dB = librosa.power_to_db(mel)
-            img = librosa.display.specshow(mel_dB, x_axis='time', y_axis='mel', sr=self.fs, fmin=minfreq, fmax=maxfreq, ax=axFragFilt[1], cmap=cmap)
-            axFragFilt[1].set(xlim=[0, self.duration], ylim=[minfreq, maxfreq], title='Mel-frequency spectrogram')
-        self.yticks(minfreq, maxfreq) # represent the numbers of y axis
+        # Calculate the linear/mel spectrogram
+        img = self.calculateSpectrogram(cm, filteredSignal, axFragFilt[1], window, windSizeSampInt, hopSize, cmap)
         self.colorBar(figFragFilt, 0.3, img)
 
-        axFragFilt[0].plot(self.time, filteredSignal)
-        axFragFilt[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        axFragFilt[0].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Amplitude', title='Waveform')
-
-        self.saveasWavCsv(cm, figFragFilt, self.time, self.audio, 0.5, self.fs) # save waveform as csv
+        self.calculateWaveform(axFragFilt[0])
+        self.aux.saveasWavCsv(cm, figFragFilt, self.time, self.audio, 0.5, self.fs) # save waveform as csv
 
         self.span = self.createSpanSelector(axFragFilt[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
@@ -923,6 +873,8 @@ class ControlMenu():
         axFragFFR[1].set(xlabel='Frequency (Hz)', ylabel='Phase (radians)', title='Frequency Response, Phase')
 
         plt.show() # show the figure
+
+
 
     # Called when pressing the 'Plot' button
     def plotFigure(self, cm, choice, windSize, overlap, minfreq, maxfreq, beta):
@@ -995,11 +947,11 @@ class ControlMenu():
                 axFragSTFT, line1 = self.plotSTFT(cm, stft, frequencies, titleSTFT)
                 ax0 = axFragSTFT[0]
             elif choice == 'STFT + Spect':
-                axFragSTFTSpect, line1 = self.plotSTFTspect(cm, stft, frequencies, window, windSizeSampInt, nfftUser, minfreq, maxfreq, hopSize, cmap, draw, title1+titleSpec)
+                axFragSTFTSpect, line1 = self.plotSTFTspect(cm, stft, frequencies, window, windSizeSampInt, hopSize, cmap, title1+titleSpec)
                 midLineSpect = axFragSTFTSpect[2].axvline(x=midPoint, color='black', linewidth='0.5', fillstyle='full') # line in the middle (spectrogram)
                 ax0 = axFragSTFTSpect[0]
             elif choice == 'Spectral Centroid':
-                axFragSC, line1 = self.plotSC(cm, audioFragWind2, window, windSizeSampInt, nfftUser, overlapSamp, minfreq, maxfreq, hopSize, cmap, draw, title1+titleSpec)
+                axFragSC, line1 = self.plotSC(cm, audioFragWind2, window, windSizeSampInt, nfftUser, overlapSamp, hopSize, cmap, title1+titleSpec)
                 midLineSpectSC = axFragSC[2].axvline(x=midPoint, color='black', linewidth='0.5', fillstyle='full') # line in the middle (spectrogram)
                 ax0 = axFragSC[0]
 
@@ -1043,7 +995,7 @@ class ControlMenu():
                         axFragSC[1].clear()
                         new_spectralC = self.calculateSC(new_audioFragWind2)
                         new_scValue = str(round(new_spectralC, 2)) # take only two decimals
-                        new_psd, new_freqs = axFragSC[1].psd(new_audioFragWind2, NFFT=windSizeSampInt, pad_to=nfftUser, Fs=self.fs, window=window, noverlap=overlapSamp)
+                        _, new_freqs = axFragSC[1].psd(new_audioFragWind2, NFFT=windSizeSampInt, pad_to=nfftUser, Fs=self.fs, window=window, noverlap=overlapSamp)
                         axFragSC[1].axvline(x=new_spectralC, color='r', linewidth='1') # draw a vertical line in x=value of the spectral centroid
                         axFragSC[1].set(xlim=[0, max(new_freqs)], xlabel='Frequency (Hz)', ylabel='Power spectral density (dB/Hz)', title='Power spectral density using fft, spectral centroid value is '+ new_scValue)
                     else: # recalculate STFT
@@ -1074,10 +1026,10 @@ class ControlMenu():
             plt.show() # show the figure
 
         elif choice == 'Spectrogram':
-            self.plotSpectrogram(cm, window, windSizeSampInt, nfftUser, minfreq, maxfreq, hopSize, cmap, draw, title1+titleSpec)
+            self.plotSpectrogram(cm, window, windSizeSampInt, hopSize, cmap, title1+titleSpec)
         elif choice == 'Short-Time-Energy':
             self.plotSTE(cm, windType1, windSizeSampInt, titleSTE)
         elif choice == 'Pitch':
             self.plotPitch(cm)
         elif choice == 'Filtering':
-            self.plotFiltering(cm, minfreq, maxfreq, cmap, draw)
+            self.plotFiltering(cm, window, windSizeSampInt, hopSize, cmap)

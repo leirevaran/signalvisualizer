@@ -6,35 +6,53 @@ from tkinterweb import HtmlFrame
 from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
 
-class HelpMenu():
+class Help(tk.Frame):
+
+    def __init__(self, master, controller):
+        tk.Frame.__init__(self, master)
+        self.controller = controller
+        self.master = master
+        self.hm = None
 
     def createHelpMenu(self, root, value):
-        hm = tk.Toplevel()
-        hm.resizable(False, False)
-        hm.title('Help menu')
-        hm.iconbitmap('icons/icon.ico')
-        hm.wm_transient(root) # Place the toplevel window at the top
+        # If it already exists, change it with the new value and take it to the front
+        if self.hm != None:
+            self.hm.var_html.set(value) # change the selected radiobutton
+            self.getValue(value) # change the html
+            self.hm.focus_set() # Place the toplevel window at the top
+            return
+        
+        self.hm = tk.Toplevel()
+        self.hm.resizable(False, False)
+        self.hm.title('Help menu')
+        self.hm.iconbitmap('icons/icon.ico')
+        self.hm.wm_transient(root) # Place the toplevel window at the top
 
-        noise_html = 'html/en/Generate noise/Generatenoise.html'
-        puret_html = 'html/en/Generate pure tone/Generatepuretone.html'
-        sawtw_html = 'html/en/Generate sawtooth signal/Generatesawtoothsignal.html'
-        squaw_html = 'html/en/Generate square wave/Generatesquarewave.html'
-        harmo_html = 'html/en/Harmonic synthesis/Harmonicsynthesis.html'
-        loadf_html = 'html/en/Load audio file/Loadaudiofile.html'
-        recor_html = 'html/en/Record audio/Recordaudio.html'
-        visua_html = 'html/en/Visualization window/Visualizationwindow.html'
+        def on_closing():
+            self.hm.destroy()
+            self.hm = None
+        self.hm.protocol("WM_DELETE_WINDOW", on_closing)
+
+        self.noise_html = 'html/en/Generate noise/Generatenoise.html'
+        self.puret_html = 'html/en/Generate pure tone/Generatepuretone.html'
+        self.sawtw_html = 'html/en/Generate sawtooth signal/Generatesawtoothsignal.html'
+        self.squaw_html = 'html/en/Generate square wave/Generatesquarewave.html'
+        self.harmo_html = 'html/en/Harmonic synthesis/Harmonicsynthesis.html'
+        self.loadf_html = 'html/en/Load audio file/Loadaudiofile.html'
+        self.recor_html = 'html/en/Record audio/Recordaudio.html'
+        self.visua_html = 'html/en/Visualization window/Visualizationwindow.html'
 
         # RADIOBUTTONS
-        hm.var_html = tk.IntVar(value=value)
+        self.hm.var_html = tk.IntVar(value=value)
 
-        rdb_pton = ttk.Radiobutton(hm, variable=hm.var_html, value=1, command=lambda: self.showHelp(puret_html, frm_html), text='Pure Tone')
-        rdb_addt = ttk.Radiobutton(hm, variable=hm.var_html, value=2, command=lambda: self.showHelp(harmo_html, frm_html), text='Addition of tones')
-        rdb_sqwv = ttk.Radiobutton(hm, variable=hm.var_html, value=3, command=lambda: self.showHelp(squaw_html, frm_html), text='Square wave')
-        rdb_stwv = ttk.Radiobutton(hm, variable=hm.var_html, value=4, command=lambda: self.showHelp(sawtw_html, frm_html), text='Sawtooth wave')
-        rdb_nois = ttk.Radiobutton(hm, variable=hm.var_html, value=5, command=lambda: self.showHelp(noise_html, frm_html), text='Noise')
-        rdb_load = ttk.Radiobutton(hm, variable=hm.var_html, value=6, command=lambda: self.showHelp(loadf_html, frm_html), text='Load file')
-        rdb_reco = ttk.Radiobutton(hm, variable=hm.var_html, value=7, command=lambda: self.showHelp(recor_html, frm_html), text='Record sound')
-        rdb_visu = ttk.Radiobutton(hm, variable=hm.var_html, value=8, command=lambda: self.showHelp(visua_html, frm_html), text='Visualization')
+        rdb_pton = ttk.Radiobutton(self.hm, variable=self.hm.var_html, value=1, command=lambda: self.showHelp(self.puret_html), text='Pure Tone')
+        rdb_addt = ttk.Radiobutton(self.hm, variable=self.hm.var_html, value=2, command=lambda: self.showHelp(self.harmo_html), text='Addition of tones')
+        rdb_sqwv = ttk.Radiobutton(self.hm, variable=self.hm.var_html, value=3, command=lambda: self.showHelp(self.squaw_html), text='Square wave')
+        rdb_stwv = ttk.Radiobutton(self.hm, variable=self.hm.var_html, value=4, command=lambda: self.showHelp(self.sawtw_html), text='Sawtooth wave')
+        rdb_nois = ttk.Radiobutton(self.hm, variable=self.hm.var_html, value=5, command=lambda: self.showHelp(self.noise_html), text='Noise')
+        rdb_load = ttk.Radiobutton(self.hm, variable=self.hm.var_html, value=6, command=lambda: self.showHelp(self.loadf_html), text='Load file')
+        rdb_reco = ttk.Radiobutton(self.hm, variable=self.hm.var_html, value=7, command=lambda: self.showHelp(self.recor_html), text='Record sound')
+        rdb_visu = ttk.Radiobutton(self.hm, variable=self.hm.var_html, value=8, command=lambda: self.showHelp(self.visua_html), text='Visualization')
 
         # positioning Radiobuttons
         rdb_pton.grid(column=0, row=0, sticky=tk.EW, padx=5, pady=5)
@@ -47,28 +65,31 @@ class HelpMenu():
         rdb_visu.grid(column=0, row=7, sticky=tk.EW, padx=5, pady=5)
 
         # FRAME
-        frm_html = HtmlFrame(hm, horizontal_scrollbar="auto", messages_enabled=False)
-        frm_html.grid(column=1, row=0, rowspan=8)
+        self.frm_html = HtmlFrame(self.hm, horizontal_scrollbar="auto", messages_enabled=False)
+        self.frm_html.grid(column=1, row=0, rowspan=8)
 
         # Initialize the help frame by showing the required help
-        if value == 1:
-            self.showHelp(puret_html, frm_html)
-        elif value == 2:
-            self.showHelp(harmo_html, frm_html)
-        elif value == 3:
-            self.showHelp(squaw_html, frm_html)
-        elif value == 4:
-            self.showHelp(sawtw_html, frm_html)
-        elif value == 5:
-            self.showHelp(noise_html, frm_html)
-        elif value == 6:
-            self.showHelp(loadf_html, frm_html)
-        elif value == 7:
-            self.showHelp(recor_html, frm_html)
-        elif value == 8:
-            self.showHelp(visua_html, frm_html)
+        self.getValue(value)
 
-    def showHelp(self, html, frm_html):
+    def getValue(self, value):
+        if value == 1:
+            self.showHelp(self.puret_html)
+        elif value == 2:
+            self.showHelp(self.harmo_html)
+        elif value == 3:
+            self.showHelp(self.squaw_html)
+        elif value == 4:
+            self.showHelp(self.sawtw_html)
+        elif value == 5:
+            self.showHelp(self.noise_html)
+        elif value == 6:
+            self.showHelp(self.loadf_html)
+        elif value == 7:
+            self.showHelp(self.recor_html)
+        elif value == 8:
+            self.showHelp(self.visua_html)
+
+    def showHelp(self, html):
         file = open(html, 'r', encoding="utf8")
         data = file.read()
-        frm_html.load_html(data)
+        self.frm_html.load_html(data)

@@ -23,7 +23,7 @@ class Load(tk.Frame):
 
     def loadAudio(self):
         # Ask the user to select a .wav file
-        file = tk.filedialog.askopenfilename(title="Open file", filetypes=(("wav files","*.wav"),)) # select audio file
+        file = tk.filedialog.askopenfilename(title="Open file", initialdir='library/', filetypes=(("wav files","*.wav"),)) # select audio file
         if file == '': # if no file has been selected
             return
 
