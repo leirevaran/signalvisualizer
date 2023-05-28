@@ -10,18 +10,27 @@ windll.shcore.SetProcessDpiAwareness(1)
 
 class Auxiliar():
 
-    #################################
-    # CALLED FROM SIGNAL VISUALIZER #
-    #################################
+    ##########################################################################
+    # CALLED FROM SIGNAL VISUALIZER AND GENERATE FREE ADDITION OF PURE TONES #
+    ##########################################################################
     
     # Calculates the width and height of the window depending on the screen size of the computer
-    def windowGeometry(self, window, x, y):
-        normal_w = 1920
-        normal_h = 1080
-        w, h = window.winfo_screenwidth(), window.winfo_screenheight()
-        window_w = int(w * x / normal_w)
-        window_h = int(h * y / normal_h)
-        window.geometry('%dx%d' % (window_w, window_h))
+    # Position the main window in the middle of the screen if 'middle' is True
+    def windowGeometry(self, window, w, h, middle):
+        ws0 = 1920 # common width of the screen
+        hs0 = 1080 # common height of the screen
+        # get screen width and height
+        ws = window.winfo_screenwidth() # width of the screen
+        hs = window.winfo_screenheight() # height of the screen
+        # calculate window width and height
+        new_w = int(ws * w / ws0) # adapt the widhth to the screen
+        new_h = int(hs * h / hs0) # adapt the height to the screen
+        # calculate x and y coordinates for the main window
+        x = (ws/2) - (new_w/2)
+        y = (hs/2) - (new_h/2)
+        if middle: window.geometry('%dx%d+%d+%d' % (new_w, new_h, x, y))
+        else: window.geometry('%dx%d' % (new_w, new_h))
+        window.deiconify()
 
 
     #################################################

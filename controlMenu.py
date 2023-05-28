@@ -327,6 +327,11 @@ class ControlMenu():
         rdb_lin.grid(column=1, row=8, sticky=tk.W)
         rdb_mel.grid(column=1, row=8, sticky=tk.NS)
 
+        # CHECKBOX
+        cm.var_spec = tk.IntVar(value=0)
+        chk_spec = ttk.Checkbutton(cm, text='Show spectrogram', variable=cm.var_spec, state='disabled')
+        chk_spec.grid(column=1, row=13, sticky=tk.W)
+
         # BUTTONS
         # Checks if all the values inserted by the user are correct
         def checkValues():
@@ -367,7 +372,7 @@ class ControlMenu():
         but_help = ttk.Button(cm, command=lambda: self.controller.help.createHelpMenu(cm, 8), text='🛈', width=2)
 
         # positioning Buttons
-        but_adse.grid(column=1, row=13, sticky=tk.EW, padx=5, pady=5)
+        but_adse.grid(column=1, row=14, sticky=tk.EW, padx=5, pady=5)
         but_freq.grid(column=3, row=8, sticky=tk.EW, padx=5, pady=5)
         but_rese.grid(column=3, row=9, sticky=tk.EW, padx=5, pady=5)
         # but_fisi.grid(column=3, row=9, sticky=tk.EW, padx=5, pady=5)
@@ -425,11 +430,13 @@ class ControlMenu():
                 dd_meth.config(state='active')
                 ent_minp.config(state='normal')
                 ent_maxp.config(state='normal')
+                chk_spec.config(state='active')
                 but_adse.config(state='active')
             else:
                 dd_meth.config(state='disabled')
                 ent_minp.config(state='disabled')
                 ent_maxp.config(state='disabled')
+                chk_spec.config(state='disabled')
                 but_adse.config(state='disabled')
 
             if choice == 'Spectrogram' or choice == 'STFT + Spect' or choice == 'Spectral Centroid' or choice == 'Filtering': 
@@ -537,7 +544,7 @@ class ControlMenu():
         return stft[range(int(nfft/2))]
     
     
-    def calculateSpectrogram(self, cm, ax, window, windSizeSampInt, hopSize, cmap):
+    def calculateWindowedSpectrogram(self, cm, ax, window, windSizeSampInt, hopSize, cmap):
         nfftUser = cm.var_nfft.get()
         draw = cm.var_draw.get()
         minfreq = cm.var_minf.get()
@@ -559,20 +566,18 @@ class ControlMenu():
         return img
     
 
-    def calculateFilteredSpectrogram(self, cm, filteredSignal, ax, minfreq, maxfreq, cmap):
-        draw = cm.var_draw.get()
+    def calculateSpectrogram(self, audio, ax, minfreq, maxfreq, draw, cmap):
         # Calculate the filtered linear/mel spectrogram filtered
         if draw == 1: # linear
-            linear = librosa.stft(filteredSignal, center=True, dtype=None, pad_mode='constant')
+            linear = librosa.stft(audio, center=True, dtype=None, pad_mode='constant')
             linear_dB = librosa.amplitude_to_db(np.abs(linear), ref=np.max)
             img = librosa.display.specshow(linear_dB, x_axis='time', y_axis='linear', sr=self.fs, fmin=minfreq, fmax=maxfreq, ax=ax, cmap=cmap)
             ax.set(xlim=[0, self.duration], ylim=[minfreq, maxfreq])
         else: # mel
-            mel = librosa.feature.melspectrogram(y=filteredSignal, sr=self.fs, fmin=minfreq, fmax=maxfreq)
+            mel = librosa.feature.melspectrogram(y=audio, sr=self.fs, fmin=minfreq, fmax=maxfreq)
             mel_dB = librosa.power_to_db(mel)
             img = librosa.display.specshow(mel_dB, x_axis='time', y_axis='mel', sr=self.fs, fmin=minfreq, fmax=maxfreq, ax=ax, cmap=cmap)
             ax.set(xlim=[0, self.duration], ylim=[minfreq, maxfreq])
-        self.yticks(minfreq, maxfreq) # represent the numbers of y axis
 
         return img
     
@@ -766,7 +771,7 @@ class ControlMenu():
             a.label_outer()
         
         # Calculate the linear/mel spectrogram
-        img = self.calculateSpectrogram(cm, ax[1], window, windSizeSampInt, hopSize, cmap)
+        img = self.calculateWindowedSpectrogram(cm, ax[1], window, windSizeSampInt, hopSize, cmap)
         self.colorBar(fig, 0.36, img)
 
         self.calculateWaveform(ax[0])
@@ -793,7 +798,7 @@ class ControlMenu():
         ax2.set(xlim=[0, max(frequencies)], xlabel='Frequency (Hz)', ylabel='Amplitude (dB)')
 
         # Calculate the linear/mel spectrogram
-        img = self.calculateSpectrogram(cm, ax3, window, windSizeSampInt, hopSize, cmap)
+        img = self.calculateWindowedSpectrogram(cm, ax3, window, windSizeSampInt, hopSize, cmap)
         self.colorBar(fig, 0.17, img)
 
         self.aux.saveasWavCsv(cm, fig, self.time, self.audio, 0.65, self.fs) # save waveform as csv
@@ -830,7 +835,7 @@ class ControlMenu():
         ax2.set(xlim=[0, max(freqs)], xlabel='Frequency (Hz)', ylabel='Power spectral density (dB/Hz)', title='Power spectral density using fft, spectral centroid value is '+ scValue)
 
         # Calculate the linear/mel spectrogram and the spectral centroid
-        img = self.calculateSpectrogram(cm, ax3, window, windSizeSampInt, hopSize, cmap)
+        img = self.calculateWindowedSpectrogram(cm, ax3, window, windSizeSampInt, hopSize, cmap)
         self.colorBar(fig, 0.17, img)
         line1, = ax3.plot(times, sc.T, color='w') # draw the white line (sc)
         ax3.set(xlim=[0, self.duration], title='log Power spectrogram')
@@ -874,10 +879,11 @@ class ControlMenu():
 
 
 
-    def plotPitch(self, cm):
+    def plotPitch(self, cm, cmap):
         method = cm.var_meth.get()
         minpitch = cm.var_minp.get()
         maxpitch = cm.var_maxp.get()
+        showSpec = cm.var_spec.get()
         maxCandidates, drawStyle = self.adse.getVariables()
         
         fig = plt.figure(figsize=(12,6))
@@ -889,14 +895,20 @@ class ControlMenu():
         # Hide x labels and tick labels for all but bottom plot.
         for a in ax:
             a.label_outer()
-        
+
         pitch, pitch_values = self.calculatePitch(method, minpitch, maxpitch, maxCandidates)
+
+        if showSpec == 1:
+            img = self.calculateSpectrogram(self.audio, ax[1], min(pitch_values), max(pitch_values), 1, cmap)
+            self.colorBar(fig, 0.36, img)
+            color = 'w'
+        else: color = '#1f77b4'
 
         if drawStyle == 1: draw = '-'
         else: draw = 'o'
 
         self.calculateWaveform(ax[0])
-        ax[1].plot(pitch.xs(), pitch_values, draw)
+        ax[1].plot(pitch.xs(), pitch_values, draw, color=color)
         ax[1].set(xlim=[0, self.duration], xlabel='Time (s)', ylabel='Frequency (Hz)')
 
         self.aux.saveasWavCsv(cm, fig, self.time, self.audio, 0.5, self.fs) # save waveform as csv
@@ -915,6 +927,7 @@ class ControlMenu():
         fcut2 = cm.var_cut2.get()
         filter = cm.var_filt.get() # butterworth, elliptic...
         type = cm.var_pass.get() # # lowpass, highpass, bandpass or bandstop
+        draw = cm.var_draw.get()
 
         fig = plt.figure(figsize=(12,6))
         gs = fig.add_gridspec(2, hspace=0)
@@ -930,7 +943,8 @@ class ControlMenu():
         filteredSignal, minfreq, maxfreq, _, _ = self.designFilter(fcut1, fcut2, p, filter, type)
 
         # Calculate the linear/mel spectrogram
-        img = self.calculateFilteredSpectrogram(cm, filteredSignal, ax[1], minfreq, maxfreq, cmap)
+        img = self.calculateSpectrogram(filteredSignal, ax[1], minfreq, maxfreq, draw, cmap)
+        self.yticks(minfreq, maxfreq) # represent the numbers of y axis
         self.colorBar(fig, 0.36, img)
 
         self.calculateWaveform(ax[0])
@@ -1017,7 +1031,7 @@ class ControlMenu():
             self.plotSTE(cm, windType1, windSizeSampInt, titleSTE)
 
         elif choice == 'Pitch':
-            self.plotPitch(cm)
+            self.plotPitch(cm, cmap)
 
         elif choice == 'Filtering':
             self.plotFiltering(cm, cmap)

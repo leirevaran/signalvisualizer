@@ -100,7 +100,8 @@ class SignalVisualizer(tk.Frame):
         self.controller.title('Signal Visualizer')
         self.controller.iconbitmap('icons/icon.ico')
         aux = Auxiliar()
-        aux.windowGeometry(self.controller, 750, 450)
+        # Position the main window in the middle of the screen
+        aux.windowGeometry(self.controller, 750, 450, True)
 
         def on_closing():
             if tk.messagebox.askokcancel("Quit", "Do you want to quit?"):
