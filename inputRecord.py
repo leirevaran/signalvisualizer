@@ -23,9 +23,9 @@ class Record(tk.Frame):
         self.master = master
         self.isrecording = False
         self.fs = 44100
-        self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
         self.selectedAudio = np.empty(1)
+        self.cm = ControlMenu()
         self.recordMenu()
 
     def recordMenu(self):

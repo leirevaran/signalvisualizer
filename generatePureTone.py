@@ -6,8 +6,8 @@ import unicodedata
 from tkinter import ttk
 from matplotlib.widgets import SpanSelector, Button, RadioButtons
 
-from controlMenu import ControlMenu
 from auxiliar import Auxiliar
+from controlMenu import ControlMenu
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -18,8 +18,8 @@ class PureTone(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
-        self.cm = ControlMenu()
         self.aux = Auxiliar()
+        self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
         self.selectedAudio = np.empty(1)
         self.toneMenu()
@@ -30,7 +30,7 @@ class PureTone(tk.Frame):
         tm.title('Generate pure tone')
         tm.iconbitmap('icons/icon.ico')
         tm.wm_transient(self) # Place the toplevel window at the top
-        # self.cm.windowGeometry(tm, 850, 475)
+        # self.aux.windowGeometry(tm, 850, 475)
 
         # Adapt the window to different sizes
         for i in range(4):
@@ -233,13 +233,13 @@ class PureTone(tk.Frame):
             def exceed(label):
                 options = {'scale': 0, 'saturate': 1}
                 option = options[label]
-                if option == 0:
+                if option == 0: # scale
                     for i in range(len(self.selectedAudio)):
                         if self.selectedAudio[i] > 1:
                             self.selectedAudio[i] = 1
                         elif self.selectedAudio[i] < -1:
                             self.selectedAudio[i] = -1
-                elif option == 1:
+                elif option == 1: # saturate
                     if max(self.selectedAudio) > 1:
                         self.selectedAudio = self.selectedAudio/max(abs(self.selectedAudio))
                     elif min(self.selectedAudio) < -1:

@@ -5,8 +5,8 @@ import sounddevice as sd
 from tkinter import ttk
 from matplotlib.widgets import SpanSelector, Button
 
-from controlMenu import ControlMenu
 from auxiliar import Auxiliar
+from controlMenu import ControlMenu
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -18,8 +18,8 @@ class FreeAdditionPureTones(tk.Frame):
         self.controller = controller
         self.master = master
         self.fs = 48000 # sample frequency
-        self.cm = ControlMenu()
         self.aux = Auxiliar()
+        self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
         self.selectedAudio = np.empty(1)
         self.freeAddMenu()
@@ -30,7 +30,7 @@ class FreeAdditionPureTones(tk.Frame):
         fam.title('Free addition of pure tones')
         fam.iconbitmap('icons/icon.ico')
         fam.wm_transient(self) # Place the toplevel window at the top
-        # self.cm.windowGeometry(fam, 800, 600)
+        # self.aux.windowGeometry(fam, 800, 600)
 
         # Adapt the window to different sizes
         for i in range(6):

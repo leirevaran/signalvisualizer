@@ -7,8 +7,8 @@ from tkinter import ttk
 from scipy import signal
 from matplotlib.widgets import SpanSelector, Button, RadioButtons
 
-from controlMenu import ControlMenu
 from auxiliar import Auxiliar
+from controlMenu import ControlMenu
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -19,8 +19,8 @@ class SquareWave(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
-        self.cm = ControlMenu()
         self.aux = Auxiliar()
+        self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
         self.selectedAudio = np.empty(1)
         self.squareMenu()
@@ -31,7 +31,7 @@ class SquareWave(tk.Frame):
         sm.title('Generate square wave')
         sm.iconbitmap('icons/icon.ico')
         sm.wm_transient(self) # Place the toplevel window at the top
-        # self.cm.windowGeometry(sm, 850, 500)
+        # self.aux.windowGeometry(sm, 850, 500)
 
         # Adapt the window to different sizes
         for i in range(4):

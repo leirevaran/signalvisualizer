@@ -6,8 +6,8 @@ import sounddevice as sd
 from tkinter import ttk
 from matplotlib.widgets import SpanSelector, Button
 
-from controlMenu import ControlMenu
 from auxiliar import Auxiliar
+from controlMenu import ControlMenu
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -18,8 +18,8 @@ class Noise(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
-        self.cm = ControlMenu()
         self.aux = Auxiliar()
+        self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
         self.selectedAudio = np.empty(1)
         self.noiseMenu()
@@ -30,7 +30,7 @@ class Noise(tk.Frame):
         nm.title('Generate noise')
         nm.iconbitmap('icons/icon.ico')
         nm.wm_transient(self) # Place the toplevel window at the top
-        # self.cm.windowGeometry(nm, 850, 250)
+        # self.aux.windowGeometry(nm, 850, 250)
 
         # Adapt the window to different sizes
         for i in range(4):

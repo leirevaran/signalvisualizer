@@ -7,8 +7,8 @@ from tkinter import ttk
 from scipy import signal
 from matplotlib.widgets import SpanSelector, Button, RadioButtons
 
-from controlMenu import ControlMenu
 from auxiliar import Auxiliar
+from controlMenu import ControlMenu
 
 # To avoid blurry fonts
 from ctypes import windll
@@ -19,8 +19,8 @@ class SawtoothWave(tk.Frame):
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
-        self.cm = ControlMenu()
         self.aux = Auxiliar()
+        self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
         self.selectedAudio = np.empty(1)
         self.sawtoothMenu()
@@ -31,7 +31,7 @@ class SawtoothWave(tk.Frame):
         stm.title('Generate sawtooth wave')
         stm.iconbitmap('icons/icon.ico')
         stm.wm_transient(self) # Place the toplevel window at the top
-        # self.cm.windowGeometry(stm, 850, 475)
+        # self.aux.windowGeometry(stm, 850, 475)
 
         # Adapt the window to different sizes
         for i in range(4):

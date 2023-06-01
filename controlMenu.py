@@ -8,7 +8,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from tkinter import ttk
 from scipy import signal
-from matplotlib.widgets import Cursor, SpanSelector, MultiCursor
+from matplotlib.widgets import Button, Cursor, SpanSelector, MultiCursor
 from matplotlib.backend_bases import MouseButton, MouseEvent
 from matplotlib.patches import Rectangle
 from scipy.io.wavfile import write
@@ -528,6 +528,28 @@ class ControlMenu():
         span = SpanSelector(ax, listenFragFrag, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)
         return span
     
+    # def addLoadButton(self, fig, ax, fs, time, audio, name):
+    #     # Takes the selected fragment and opens the control menu when clicked
+    #     def load(event):
+    #         if self.selectedAudio.shape == (1,): 
+    #             self.createControlMenu(self, name, fs, audio)
+    #         else:
+    #             self.createControlMenu(self, name, fs, self.selectedAudio)
+    #         plt.close(fig)
+
+    #     # Adds a 'Load' button to the figure
+    #     axload = fig.add_axes([0.8, 0.01, 0.09, 0.05]) # [left, bottom, width, height]
+    #     but_load = Button(axload, 'Load')
+    #     but_load.on_clicked(load)
+    #     axload._but_load = but_load # reference to the Button (otherwise the button does nothing)
+
+    #     def listenFrag(xmin, xmax):
+    #         ini, end = np.searchsorted(time, (xmin, xmax))
+    #         self.selectedAudio = audio[ini:end+1]
+    #         sd.play(self.selectedAudio, fs)
+            
+    #     self.span = SpanSelector(ax, listenFrag, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)
+    
 
     #####################
     # CALCULATE METHODS #
@@ -899,8 +921,12 @@ class ControlMenu():
         pitch, pitch_values = self.calculatePitch(method, minpitch, maxpitch, maxCandidates)
 
         if showSpec == 1:
-            img = self.calculateSpectrogram(self.audio, ax[1], min(pitch_values), max(pitch_values), 1, cmap)
-            self.colorBar(fig, 0.36, img)
+            if math.isnan(min(pitch_values)) and math.isnan(max(pitch_values)):
+                text = "Cannot draw the spectrogram because minimum and maximum values of the samples of the pitch are unvoiced."
+                tk.messagebox.showerror(parent=cm, title="Unvoiced samples", message=text) # show error
+            else:
+                img = self.calculateSpectrogram(self.audio, ax[1], min(pitch_values), max(pitch_values), 1, cmap)
+                self.colorBar(fig, 0.36, img)
             color = 'w'
         else: color = '#1f77b4'
 
@@ -951,6 +977,7 @@ class ControlMenu():
         self.aux.saveasWavCsv(cm, fig, self.time, self.audio, 0.5, self.fs) # save waveform as csv
 
         self.span = self.createSpanSelector(ax[0]) # Select a fragment with the cursor and play the audio of that fragment
+        # self.addLoadButton(fig, ax[0], self.fs, self.time, filteredSignal, self.fileName+str(' (filtered)'))
         plt.show() # show the figure
 
 
@@ -961,24 +988,25 @@ class ControlMenu():
         filter = cm.var_filt.get() # butterworth, elliptic...
         type = cm.var_pass.get() # # lowpass, highpass, bandpass or bandstop
 
-        fig, ax = plt.subplots(1, 2)
-        plt.subplots_adjust(hspace=.4) # to avoid overlapping between xlabel and title
+        fig, ax = plt.subplots(2, figsize=(9,7))
+        plt.subplots_adjust(hspace=.3) # to avoid overlapping between xlabel and title
         fig.canvas.manager.set_window_title('Filter frequency response') # set title to the figure window
 
         _, _, _, b, a = self.designFilter(fcut1, fcut2, p, filter, type)
 
         # Calculate the filter frequency response
-        # w, h = signal.freqz(b, a)
+        w, h = signal.freqz(b, a, fs=self.fs) # w: frequencies in Hz, h: frequency response
+        # w_rad, _ = signal.freqz(b, a) # w_rad: frequencies in rad/samples
         h = signal.TransferFunction(b, a)
-        w, mag, phase = signal.bode(h)
+        w_rads = ... # w_rads: frequencies in rad/s
+        w, mag, phase = signal.bode(h, w_rads)
 
-        ax[0].semilogx(w, mag) # Magnitude plot
+        ax[0].plot(w, mag) # Magnitude plot
         ax[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        ax[0].set(xlabel='Frequency (Hz)', ylabel='Magnitude (dB)', title='Frequency Response, Magnitude')
-        # axFragFFR[1].plot(w, np.abs(h))
-        ax[1].semilogx(w, phase) # Phase plot
+        ax[0].set(xlim=[0, max(w)], xlabel='Frequency (Hz)', ylabel='Magnitude (dB)', title='Frequency Response, Magnitude')
+        ax[1].plot(w, phase) # Phase plot
         ax[1].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        ax[1].set(xlabel='Frequency (Hz)', ylabel='Phase (radians)', title='Frequency Response, Phase')
+        ax[1].set(xlim=[0, max(w)], xlabel='Frequency (Hz)', ylabel='Phase (deg)', title='Frequency Response, Phase')
 
         plt.show() # show the figure
 
