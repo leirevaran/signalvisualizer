@@ -29,7 +29,7 @@ class FreeAdditionPureTones(tk.Frame):
         fam.resizable(True, True)
         fam.title('Free addition of pure tones')
         fam.iconbitmap('icons/icon.ico')
-        fam.wm_transient(self) # Place the toplevel window at the top
+        fam.lift() # Place the toplevel window at the top
         # self.aux.windowGeometry(fam, 800, 600)
 
         # Adapt the window to different sizes
@@ -284,9 +284,9 @@ class FreeAdditionPureTones(tk.Frame):
         # Takes the selected fragment and opens the control menu when clicked
         def load(event):
             if self.selectedAudio.shape == (1,): 
-                self.cm.createControlMenu(self, name, fs, audio)
+                self.cm.createControlMenu(self, name, fs, audio, self.controller)
             else:
-                self.cm.createControlMenu(self, name, fs, self.selectedAudio)
+                self.cm.createControlMenu(self, name, fs, self.selectedAudio, self.controller)
             plt.close(fig)
             menu.destroy()
             axload._but_load = but_load # reference to the Button (otherwise the button does nothing)

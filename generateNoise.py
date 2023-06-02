@@ -29,7 +29,7 @@ class Noise(tk.Frame):
         nm.resizable(True, True)
         nm.title('Generate noise')
         nm.iconbitmap('icons/icon.ico')
-        nm.wm_transient(self) # Place the toplevel window at the top
+        nm.lift() # Place the toplevel window at the top
         # self.aux.windowGeometry(nm, 850, 250)
 
         # Adapt the window to different sizes
@@ -174,9 +174,9 @@ class Noise(tk.Frame):
         # Takes the selected fragment and opens the control menu when clicked
         def load(event):
             if self.selectedAudio.shape == (1,): 
-                self.cm.createControlMenu(self, name, fs, audio)
+                self.cm.createControlMenu(self, name, fs, audio, self.controller)
             else:
-                self.cm.createControlMenu(self, name, fs, self.selectedAudio)
+                self.cm.createControlMenu(self, name, fs, self.selectedAudio, self.controller)
             plt.close(fig)
             menu.destroy()
 

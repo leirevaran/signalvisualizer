@@ -145,11 +145,6 @@ class SignalVisualizer(tk.Frame):
 
         return menubar
     
-    # def createWindowButtons(self):
-    #     w1Button = tk.Button(self, text="Window1", command=lambda: self.controller.show_frame('LoadApp')) # with lambda, the action is only made when the button is pressed
-    #     w1Button.configure(state="disabled")
-    #     w1Button.grid()
-    
 if __name__ == "__main__":
     app = Start()
     app.mainloop()

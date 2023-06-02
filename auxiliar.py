@@ -10,10 +10,6 @@ windll.shcore.SetProcessDpiAwareness(1)
 
 class Auxiliar():
 
-    ##########################################################################
-    # CALLED FROM SIGNAL VISUALIZER AND GENERATE FREE ADDITION OF PURE TONES #
-    ##########################################################################
-    
     # Calculates the width and height of the window depending on the screen size of the computer
     # Position the main window in the middle of the screen if 'middle' is True
     def windowGeometry(self, window, w, h, middle):

@@ -6,6 +6,7 @@ import PyInstaller.__main__
 subprocess.check_call([sys.executable, "-m", "pip", "install", "librosa"])
 
 PyInstaller.__main__.run([
+    '--clean',
     '-w',
     '--icon=./icons/icon.ico',
     '--collect-data',

@@ -21,7 +21,7 @@ class Spectrogram(tk.Frame):
         cmm.resizable(True, True)
         cmm.title('Choose colormap of the spectrogram')
         cmm.iconbitmap('icons/icon.ico')
-        cmm.wm_transient(self) # Place the toplevel window at the top
+        cmm.lift() # Place the toplevel window at the top
         # self.aux.windowGeometry(cmm, 850, 250)
 
         # Adapt the window to different sizes

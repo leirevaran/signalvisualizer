@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 from tkinterweb import HtmlFrame
 
+from auxiliar import Auxiliar
+
 # To avoid blurry fonts
 from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
@@ -26,7 +28,9 @@ class Help(tk.Frame):
         self.hm.resizable(False, False)
         self.hm.title('Help menu')
         self.hm.iconbitmap('icons/icon.ico')
-        self.hm.wm_transient(root) # Place the toplevel window at the top
+        self.hm.lift() # Place the toplevel window at the top
+        self.aux = Auxiliar()
+        self.aux.windowGeometry(self.hm, 975, 600, True)
 
         def on_closing():
             self.hm.destroy()

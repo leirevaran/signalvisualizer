@@ -29,7 +29,7 @@ class PureTone(tk.Frame):
         tm.resizable(True, True)
         tm.title('Generate pure tone')
         tm.iconbitmap('icons/icon.ico')
-        tm.wm_transient(self) # Place the toplevel window at the top
+        tm.lift() # Place the toplevel window at the top
         # self.aux.windowGeometry(tm, 850, 475)
 
         # Adapt the window to different sizes
@@ -208,9 +208,9 @@ class PureTone(tk.Frame):
         # Takes the selected fragment and opens the control menu when clicked
         def load(event):
             if self.selectedAudio.shape == (1,): 
-                self.cm.createControlMenu(self, name, fs, audio)
+                self.cm.createControlMenu(self, name, fs, audio, self.controller)
             else:
-                self.cm.createControlMenu(self, name, fs, self.selectedAudio)
+                self.cm.createControlMenu(self, name, fs, self.selectedAudio, self.controller)
             plt.close(fig)
             menu.destroy()
             axload._but_load = but_load # reference to the Button (otherwise the button does nothing)

@@ -61,9 +61,9 @@ class Load(tk.Frame):
         # Takes the selected fragment and opens the control menu when clicked
         def load(event):
             if self.selectedAudio.shape == (1,): 
-                self.cm.createControlMenu(self, name, fs, audio)
+                self.cm.createControlMenu(self, name, fs, audio, self.controller)
             else:
-                self.cm.createControlMenu(self, name, fs, self.selectedAudio)
+                self.cm.createControlMenu(self, name, fs, self.selectedAudio, self.controller)
             plt.close(fig)
 
         # Adds a 'Load' button to the figure

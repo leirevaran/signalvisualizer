@@ -30,7 +30,7 @@ class SquareWave(tk.Frame):
         sm.resizable(True, True)
         sm.title('Generate square wave')
         sm.iconbitmap('icons/icon.ico')
-        sm.wm_transient(self) # Place the toplevel window at the top
+        sm.lift() # Place the toplevel window at the top
         # self.aux.windowGeometry(sm, 850, 500)
 
         # Adapt the window to different sizes
@@ -202,9 +202,9 @@ class SquareWave(tk.Frame):
         # Takes the selected fragment and opens the control menu when clicked
         def load(event):
             if self.selectedAudio.shape == (1,): 
-                self.cm.createControlMenu(self, name, fs, audio)
+                self.cm.createControlMenu(self, name, fs, audio, self.controller)
             else:
-                self.cm.createControlMenu(self, name, fs, self.selectedAudio)
+                self.cm.createControlMenu(self, name, fs, self.selectedAudio, self.controller)
             plt.close(fig)
             menu.destroy()
             axload._but_load = but_load # reference to the Button (otherwise the button does nothing)
