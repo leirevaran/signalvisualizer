@@ -1,5 +1,6 @@
 import tkinter as tk, tkinter.filedialog
 import struct
+import librosa
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
@@ -39,7 +40,7 @@ class Load(tk.Frame):
                 ampMax = np.ndarray.max(abs(audio)) # max amplitude
                 audio = np.sum(audio, axis=1) # from stereo to mono
                 audio = audio * ampMax / np.ndarray.max(abs(audio)) # normalize and leave with the max amplitude
-
+        
         self.plotAudio(file, audio, fs)
 
     def plotAudio(self, file, audio, fs):
@@ -48,7 +49,8 @@ class Load(tk.Frame):
         figFile.canvas.manager.set_window_title(fileName) # set title to the figure window
         
         time = np.arange(0, len(audio)/fs, 1/fs) # Time axis
-        self.addLoadButton(figFile, axFile, fs, time, audio, fileName)
+        duration = librosa.get_duration(filename=file)
+        self.addLoadButton(figFile, axFile, fs, time, audio, duration, fileName)
 
         # Plot the audio file
         axFile.plot(time, audio)
@@ -57,13 +59,15 @@ class Load(tk.Frame):
 
         plt.show() # show the figure
 
-    def addLoadButton(self, fig, ax, fs, time, audio, name):
+    def addLoadButton(self, fig, ax, fs, time, audio, duration, name):
         # Takes the selected fragment and opens the control menu when clicked
         def load(event):
             if self.selectedAudio.shape == (1,): 
-                self.cm.createControlMenu(self, name, fs, audio, self.controller)
+                self.cm.createControlMenu(name, fs, audio, duration, self.controller)
             else:
-                self.cm.createControlMenu(self, name, fs, self.selectedAudio, self.controller)
+                time = np.arange(0, len(self.selectedAudio)/fs, 1/fs) # time array of the audio
+                durSelec = max(time) # duration of the selected fragment
+                self.cm.createControlMenu(name, fs, self.selectedAudio, durSelec, self.controller)
             plt.close(fig)
 
         # Adds a 'Load' button to the figure

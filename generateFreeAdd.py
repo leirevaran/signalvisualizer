@@ -268,7 +268,7 @@ class FreeAdditionPureTones(tk.Frame):
             self.fig, self.ax = plt.subplots() # create the window
 
         fig, ax = self.fig, self.ax
-        self.addLoadButton(fig, ax, self.fs, time, fapt, fam, 'Free addition of pure tones')
+        self.addLoadButton(fig, ax, self.fs, time, fapt, duration, fam, 'Free addition of pure tones')
         
         # Plot free addition of pure tones
         limite = max(abs(fapt))*1.1
@@ -280,13 +280,15 @@ class FreeAdditionPureTones(tk.Frame):
 
         plt.show()
     
-    def addLoadButton(self, fig, ax, fs, time, audio, menu, name):
+    def addLoadButton(self, fig, ax, fs, time, audio, duration, menu, name):
         # Takes the selected fragment and opens the control menu when clicked
         def load(event):
             if self.selectedAudio.shape == (1,): 
-                self.cm.createControlMenu(self, name, fs, audio, self.controller)
+                self.cm.createControlMenu(name, fs, audio, duration, self.controller)
             else:
-                self.cm.createControlMenu(self, name, fs, self.selectedAudio, self.controller)
+                time = np.arange(0, len(self.selectedAudio)/fs, 1/fs) # time array of the audio
+                durSelec = max(time) # duration of the selected fragment
+                self.cm.createControlMenu(name, fs, self.selectedAudio, durSelec, self.controller)
             plt.close(fig)
             menu.destroy()
             axload._but_load = but_load # reference to the Button (otherwise the button does nothing)

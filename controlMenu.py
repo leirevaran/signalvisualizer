@@ -22,17 +22,30 @@ windll.shcore.SetProcessDpiAwareness(1)
 
 class ControlMenu():
 
-    def createControlMenu(self, root, fileName, fs, audioFrag, controller):
+    def createControlMenu(self, fileName, fs, audioFrag, duration, controller):
         self.fileName = fileName
         self.audio = audioFrag # audio array of the fragment
         self.fs = fs # sample frequency of the audio (Hz)
         self.time = np.arange(0, len(self.audio)/self.fs, 1/self.fs) # time array of the audio
-        self.duration = max(self.time) # duration of the audio (s)
+        self.duration = duration # duration of the audio (s)
         self.lenAudio = len(self.audio) # length of the audio array
         self.controller = controller
+        np.seterr(divide = 'ignore') # turn off the "RuntimeWarning: divide by zero encountered in log10"
+
+        # 'self.time' and 'self.audio' need to have the same first dimension
+        if len(self.time) < len(self.audio):
+            self.audio = self.audio[:-1].copy() # delete last element of the numpy array
+        elif len(self.time) > len(self.audio):
+            self.time = self.time[:-1].copy() # delete last element of the numpy array
 
         self.aux = Auxiliar()
         self.adse = AdvancedSettings()
+
+        # The signal must have a minimum duration of 0.01 seconds
+        if self.duration < 0.01:
+            text = "The signal must have a minimum duration of 0.01s."
+            tk.messagebox.showerror(title="Signal too short", message=text) # show error
+            return
 
         cm = tk.Toplevel()
         cm.resizable(True, True)
@@ -47,19 +60,15 @@ class ControlMenu():
         for i in range(14):
             cm.rowconfigure(i, weight=1)
 
-        # The signal must have a minimum duration of 0.01 seconds
-        if self.duration < 0.01:
-            text = "The signal must have a minimum duration of 0.01s."
-            tk.messagebox.showerror(parent=cm, title="Signal too short", message=text) # show error
-            return
-
         # If the 'Control menu' window is closed, close also all the generated figures
         def on_closing():
             cm.destroy()
             plt.close('all') # closes all matplotlib figures
         cm.protocol("WM_DELETE_WINDOW", on_closing)
 
-        # LABELS
+        ##########
+        # LABELS #
+        ##########
         # Labels of OptionMenus
         lab_opts = tk.Label(cm, text='Choose an option', bd=6, font=('TkDefaultFont', 10, 'bold'))
         lab_wind = tk.Label(cm, text='Window')
@@ -76,6 +85,8 @@ class ControlMenu():
         lab_maxp = tk.Label(cm, text='Pitch ceiling (Hz)')
         lab_fund = tk.Label(cm, text='Fund. freq. multiplication')
         lab_cent = tk.Label(cm, text='Center frequency')
+        lab_perc = tk.Label(cm, text='Percentage (%)')
+        lab_fcut = tk.Label(cm, text='Fcut')
         lab_cut1 = tk.Label(cm, text='Fcut1')
         lab_cut2 = tk.Label(cm, text='Fcut2')
         lab_beta = tk.Label(cm, text='Beta')
@@ -105,8 +116,10 @@ class ControlMenu():
         lab_maxp.grid(column=0, row=13, sticky=tk.E)
         lab_fund.grid(column=2, row=3, sticky=tk.E)
         lab_cent.grid(column=2, row=4, sticky=tk.E)
-        lab_cut1.grid(column=2, row=5, sticky=tk.E)
-        lab_cut2.grid(column=2, row=6, sticky=tk.E)
+        lab_perc.grid(column=2, row=5, sticky=tk.E)
+        lab_fcut.grid(column=2, row=6, sticky=tk.E)
+        lab_cut1.grid(column=2, row=7, sticky=tk.E)
+        lab_cut2.grid(column=2, row=8, sticky=tk.E)
         lab_beta.grid(column=2, row=11, sticky=tk.E)
         lab_fshz.grid(column=3, row=13, sticky=tk.EW)
 
@@ -115,10 +128,12 @@ class ControlMenu():
         lab_filt.grid(column=3, row=1)
         lab_sten.grid(column=3, row=10)
 
-        # ENTRYS
+        ##########
+        # ENTRYS #
+        ##########
         if self.duration <= 0.03:
-            windSize = self.duration - 0.001
-            overlap = windSize - 0.001
+            windSize = round(self.duration - 0.001, 3)
+            overlap = round(windSize - 0.001, 3)
         else:
             windSize = 0.03
             overlap = 0.01
@@ -131,6 +146,8 @@ class ControlMenu():
         cm.var_maxp = tk.DoubleVar(value=600.0)
         cm.var_fund = tk.IntVar(value=1)
         cm.var_cent = tk.IntVar(value=400)
+        cm.var_perc = tk.DoubleVar(value=10.0)
+        cm.var_fcut = tk.IntVar(value=1000)
         cm.var_cut1 = tk.IntVar(value=200)
         cm.var_cut2 = tk.IntVar(value=600)
         cm.var_beta = tk.IntVar()
@@ -145,6 +162,8 @@ class ControlMenu():
         ent_maxp = ttk.Entry(cm, textvariable=cm.var_maxp, validate='key', validatecommand=vcmd, state='disabled')
         ent_fund = ttk.Entry(cm, textvariable=cm.var_fund, validate='key', validatecommand=vcmd, state='disabled')
         ent_cent = ttk.Entry(cm, textvariable=cm.var_cent, validate='key', validatecommand=vcmd, state='disabled')
+        ent_perc = ttk.Entry(cm, textvariable=cm.var_perc, validate='key', validatecommand=vcmd, state='disabled')
+        ent_fcut = ttk.Entry(cm, textvariable=cm.var_fcut, validate='key', validatecommand=vcmd, state='disabled')
         ent_cut1 = ttk.Entry(cm, textvariable=cm.var_cut1, validate='key', validatecommand=vcmd, state='disabled')
         ent_cut2 = ttk.Entry(cm, textvariable=cm.var_cut2, validate='key', validatecommand=vcmd, state='disabled')
         ent_beta = ttk.Entry(cm, textvariable=cm.var_beta, validate='key', validatecommand=vcmd, state='disabled')
@@ -157,7 +176,7 @@ class ControlMenu():
             if windSize > self.duration or windSize == 0:
                 # Reset widgets
                 if self.duration <= 0.03:
-                    cm.var_size.set(self.duration - 0.001)
+                    cm.var_size.set(round(self.duration - 0.001, 3))
                 else:
                     cm.var_size.set(0.03)
                 cm.opt_nfft = [2**9, 2**10, 2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19]
@@ -202,7 +221,7 @@ class ControlMenu():
             if overlap > self.duration or overlap >= windSize:
                 # Reset widget
                 if self.duration <= 0.03:
-                    overlap = windSize - 0.001
+                    overlap = round(windSize - 0.001, 3)
                 else:
                     cm.var_over.set('0.01')
                 if overlap > self.duration: # The overlap can't be greater than the duration of the signal
@@ -260,11 +279,11 @@ class ControlMenu():
         def fundfreqEntry(event):
             fundfreq = cm.var_fund.get()
             if fundfreq < 1:
-                cm.var_fund.set('1')
+                cm.var_fund.set('1') # reset widget
                 text = "The minimum value of the fundamental frequency response is 1."
                 tk.messagebox.showerror(parent=cm, title="Fundamental frequency response too small", message=text) # show error
             elif fundfreq > (self.fs/2): # max fundfreq = (self.fs/2)-(max(anchura de banda)/2) (?)
-                cm.var_fund.set(self.fs/2)
+                cm.var_fund.set(self.fs/2) # reset widget
                 text = "The maximum frequency can't be greater than the half of the sample frequency (" + str(self.fs/2) + "Hz)."
                 tk.messagebox.showerror(parent=cm, title="Fundamental frequency response too big", message=text) # show error
             else: return True
@@ -279,6 +298,14 @@ class ControlMenu():
             #     tk.messagebox.showerror(parent=cm, title="Wrong center frequency value", message=text) # show error
             # else: return True
             return True
+        
+        def percentageEntry(event):
+            percentage = cm.var_perc.get()
+            if percentage < 0.0 or percentage > 100.0:
+                cm.var_perc.set('10.0') # reset widget
+                text = "The percentage must be a number between 0 and 100."
+                tk.messagebox.showerror(parent=cm, title="Wrong percentage value", message=text) # show error
+            else: return True
         
         def fcut1Entry(event):
             # center = cm.var_cent.get()
@@ -323,6 +350,7 @@ class ControlMenu():
         ent_maxp.bind('<Return>', maxpitchEntry)
         ent_fund.bind('<Return>', fundfreqEntry)
         ent_cent.bind('<Return>', centerEntry)
+        ent_perc.bind('<Return>', percentageEntry)
         ent_cut1.bind('<Return>', fcut1Entry)
         ent_cut2.bind('<Return>', fcut2Entry)
         ent_beta.bind('<Return>', betaEntry)
@@ -336,8 +364,10 @@ class ControlMenu():
         ent_maxp.grid(column=1, row=13, sticky=tk.EW, padx=5, pady=5)
         ent_fund.grid(column=3, row=3, sticky=tk.EW, padx=5, pady=5)
         ent_cent.grid(column=3, row=4, sticky=tk.EW, padx=5, pady=5)
-        ent_cut1.grid(column=3, row=5, sticky=tk.EW, padx=5, pady=5)
-        ent_cut2.grid(column=3, row=6, sticky=tk.EW, padx=5, pady=5)
+        ent_perc.grid(column=3, row=5, sticky=tk.EW, padx=5, pady=5)
+        ent_fcut.grid(column=3, row=6, sticky=tk.EW, padx=5, pady=5)
+        ent_cut1.grid(column=3, row=7, sticky=tk.EW, padx=5, pady=5)
+        ent_cut2.grid(column=3, row=8, sticky=tk.EW, padx=5, pady=5)
         ent_beta.grid(column=3, row=11, sticky=tk.EW, padx=5, pady=5)
 
         # RADIOBUTTONS
@@ -369,7 +399,9 @@ class ControlMenu():
         chk_pitch = ttk.Checkbutton(cm, text='Show pitch', command=pitchCheckbox, variable=cm.var_pitch)
         chk_pitch.grid(column=1, row=9, sticky=tk.W)
 
-        # BUTTONS
+        ###########
+        # BUTTONS #
+        ###########
         # Checks if all the values inserted by the user are correct
         def checkValues():
             choice = cm.var_opts.get()
@@ -382,6 +414,7 @@ class ControlMenu():
             maxpitch = cm.var_maxp.get()
             fundfreq = cm.var_fund.get()
             center = cm.var_cent.get()
+            percentage = cm.var_perc.get()
             fcut1 = cm.var_cut1.get()
             fcut2 = cm.var_cut2.get()
 
@@ -390,7 +423,7 @@ class ControlMenu():
                     return
                 if minfreqEntry(minfreq)!=True or maxfreqEntry(maxfreq)!=True:
                     return
-                if choice == 'Filtering' and (fundfreqEntry(fundfreq)!=True or centerEntry(center)!=True or fcut1Entry(fcut1)!=True or fcut2Entry(fcut2)!=True):
+                if choice == 'Filtering' and (fundfreqEntry(fundfreq)!=True or centerEntry(center)!=True or percentageEntry(percentage)!=True or fcut1Entry(fcut1)!=True or fcut2Entry(fcut2)!=True):
                     return
                 if choice != 'Filtering' and windowLengthEntry(windSize) != True:
                     return
@@ -403,32 +436,28 @@ class ControlMenu():
 
         but_adse = ttk.Button(cm, state='disabled', command=lambda: self.adse.advancedSettings(), text='Advanced settings')
         but_freq = ttk.Button(cm, state='disabled', command=lambda: self.plotFiltFreqResponse(cm), text='Filter Frequency Response')
-        but_rese = ttk.Button(cm, state='disabled', text='Reset Signal')
-        # but_fisi = ttk.Button(cm, state='disabled', text='Filter Signal')
         but_plot = ttk.Button(cm, command=lambda: checkValues(), text='Plot')
         but_help = ttk.Button(cm, command=lambda: self.controller.help.createHelpMenu(cm, 8), text='🛈', width=2)
 
         # positioning Buttons
         but_adse.grid(column=1, row=14, sticky=tk.EW, padx=5, pady=5)
-        but_freq.grid(column=3, row=8, sticky=tk.EW, padx=5, pady=5)
-        but_rese.grid(column=3, row=9, sticky=tk.EW, padx=5, pady=5)
-        # but_fisi.grid(column=3, row=9, sticky=tk.EW, padx=5, pady=5)
+        but_freq.grid(column=3, row=9, sticky=tk.EW, padx=5, pady=5)
         but_plot.grid(column=3, row=14, sticky=tk.EW, padx=5, pady=5)
         but_help.grid(column=2, row=14, sticky=tk.E, padx=5, pady=5)
 
-        # OPTION MENUS
+        ################
+        # OPTION MENUS #
+        ################
         cm.options = ('FT','STFT', 'Spectrogram','STFT + Spect', 'Short-Time-Energy', 'Pitch', 'Spectral Centroid', 'Filtering')
         cm.opt_wind = ('Bartlett','Blackman', 'Hamming','Hanning', 'Kaiser')
         cm.opt_nfft = [2**9, 2**10, 2**11, 2**12, 2**13, 2**14, 2**15, 2**16, 2**17, 2**18, 2**19]
         cm.opt_meth = ('Autocorrelation', 'Cross-correlation', 'Subharmonics', 'Spinet')
-        cm.opt_pass = ('Lowpass','Highpass', 'Bandpass', 'Bandstop', 'Harmonic')
-        cm.opt_filt = ('Butterworth','Elliptic', 'Chebyshev I', 'Chebyshev II', 'FIR least-squares')
+        cm.opt_pass = ('Harmonic', 'Lowpass','Highpass', 'Bandpass', 'Bandstop')
 
         cm.var_opts = tk.StringVar()
         cm.var_wind = tk.StringVar()
         cm.var_nfft = tk.IntVar()
         cm.var_meth = tk.StringVar()
-        cm.var_filt = tk.StringVar()
         cm.var_pass = tk.StringVar()
 
         # Called when changing the main option (FT, STFT, etc.) for disabling or activating widgets
@@ -442,25 +471,36 @@ class ControlMenu():
             else: ent_size.config(state='normal')
 
             if choice == 'Filtering':
-                ent_fund.config(state='normal')
-                ent_cent.config(state='normal')
-                ent_cut1.config(state='normal')
-                ent_cut2.config(state='normal')
-                dd_filt.config(state='active')
                 dd_pass.config(state='active')
+                ent_perc.config(state='normal')
                 but_freq.configure(state='active')
-                but_rese.configure(state='active')
-                # but_fisi.configure(state='active')
+
+                type = cm.var_pass.get()
+                if type == 'Lowpass' or type == 'Highpass':
+                    ent_fcut.config(state='normal')
+                else:
+                    ent_fcut.config(state='disabled')
+                if type == 'Bandpass' or type == 'Bandstop':
+                    ent_cut1.config(state='normal')
+                    ent_cut2.config(state='normal')
+                else:
+                    ent_cut1.config(state='disabled')
+                    ent_cut2.config(state='disabled')
+                if type == 'Harmonic':
+                    ent_fund.config(state='normal')
+                    ent_cent.config(state='normal')
+                else:
+                    ent_fund.config(state='disabled')
+                    ent_cent.config(state='disabled')
             else:
+                dd_pass.config(state='disabled')
                 ent_fund.config(state='disabled')
                 ent_cent.config(state='disabled')
+                ent_perc.config(state='disabled')
+                but_freq.configure(state='disabled')
+                ent_fcut.config(state='disabled')
                 ent_cut1.config(state='disabled')
                 ent_cut2.config(state='disabled')
-                dd_filt.config(state='disabled')
-                dd_pass.config(state='disabled')
-                but_freq.configure(state='disabled')
-                but_rese.configure(state='disabled')
-                # but_fisi.configure(state='disabled')
 
             if choice == 'Pitch':
                 self.adse.createVariables() # create the variables of advanced settings
@@ -505,13 +545,32 @@ class ControlMenu():
             else:
                 chk_pitch.config(state='disabled')
 
+        def displayFilterOptions(choice):
+            if choice == 'Lowpass' or choice == 'Highpass':
+                ent_fcut.config(state='normal')
+            else:
+                ent_fcut.config(state='disabled')
+
+            if choice == 'Bandpass' or choice == 'Bandstop':
+                ent_cut1.config(state='normal')
+                ent_cut2.config(state='normal')
+            else:
+                ent_cut1.config(state='disabled')
+                ent_cut2.config(state='disabled')
+
+            if choice == 'Harmonic':
+                ent_fund.config(state='normal')
+                ent_cent.config(state='normal')
+            else:
+                ent_fund.config(state='disabled')
+                ent_cent.config(state='disabled')
+
         # creating option menus
         dd_opts = ttk.OptionMenu(cm, cm.var_opts, cm.options[2], *cm.options, command=displayOptions)
         dd_wind = ttk.OptionMenu(cm, cm.var_wind, cm.opt_wind[0], *cm.opt_wind)
         dd_nfft = ttk.OptionMenu(cm, cm.var_nfft, cm.opt_nfft[0], *cm.opt_nfft)
         dd_meth = ttk.OptionMenu(cm, cm.var_meth, cm.opt_meth[0], *cm.opt_meth)
-        dd_pass = ttk.OptionMenu(cm, cm.var_pass, cm.opt_pass[0], *cm.opt_pass)
-        dd_filt = ttk.OptionMenu(cm, cm.var_filt, cm.opt_filt[0], *cm.opt_filt)
+        dd_pass = ttk.OptionMenu(cm, cm.var_pass, cm.opt_pass[0], *cm.opt_pass, command=displayFilterOptions)
 
         # size of the OptionMenus
         dd_opts.config(width=16)
@@ -519,7 +578,6 @@ class ControlMenu():
         dd_nfft.config(width=18, state='disabled')
         dd_meth.config(width=18, state='disabled')
         dd_pass.config(width=18, state='disabled')
-        dd_filt.config(width=18, state='disabled')
 
         # positioning OptionMenus
         dd_opts.grid(column=2, row=0, sticky=tk.EW, padx=5)
@@ -527,7 +585,6 @@ class ControlMenu():
         dd_nfft.grid(column=1, row=3, sticky=tk.EW, padx=5)
         dd_meth.grid(column=1, row=11, sticky=tk.EW, padx=5)
         dd_pass.grid(column=3, row=2, sticky=tk.EW, padx=5)
-        dd_filt.grid(column=3, row=7, sticky=tk.EW, padx=5)
 
         # Plot the spectrogram
         checkValues()
@@ -713,73 +770,57 @@ class ControlMenu():
         return pitch, pitch_values
     
     
-    def designFilter(self, fundfreqmult, fundfreq, fcut, fcut1, fcut2, p, type):
-        gpass = 3
-        gstop = 40
+    def designFilter(self, cm, fig, gpass, gstop):
+        type = cm.var_pass.get() # harmonic, lowpass, highpass, bandpass or bandstop
+        p = cm.var_perc.get()
 
         # Design filter
-        if type == 'Lowpass':
-            delta = fcut * (p/100) # 1st transition band
-            wp = fcut - delta
-            ws = fcut + delta
+        if type == 'Lowpass' or type == 'Highpass':
+            fcut = cm.var_fcut.get()
+            # fig.canvas.manager.set_window_title('Filtering-'+type+'-'+str(p)+'%-Fcut_'+str(fcut)) # set title to the figure window
+            delta = fcut * (p/100) # transition band
 
-            # if filter == 'Butterworth':
-            #     N, Wn = signal.buttord(wp, ws, gpass, gstop, fs=self.fs)
-            #     b, a = signal.butter(N, Wn, btype=type, fs=self.fs)
-            # elif filter == 'Elliptic':
-            N, Wn = signal.ellipord(wp, ws, gpass, gstop, fs=self.fs)
-            b, a = signal.ellip(N, gpass, gstop, Wn, btype=type, fs=self.fs)
-            # elif filter == 'Chebyshev I':
-            #     N, Wn = signal.cheb1ord(wp, ws, gpass, gstop, fs=self.fs)
-            #     b, a = signal.cheby1(N, gpass, Wn, btype=type, fs=self.fs)
-            # elif filter == 'Chebyshev II':
-            #     N, Wn = signal.cheb2ord(wp, ws, gpass, gstop, fs=self.fs)
-            #     b, a = signal.cheby2(N, gstop, Wn, btype=type, fs=self.fs)
-            # elif filter == 'FIR least-squares':
-            #     coeffs = signal.firls(fs=self.audiofs)
-
-        elif  type == 'Highpass':
-            delta = fcut * (p/100) # 1st transition band
-            wp = fcut + delta
-            ws = fcut - delta
+            if type == 'Lowpass':
+                wp = fcut - delta
+                ws = fcut + delta
+            elif  type == 'Highpass':
+                wp = fcut + delta
+                ws = fcut - delta
 
             N, Wn = signal.ellipord(wp, ws, gpass, gstop, fs=self.fs)
             b, a = signal.ellip(N, gpass, gstop, Wn, btype=type, fs=self.fs)
 
-        elif type == 'Bandpass':
-            delta1 = fcut1 * (p/100) # 1st transition band
-            delta2 = fcut2 * (p/100) # 2nd transition band
-            wp1 = fcut1 + delta1
-            wp2 = fcut2 - delta2
-            ws1 = fcut1 - delta1
-            ws2 = fcut2 + delta2
+        else:
+            if type == 'Harmonic':
+                fundfreqmult = cm.var_fund.get()
+                fundfreq = cm.var_cent.get()
+                # fig.canvas.manager.set_window_title('Filtering-'+type+'-'+str(p)+'%-FundFreqMult_'+str(fundfreqmult)+'-CenterFreq_'+str(fundfreq)+'Hz') # set title to the figure window
+                fc = fundfreq * fundfreqmult # central frequency, value of the 1st harmonic
+                fcut1 = fc - fundfreq/2
+                fcut2 = fc + fundfreq/2
+                delta1 = fcut1 * (p/100) # 1st transition band
+                delta2 = fcut2 * (p/100) # 2nd transition band
+                wp1 = fcut1 + delta1
+                wp2 = fcut2 - delta2
+                ws1 = fcut1 - delta1
+                ws2 = fcut2 + delta2
+            else:
+                fcut1 = cm.var_cut1.get()
+                fcut2 = cm.var_cut2.get()
+                # fig.canvas.manager.set_window_title('Filtering-'+type+'-'+str(p)+'%-Fcut1_'+str(fcut1)+'-Fcut2_'+str(fcut2)) # set title to the figure window
+                delta1 = fcut1 * (p/100) # 1st transition band
+                delta2 = fcut2 * (p/100) # 2nd transition band
 
-            N, Wn = signal.ellipord([wp1,wp2], [ws1,ws2], gpass, gstop, fs=self.fs)
-            b, a = signal.ellip(N, gpass, gstop, Wn, btype=type, fs=self.fs)
-
-        elif type == 'Bandstop':
-            delta1 = fcut1 * (p/100) # 1st transition band
-            delta2 = fcut2 * (p/100) # 2nd transition band
-            wp1 = fcut1 - delta1
-            wp2 = fcut2 + delta2
-            ws1 = fcut1 + delta1
-            ws2 = fcut2 - delta2
-
-            N, Wn = signal.ellipord([wp1,wp2], [ws1,ws2], gpass, gstop, fs=self.fs)
-            b, a = signal.ellip(N, gpass, gstop, Wn, btype=type, fs=self.fs)
-
-        elif type == 'Harmonic':
-            # primer armonico
-            fc = fundfreq * fundfreqmult # valor del primer armonico, frecuencia central (lo que ahora es center freq) 
-            fcut1 = fc - fundfreq/2
-            fcut2 = fc + fundfreq/2
-
-            delta1 = fcut1 * (p/100) # 1st transition band
-            delta2 = fcut2 * (p/100) # 2nd transition band
-            wp1 = fcut1 + delta1
-            wp2 = fcut2 - delta2
-            ws1 = fcut1 - delta1
-            ws2 = fcut2 + delta2
+                if type == 'Bandpass':
+                    wp1 = fcut1 + delta1
+                    wp2 = fcut2 - delta2
+                    ws1 = fcut1 - delta1
+                    ws2 = fcut2 + delta2
+                elif type == 'Bandstop':
+                    wp1 = fcut1 - delta1
+                    wp2 = fcut2 + delta2
+                    ws1 = fcut1 + delta1
+                    ws2 = fcut2 - delta2
 
             N, Wn = signal.ellipord([wp1,wp2], [ws1,ws2], gpass, gstop, fs=self.fs)
             b, a = signal.ellip(N, gpass, gstop, Wn, btype='Bandpass', fs=self.fs)
@@ -804,12 +845,6 @@ class ControlMenu():
         fft2 = fft[range(int(self.lenAudio/2))] # Exclude sampling frequency
         values = np.arange(int(self.lenAudio/2))
         frequencies = values / (self.lenAudio/self.fs) # values / time period
-
-        # 'self.time' and 'self.audio' need to have the same first dimension
-        if len(self.time) < len(self.audio):
-            self.audio = self.audio[:-1].copy() # delete last element of the numpy array
-        elif len(self.time) > len(self.audio):
-            self.time = self.time[:-1].copy() # delete last element of the numpy array
 
         self.calculateWaveform(ax[0])
         ax[1].plot(frequencies, 20*np.log10(abs(fft2)))
@@ -849,7 +884,7 @@ class ControlMenu():
         showPitch = cm.var_pitch.get()
 
         fig = plt.figure(figsize=(12,6))
-        gs = fig.add_gridspec(2, hspace=0)
+        gs = fig.add_gridspec(2, hspace=0, height_ratios=[1, 3])
         ax = gs.subplots(sharex=True)
         fig.suptitle('Spectrogram')
         fig.canvas.manager.set_window_title(str(self.fileName)+'-Spectrogram-'+title) # set title to the figure window
@@ -860,7 +895,7 @@ class ControlMenu():
         
         # Calculate the linear/mel spectrogram
         img = self.calculateWindowedSpectrogram(cm, ax[1], window, windSizeSampInt, hopSize, cmap)
-        self.colorBar(fig, 0.36, img)
+        self.colorBar(fig, 0.56, img)
 
         if showPitch == 1:
             method = cm.var_meth.get()
@@ -873,7 +908,7 @@ class ControlMenu():
             ax[1].plot(pitch.xs(), pitch_values, draw, color='w')
 
         self.calculateWaveform(ax[0])
-        self.aux.saveasWavCsv(cm, fig, self.time, self.audio, 0.5, self.fs) # save waveform as csv
+        self.aux.saveasWavCsv(cm, fig, self.time, self.audio, 0.69, self.fs) # save waveform as csv
 
         self.multicursor = MultiCursor(fig.canvas, (ax[0], ax[1]), color='black', lw=1)
         self.span = self.createSpanSelector(ax[0]) # Select a fragment with the cursor and play the audio of that fragment
@@ -1010,58 +1045,18 @@ class ControlMenu():
         plt.show() # show the figure
 
 
-    def plotFiltering(self, cm, cmap):
-        fundfreqmult = cm.var_fund.get()
-        fundfreq = cm.var_cent.get()
-        p = 10
-        fcut = 5000
-        fcut1 = cm.var_cut1.get()
-        fcut2 = cm.var_cut2.get()
-        # filter = cm.var_filt.get() # butterworth, elliptic...
-        type = cm.var_pass.get() # lowpass, highpass, bandpass or bandstop
-        draw = cm.var_draw.get()
-        minfreq = cm.var_minf.get()
-        maxfreq = cm.var_maxf.get()
-
-        fig = plt.figure(figsize=(12,6))
-        gs = fig.add_gridspec(2, hspace=0)
-        ax = gs.subplots(sharex=True)
-        fig.suptitle('Filtering')
-        fig.canvas.manager.set_window_title('Filtering-'+type+'-Fcut1_'+str(fcut1)+'Hz-Fcut2_'+str(fcut2)+'Hz') # set title to the figure window
-        # figFragFilt.canvas.manager.set_window_title('Filtering-FundFreqMult_'+ str(fundfreq) +'-Center_'+ str(center) + '-Fcut1_'+ str(fcut1) + 'Hz-Fcut2_'+ str(fcut2) + 'Hz' + '-Filter_'+ str(filter)) # set title to the figure window
-
-        # Hide x labels and tick labels for all but bottom plot.
-        for a in ax:
-            a.label_outer()
-        
-        filteredSignal, _, _ = self.designFilter(fundfreqmult, fundfreq, fcut, fcut1, fcut2, p, type)
-
-        # Calculate the linear/mel spectrogram
-        img = self.calculateSpectrogram(filteredSignal, ax[1], minfreq, maxfreq, draw, cmap)
-        self.yticks(minfreq, maxfreq) # represent the numbers of y axis
-        self.colorBar(fig, 0.36, img)
-
-        self.calculateWaveform(ax[0])
-        self.aux.saveasWavCsv(cm, fig, self.time, filteredSignal, 0.5, self.fs) # save waveform as csv
-
-        self.span = self.createSpanSelector(ax[0]) # Select a fragment with the cursor and play the audio of that fragment
-        # self.addLoadButton(fig, ax[0], self.fs, self.time, filteredSignal, self.fileName+str(' (filtered)'))
+    def plotFiltering(self, cm):
+        filteredSignal, _, _ = self.designFilter(cm, 0, 3, 40)
+        ControlMenu().createControlMenu(self.fileName+str(' (filtered)'), self.fs, filteredSignal, self.duration, self.controller)
         plt.show() # show the figure
 
 
+    # Callen when pressing the "Filter frequency response" button
     def plotFiltFreqResponse(self, cm):
-        p = 10
-        fcut = 1000
-        fcut1 = cm.var_cut1.get()
-        fcut2 = cm.var_cut2.get()
-        filter = cm.var_filt.get() # butterworth, elliptic...
-        type = cm.var_pass.get() # # lowpass, highpass, bandpass or bandstop
-
         fig, ax = plt.subplots(2, figsize=(9,7))
         plt.subplots_adjust(hspace=.3) # to avoid overlapping between xlabel and title
-        fig.canvas.manager.set_window_title('Filter frequency response') # set title to the figure window
 
-        _, b, a = self.designFilter(fcut, fcut1, fcut2, p, type)
+        _, b, a = self.designFilter(cm, fig, 3, 40)
 
         # Calculate the filter frequency response
         # w, h = signal.freqz(b, a, fs=self.fs) # w: frequencies in Hz, h: frequency response
@@ -1079,7 +1074,6 @@ class ControlMenu():
         ax[1].set(xlim=[0, max(w)], xlabel='Frequency (Hz)', ylabel='Phase (deg)', title='Frequency Response, Phase')
 
         plt.show() # show the figure
-
 
 
     # Called when pressing the 'Plot' button
@@ -1118,8 +1112,8 @@ class ControlMenu():
             windType1 = ('kaiser', beta) # used in STE
 
         if choice == 'FT':
-            if plt.fignum_exists(self.figFT.number):
-                plt.close(self.figFT.number) # close the figure of the FT
+            # if plt.fignum_exists(self.figFT.number):
+            #     plt.close(self.figFT.number) # close the figure of the FT
             self.plotFT(cm) # create the figure of the FT (again)
 
         elif choice == 'Spectrogram':
@@ -1132,7 +1126,7 @@ class ControlMenu():
             self.plotPitch(cm)
 
         elif choice == 'Filtering':
-            self.plotFiltering(cm, cmap)
+            self.plotFiltering(cm)
 
         elif choice == 'STFT' or choice == 'STFT + Spect' or choice == 'Spectral Centroid':
             # The window is in the middle of the waveform by default
