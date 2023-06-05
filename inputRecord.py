@@ -23,52 +23,54 @@ class Record(tk.Frame):
         self.master = master
         self.isrecording = False
         self.fs = 44100
-        self.fig, self.ax = plt.subplots()
         self.selectedAudio = np.empty(1)
         self.cm = ControlMenu()
         self.recordMenu()
 
     def recordMenu(self):
         rm = tk.Toplevel()
-        rm.resizable(True, True)
+        rm.resizable(False, False)
         rm.title('Record')
         rm.iconbitmap('icons/icon.ico')
         rm.lift() # Place the toplevel window at the top
 
         # Adapt the window to different sizes
-        for i in range(1):
+        for i in range(2):
             rm.columnconfigure(i, weight=1)
 
-        for i in range(2):
+        for i in range(3):
             rm.rowconfigure(i, weight=1)
 
         # If the 'generate' menu is closed, close also the generated figure
         def on_closing():
             rm.destroy()
-            plt.close(self.fig)
+            # plt.close(self.fig)
         rm.protocol("WM_DELETE_WINDOW", on_closing)
 
         # BUTTONS
-        # play = PhotoImage(file='icons/play.png')
-        # stop = PhotoImage(file='icons/stop.png')
-        # but_reco = tk.Button(rm, text='🎤', font=('Arial', 100, 'bold'), command=lambda: self.clickHandler())
-        but_play = ttk.Button(rm, command=lambda: self.startrecording(), text='Start recording')
-        but_stop = ttk.Button(rm, command=lambda: self.stoprecording(rm), text='Stop recording')
+        but_play = tk.Button(rm, command=lambda: self.startrecording(but_play, but_stop), text='⏺', font=('Arial', 40, 'bold'))
+        but_stop = tk.Button(rm, command=lambda: self.stoprecording(rm, but_play, but_stop), text='⏹', font=('Arial', 40, 'bold'), state='disabled')
         but_help = ttk.Button(rm, command=lambda: self.controller.help.createHelpMenu(self, 7), text='🛈', width=2)
 
-        but_play.grid()
-        but_stop.grid()
-        but_help.grid()
+        but_play.grid(column=0, row=0, sticky=tk.EW)
+        but_stop.grid(column=1, row=0, sticky=tk.EW)
+        but_help.grid(column=0, row=2, sticky=tk.EW, columnspan=2, padx=100, pady=5)
 
-        self.lab_time = ttk.Label(rm, text='00:00')
-        self.lab_time.grid()
+        # TIME LABEL
+        self.lab_time = ttk.Label(rm, text='00:00', font=('TkDefaultFont 30'))
+        self.lab_time.grid(column=0, row=1, columnspan=2)
 
-    def startrecording(self):
+    def startrecording(self, but_play, but_stop):
+        but_play.config(state='disabled')
+        but_stop.config(state='active')
         self.isrecording = True
         t = threading.Thread(target=self.record)
         t.start()
 
-    def stoprecording(self, rm):
+    def stoprecording(self, rm, but_play, but_stop):
+        but_play.config(state='active')
+        but_stop.config(state='disabled')
+        self.fig, self.ax = plt.subplots()
         self.isrecording = False
         self.plotRecording(rm)
 
