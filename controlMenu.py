@@ -39,7 +39,6 @@ class ControlMenu():
             self.time = self.time[:-1].copy() # delete last element of the numpy array
 
         self.aux = Auxiliar()
-        self.adse = AdvancedSettings()
 
         # The signal must have a minimum duration of 0.01 seconds
         if self.duration < 0.01:
@@ -84,7 +83,7 @@ class ControlMenu():
         lab_minp = tk.Label(cm, text='Pitch floor (Hz)')
         lab_maxp = tk.Label(cm, text='Pitch ceiling (Hz)')
         lab_fund = tk.Label(cm, text='Fund. freq. multiplication')
-        lab_cent = tk.Label(cm, text='Center frequency')
+        lab_cent = tk.Label(cm, text='First harmonic frequency')
         lab_perc = tk.Label(cm, text='Percentage (%)')
         lab_fcut = tk.Label(cm, text='Fcut')
         lab_cut1 = tk.Label(cm, text='Fcut1')
@@ -120,13 +119,13 @@ class ControlMenu():
         lab_fcut.grid(column=2, row=6, sticky=tk.E)
         lab_cut1.grid(column=2, row=7, sticky=tk.E)
         lab_cut2.grid(column=2, row=8, sticky=tk.E)
-        lab_beta.grid(column=2, row=11, sticky=tk.E)
+        lab_beta.grid(column=2, row=10, sticky=tk.E)
         lab_fshz.grid(column=3, row=13, sticky=tk.EW)
 
         lab_spec.grid(column=1, row=5)
         lab_ptch.grid(column=1, row=10)
         lab_filt.grid(column=3, row=1)
-        lab_sten.grid(column=3, row=10)
+        lab_sten.grid(column=3, row=9)
 
         ##########
         # ENTRYS #
@@ -154,8 +153,8 @@ class ControlMenu():
 
         vcmd = (cm.register(self.aux.onValidate), '%S', '%s', '%d')
         
-        ent_size = ttk.Entry(cm, textvariable=cm.var_size, validate='key', validatecommand=vcmd, state='disabled')
-        ent_over = ttk.Entry(cm, textvariable=cm.var_over, validate='key', validatecommand=vcmd, state='disabled')
+        ent_size = ttk.Entry(cm, textvariable=cm.var_size, validate='key', validatecommand=vcmd)
+        ent_over = ttk.Entry(cm, textvariable=cm.var_over, validate='key', validatecommand=vcmd)
         ent_minf = ttk.Entry(cm, textvariable=cm.var_minf, validate='key', validatecommand=vcmd)
         ent_maxf = ttk.Entry(cm, textvariable=cm.var_maxf, validate='key', validatecommand=vcmd)
         ent_minp = ttk.Entry(cm, textvariable=cm.var_minp, validate='key', validatecommand=vcmd, state='disabled')
@@ -368,7 +367,7 @@ class ControlMenu():
         ent_fcut.grid(column=3, row=6, sticky=tk.EW, padx=5, pady=5)
         ent_cut1.grid(column=3, row=7, sticky=tk.EW, padx=5, pady=5)
         ent_cut2.grid(column=3, row=8, sticky=tk.EW, padx=5, pady=5)
-        ent_beta.grid(column=3, row=11, sticky=tk.EW, padx=5, pady=5)
+        ent_beta.grid(column=3, row=10, sticky=tk.EW, padx=5, pady=5)
 
         # RADIOBUTTONS
         cm.var_draw = tk.IntVar(value=1)
@@ -385,7 +384,7 @@ class ControlMenu():
         def pitchCheckbox():
             showPitch = cm.var_pitch.get()
             if showPitch == 1:
-                self.adse.createVariables() # create the variables of advanced settings
+                self.controller.adse.createVariables() # create the variables of advanced settings
                 dd_meth.config(state='active')
                 ent_minp.config(state='normal')
                 ent_maxp.config(state='normal')
@@ -434,14 +433,14 @@ class ControlMenu():
             
             self.plotFigure(cm, choice, windSize, overlap, minfreq, maxfreq, beta)
 
-        but_adse = ttk.Button(cm, state='disabled', command=lambda: self.adse.advancedSettings(), text='Advanced settings')
-        but_freq = ttk.Button(cm, state='disabled', command=lambda: self.plotFiltFreqResponse(cm), text='Filter Frequency Response')
+        but_adse = ttk.Button(cm, state='disabled', command=lambda: self.controller.adse.advancedSettings(), text='Advanced settings')
+        # but_freq = ttk.Button(cm, state='disabled', command=lambda: self.plotFiltFreqResponse(cm), text='Filter Frequency Response')
         but_plot = ttk.Button(cm, command=lambda: checkValues(), text='Plot')
-        but_help = ttk.Button(cm, command=lambda: self.controller.help.createHelpMenu(cm, 8), text='🛈', width=2)
+        but_help = ttk.Button(cm, command=lambda: self.controller.help.createHelpMenu(8), text='🛈', width=2)
 
         # positioning Buttons
         but_adse.grid(column=1, row=14, sticky=tk.EW, padx=5, pady=5)
-        but_freq.grid(column=3, row=9, sticky=tk.EW, padx=5, pady=5)
+        # but_freq.grid(column=3, row=9, sticky=tk.EW, padx=5, pady=5)
         but_plot.grid(column=3, row=14, sticky=tk.EW, padx=5, pady=5)
         but_help.grid(column=2, row=14, sticky=tk.E, padx=5, pady=5)
 
@@ -462,6 +461,8 @@ class ControlMenu():
 
         # Called when changing the main option (FT, STFT, etc.) for disabling or activating widgets
         def displayOptions(choice):
+            dd_opts.config(state='active') # keeps the options visible
+
             if choice == 'FT' or choice == 'STFT' or choice == 'Pitch' or choice == 'Filtering': 
                 ent_over.config(state='disabled')
             else: ent_over.config(state='normal')
@@ -473,7 +474,7 @@ class ControlMenu():
             if choice == 'Filtering':
                 dd_pass.config(state='active')
                 ent_perc.config(state='normal')
-                but_freq.configure(state='active')
+                # but_freq.configure(state='active')
 
                 type = cm.var_pass.get()
                 if type == 'Lowpass' or type == 'Highpass':
@@ -497,13 +498,13 @@ class ControlMenu():
                 ent_fund.config(state='disabled')
                 ent_cent.config(state='disabled')
                 ent_perc.config(state='disabled')
-                but_freq.configure(state='disabled')
+                # but_freq.configure(state='disabled')
                 ent_fcut.config(state='disabled')
                 ent_cut1.config(state='disabled')
                 ent_cut2.config(state='disabled')
 
             if choice == 'Pitch':
-                self.adse.createVariables() # create the variables of advanced settings
+                self.controller.adse.createVariables() # create the variables of advanced settings
                 dd_meth.config(state='active')
                 ent_minp.config(state='normal')
                 ent_maxp.config(state='normal')
@@ -573,9 +574,9 @@ class ControlMenu():
         dd_pass = ttk.OptionMenu(cm, cm.var_pass, cm.opt_pass[0], *cm.opt_pass, command=displayFilterOptions)
 
         # size of the OptionMenus
-        dd_opts.config(width=16)
-        dd_wind.config(width=18, state='disabled')
-        dd_nfft.config(width=18, state='disabled')
+        dd_opts.config(width=16, state='active')
+        dd_wind.config(width=18, state='active')
+        dd_nfft.config(width=18, state='active')
         dd_meth.config(width=18, state='disabled')
         dd_pass.config(width=18, state='disabled')
 
@@ -721,7 +722,7 @@ class ControlMenu():
         # Convert the numpy array containing the audio fragment into a wav file
         write('wav/frag.wav', self.fs, self.audio) # generates a wav file in the current folder
 
-        silenceTh, voiceTh, octaveCost, octJumpCost, vcdUnvcdCost, accurate = self.adse.getAutocorrelationVars()
+        silenceTh, voiceTh, octaveCost, octJumpCost, vcdUnvcdCost, accurate = self.controller.adse.getAutocorrelationVars()
         if accurate == 1: accurate_bool = True
         else: accurate_bool = False
 
@@ -748,7 +749,7 @@ class ControlMenu():
                                     voiced_unvoiced_cost=vcdUnvcdCost,
                                     pitch_ceiling=maxpitch)
         elif method == 'Subharmonics':
-            maxFreqComp, maxSubharm, compFactor, pointsPerOct = self.adse.getSubharmonicsVars()
+            maxFreqComp, maxSubharm, compFactor, pointsPerOct = self.controller.adse.getSubharmonicsVars()
             pitch = snd.to_pitch_shs(minimum_pitch=minpitch, 
                                     max_number_of_candidates=maxCandidates,
                                     maximum_frequency_component=maxFreqComp,
@@ -757,7 +758,7 @@ class ControlMenu():
                                     ceiling=maxpitch,
                                     number_of_points_per_octave=pointsPerOct)
         elif method == 'Spinet':
-            windLen, minFiltFreq, maxFiltFreq, numFilters = self.adse.getSpinetVars()
+            windLen, minFiltFreq, maxFiltFreq, numFilters = self.controller.adse.getSpinetVars()
             pitch = snd.to_pitch_spinet(window_length=windLen,
                                         minimum_filter_frequency=minFiltFreq,
                                         maximum_filter_frequency=maxFiltFreq,
@@ -901,7 +902,7 @@ class ControlMenu():
             method = cm.var_meth.get()
             minpitch = cm.var_minp.get()
             maxpitch = cm.var_maxp.get()
-            maxCandidates, drawStyle = self.adse.getVariables()
+            maxCandidates, drawStyle = self.controller.adse.getVariables()
             pitch, pitch_values = self.calculatePitch(method, minpitch, maxpitch, maxCandidates)
             if drawStyle == 1: draw = '-'
             else: draw = 'o'
@@ -1016,7 +1017,7 @@ class ControlMenu():
         method = cm.var_meth.get()
         minpitch = cm.var_minp.get()
         maxpitch = cm.var_maxp.get()
-        maxCandidates, drawStyle = self.adse.getVariables()
+        maxCandidates, drawStyle = self.controller.adse.getVariables()
         
         fig = plt.figure(figsize=(12,6))
         gs = fig.add_gridspec(2, hspace=0)
@@ -1051,29 +1052,29 @@ class ControlMenu():
         plt.show() # show the figure
 
 
-    # Callen when pressing the "Filter frequency response" button
-    def plotFiltFreqResponse(self, cm):
-        fig, ax = plt.subplots(2, figsize=(9,7))
-        plt.subplots_adjust(hspace=.3) # to avoid overlapping between xlabel and title
+    # # Callen when pressing the "Filter frequency response" button
+    # def plotFiltFreqResponse(self, cm):
+    #     fig, ax = plt.subplots(2, figsize=(9,7))
+    #     plt.subplots_adjust(hspace=.3) # to avoid overlapping between xlabel and title
 
-        _, b, a = self.designFilter(cm, fig, 3, 40)
+    #     _, b, a = self.designFilter(cm, fig, 3, 40)
 
-        # Calculate the filter frequency response
-        # w, h = signal.freqz(b, a, fs=self.fs) # w: frequencies in Hz, h: frequency response
-        # w_rad, _ = signal.freqz(b, a) # w_rad: frequencies in rad/samples
-        h = signal.TransferFunction(b, a)
-        # w_rads = ... # w_rads: frequencies in rad/s
-        # w, mag, phase = signal.bode(h, w_rads)
-        w, mag, phase = signal.bode(h)
+    #     # Calculate the filter frequency response
+    #     # w, h = signal.freqz(b, a, fs=self.fs) # w: frequencies in Hz, h: frequency response
+    #     # w_rad, _ = signal.freqz(b, a) # w_rad: frequencies in rad/samples
+    #     h = signal.TransferFunction(b, a)
+    #     # w_rads = ... # w_rads: frequencies in rad/s
+    #     # w, mag, phase = signal.bode(h, w_rads)
+    #     w, mag, phase = signal.bode(h)
 
-        ax[0].plot(w, mag) # Magnitude plot
-        ax[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        ax[0].set(xlim=[0, max(w)], xlabel='Frequency (Hz)', ylabel='Magnitude (dB)', title='Frequency Response, Magnitude')
-        ax[1].plot(w, phase) # Phase plot
-        ax[1].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
-        ax[1].set(xlim=[0, max(w)], xlabel='Frequency (Hz)', ylabel='Phase (deg)', title='Frequency Response, Phase')
+    #     ax[0].plot(w, mag) # Magnitude plot
+    #     ax[0].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
+    #     ax[0].set(xlim=[0, max(w)], ylabel='Magnitude (dB)', title='Frequency Response, Magnitude')
+    #     ax[1].plot(w, phase) # Phase plot
+    #     ax[1].axhline(y=0, color='black', linewidth='0.5', linestyle='--') # draw an horizontal line in y=0.0
+    #     ax[1].set(xlim=[0, max(w)], ylabel='Phase (deg)', title='Frequency Response, Phase')
 
-        plt.show() # show the figure
+    #     plt.show() # show the figure
 
 
     # Called when pressing the 'Plot' button

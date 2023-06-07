@@ -16,7 +16,7 @@ class Help(tk.Frame):
         self.master = master
         self.hm = None
 
-    def createHelpMenu(self, root, value):
+    def createHelpMenu(self, value):
         # If it already exists, change it with the new value and take it to the front
         if self.hm != None:
             self.hm.var_html.set(value) # change the selected radiobutton

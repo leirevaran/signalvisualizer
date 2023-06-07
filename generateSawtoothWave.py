@@ -136,7 +136,7 @@ class SawtoothWave(tk.Frame):
 
         but_gene = ttk.Button(stm, command=lambda: checkValues(1), text='Generate')
         but_save = ttk.Button(stm, command=lambda: checkValues(2), text='Save values as default')
-        but_help = ttk.Button(stm, command=lambda: self.controller.help.createHelpMenu(self, 4), text='🛈', width=2)
+        but_help = ttk.Button(stm, command=lambda: self.controller.help.createHelpMenu(4), text='🛈', width=2)
 
         but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)
         but_save.grid(column=3, row=7, sticky=tk.EW, padx=5, pady=5)

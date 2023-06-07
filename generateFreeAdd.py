@@ -134,7 +134,7 @@ class FreeAdditionPureTones(tk.Frame):
         but_gene = ttk.Button(fam, command=lambda: self.plotFAPT(fam), text='Generate')
         but_pian = ttk.Button(fam, command=lambda: self.pianoKeyboard(fam, but_pian, ent_octv), text='Show piano')
         but_save = ttk.Button(fam, command=lambda: self.saveDefaultValues(fam, list), text='Save values as default')
-        but_help = ttk.Button(fam, command=lambda: self.controller.help.createHelpMenu(self, 2), text='🛈', width=2)
+        but_help = ttk.Button(fam, command=lambda: self.controller.help.createHelpMenu(2), text='🛈', width=2)
 
         but_gene.grid(column=6, row=8, sticky=tk.EW, padx=5, pady=5)
         but_pian.grid(column=2, row=4, sticky=tk.EW, padx=5, pady=5)

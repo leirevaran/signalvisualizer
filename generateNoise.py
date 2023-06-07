@@ -103,7 +103,7 @@ class Noise(tk.Frame):
 
         but_gene = ttk.Button(nm, command=lambda: checkValues(1), text='Generate')
         but_save = ttk.Button(nm, command=lambda: checkValues(2), text='Save values as default')
-        but_help = ttk.Button(nm, command=lambda: self.controller.help.createHelpMenu(self, 5), text='🛈', width=2)
+        but_help = ttk.Button(nm, command=lambda: self.controller.help.createHelpMenu(5), text='🛈', width=2)
 
         but_gene.grid(column=4, row=5, sticky=tk.EW, padx=5, pady=5)
         but_save.grid(column=3, row=5, sticky=tk.EW, padx=5, pady=5)

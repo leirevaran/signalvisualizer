@@ -7,45 +7,61 @@ from auxiliar import Auxiliar
 from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
 
-class AdvancedSettings():
+class AdvancedSettings(tk.Frame):
+
+    def __init__(self, master, controller):
+        tk.Frame.__init__(self, master)
+        self.controller = controller
+        self.master = master
+        self.adse = None
 
     def advancedSettings(self):
-        adse = tk.Toplevel()
-        adse.geometry('738x420')
-        adse.resizable(True, True)
-        adse.title('Pitch - Advanced settings')
-        adse.iconbitmap('icons/icon.ico')
+        # If it already exists, take it to the front
+        if self.adse != None:
+            self.adse.focus_set() # Place the toplevel window at the top
+            return
+        
+        self.adse = tk.Toplevel()
+        self.adse.geometry('738x420')
+        self.adse.resizable(True, True)
+        self.adse.title('Pitch - Advanced settings')
+        self.adse.iconbitmap('icons/icon.ico')
         self.aux = Auxiliar()
 
         # Adapt the window to different sizes
         for i in range(3):
-            adse.columnconfigure(i, weight=1)
+            self.adse.columnconfigure(i, weight=1)
 
         for i in range(11):
-            adse.rowconfigure(i, weight=1)
+            self.adse.rowconfigure(i, weight=1)
+
+        def on_closing():
+            self.adse.destroy()
+            self.adse = None
+        self.adse.protocol("WM_DELETE_WINDOW", on_closing)
 
         # LABELS (adse)
-        lab_aucc = tk.Label(adse, text='Autocorrelation / Cross-correlation', bd=6, font=('TkDefaultFont', 10))
-        lab_sith = tk.Label(adse, text='Silence treshold')
-        lab_voth = tk.Label(adse, text='Voicing treshold')
-        lab_octc = tk.Label(adse, text='Octave cost')
-        lab_ocjc = tk.Label(adse, text='Octave jump cost')
-        lab_vunc = tk.Label(adse, text='Voiced-unvoiced cost')
+        lab_aucc = tk.Label(self.adse, text='Autocorrelation / Cross-correlation', bd=6, font=('TkDefaultFont', 10))
+        lab_sith = tk.Label(self.adse, text='Silence treshold')
+        lab_voth = tk.Label(self.adse, text='Voicing treshold')
+        lab_octc = tk.Label(self.adse, text='Octave cost')
+        lab_ocjc = tk.Label(self.adse, text='Octave jump cost')
+        lab_vunc = tk.Label(self.adse, text='Voiced-unvoiced cost')
 
-        lab_subh = tk.Label(adse, text='Subharmonics', bd=6, font=('TkDefaultFont', 10))
-        lab_mxfc = tk.Label(adse, text='Max frequency component')
-        lab_mxsh = tk.Label(adse, text='Max number of subharmonics')
-        lab_cmpf = tk.Label(adse, text='Compression factor')
-        lab_ptso = tk.Label(adse, text='Number of points per octave')
+        lab_subh = tk.Label(self.adse, text='Subharmonics', bd=6, font=('TkDefaultFont', 10))
+        lab_mxfc = tk.Label(self.adse, text='Max frequency component')
+        lab_mxsh = tk.Label(self.adse, text='Max number of subharmonics')
+        lab_cmpf = tk.Label(self.adse, text='Compression factor')
+        lab_ptso = tk.Label(self.adse, text='Number of points per octave')
 
-        lab_spin = tk.Label(adse, text='Spinet', bd=6, font=('TkDefaultFont', 10))
-        lab_winl = tk.Label(adse, text='Window length')
-        lab_mnfi = tk.Label(adse, text='Min filter frequency')
-        lab_mxfi = tk.Label(adse, text='Max filter frequency')
-        lab_filt = tk.Label(adse, text='Number of filters')
+        lab_spin = tk.Label(self.adse, text='Spinet', bd=6, font=('TkDefaultFont', 10))
+        lab_winl = tk.Label(self.adse, text='Window length')
+        lab_mnfi = tk.Label(self.adse, text='Min filter frequency')
+        lab_mxfi = tk.Label(self.adse, text='Max filter frequency')
+        lab_filt = tk.Label(self.adse, text='Number of filters')
 
-        lab_cand = tk.Label(adse, text='Max number of candidates')
-        lab_draw = tk.Label(adse, text='Drawing style')
+        lab_cand = tk.Label(self.adse, text='Max number of candidates')
+        lab_draw = tk.Label(self.adse, text='Drawing style')
 
         # positioning Labels (adse)
         lab_aucc.grid(column=0, row=0, sticky=tk.E, columnspan=2)
@@ -71,43 +87,43 @@ class AdvancedSettings():
         lab_draw.grid(column=2, row=9, sticky=tk.E)
 
         # ENTRYS (adse)
-        adse.var_sith = tk.DoubleVar(value=0.03)
-        adse.var_voth = tk.DoubleVar(value=0.45)
-        adse.var_octc = tk.DoubleVar(value=0.01)
-        adse.var_ocjc = tk.DoubleVar(value=0.35)
-        adse.var_vunc = tk.DoubleVar(value=0.14)
+        self.adse.var_sith = tk.DoubleVar(value=0.03)
+        self.adse.var_voth = tk.DoubleVar(value=0.45)
+        self.adse.var_octc = tk.DoubleVar(value=0.01)
+        self.adse.var_ocjc = tk.DoubleVar(value=0.35)
+        self.adse.var_vunc = tk.DoubleVar(value=0.14)
 
-        adse.var_mxfc = tk.DoubleVar(value=1250)
-        adse.var_subh = tk.IntVar(value=15)
-        adse.var_cmpf = tk.DoubleVar(value=0.84)
-        adse.var_ptso = tk.IntVar(value=48)
+        self.adse.var_mxfc = tk.DoubleVar(value=1250)
+        self.adse.var_subh = tk.IntVar(value=15)
+        self.adse.var_cmpf = tk.DoubleVar(value=0.84)
+        self.adse.var_ptso = tk.IntVar(value=48)
 
-        adse.var_winl = tk.DoubleVar(value=0.04)
-        adse.var_mnfi = tk.DoubleVar(value=70)
-        adse.var_mxfi = tk.DoubleVar(value=5000)
-        adse.var_filt = tk.IntVar(value=250)
+        self.adse.var_winl = tk.DoubleVar(value=0.04)
+        self.adse.var_mnfi = tk.DoubleVar(value=70)
+        self.adse.var_mxfi = tk.DoubleVar(value=5000)
+        self.adse.var_filt = tk.IntVar(value=250)
 
-        adse.var_cand = tk.IntVar(value=15)
+        self.adse.var_cand = tk.IntVar(value=15)
 
-        vcmd = (adse.register(self.aux.onValidate), '%S', '%s', '%d')
+        vcmd = (self.adse.register(self.aux.onValidate), '%S', '%s', '%d')
 
-        ent_sith = ttk.Entry(adse, textvariable=adse.var_sith, validate='key', validatecommand=vcmd)
-        ent_voth = ttk.Entry(adse, textvariable=adse.var_voth, validate='key', validatecommand=vcmd)
-        ent_octc = ttk.Entry(adse, textvariable=adse.var_octc, validate='key', validatecommand=vcmd)
-        ent_ocjc = ttk.Entry(adse, textvariable=adse.var_ocjc, validate='key', validatecommand=vcmd)
-        ent_vunc = ttk.Entry(adse, textvariable=adse.var_vunc, validate='key', validatecommand=vcmd)
+        ent_sith = ttk.Entry(self.adse, textvariable=self.adse.var_sith, validate='key', validatecommand=vcmd)
+        ent_voth = ttk.Entry(self.adse, textvariable=self.adse.var_voth, validate='key', validatecommand=vcmd)
+        ent_octc = ttk.Entry(self.adse, textvariable=self.adse.var_octc, validate='key', validatecommand=vcmd)
+        ent_ocjc = ttk.Entry(self.adse, textvariable=self.adse.var_ocjc, validate='key', validatecommand=vcmd)
+        ent_vunc = ttk.Entry(self.adse, textvariable=self.adse.var_vunc, validate='key', validatecommand=vcmd)
 
-        ent_mxfc = ttk.Entry(adse, textvariable=adse.var_mxfc, validate='key', validatecommand=vcmd)
-        ent_subh = ttk.Entry(adse, textvariable=adse.var_subh, validate='key', validatecommand=vcmd)
-        ent_cmpf = ttk.Entry(adse, textvariable=adse.var_cmpf, validate='key', validatecommand=vcmd)
-        ent_ptso = ttk.Entry(adse, textvariable=adse.var_ptso, validate='key', validatecommand=vcmd)
+        ent_mxfc = ttk.Entry(self.adse, textvariable=self.adse.var_mxfc, validate='key', validatecommand=vcmd)
+        ent_subh = ttk.Entry(self.adse, textvariable=self.adse.var_subh, validate='key', validatecommand=vcmd)
+        ent_cmpf = ttk.Entry(self.adse, textvariable=self.adse.var_cmpf, validate='key', validatecommand=vcmd)
+        ent_ptso = ttk.Entry(self.adse, textvariable=self.adse.var_ptso, validate='key', validatecommand=vcmd)
         
-        ent_winl = ttk.Entry(adse, textvariable=adse.var_winl, validate='key', validatecommand=vcmd)
-        ent_mnfi = ttk.Entry(adse, textvariable=adse.var_mnfi, validate='key', validatecommand=vcmd)
-        ent_mxfi = ttk.Entry(adse, textvariable=adse.var_mxfi, validate='key', validatecommand=vcmd)
-        ent_filt = ttk.Entry(adse, textvariable=adse.var_filt, validate='key', validatecommand=vcmd)
+        ent_winl = ttk.Entry(self.adse, textvariable=self.adse.var_winl, validate='key', validatecommand=vcmd)
+        ent_mnfi = ttk.Entry(self.adse, textvariable=self.adse.var_mnfi, validate='key', validatecommand=vcmd)
+        ent_mxfi = ttk.Entry(self.adse, textvariable=self.adse.var_mxfi, validate='key', validatecommand=vcmd)
+        ent_filt = ttk.Entry(self.adse, textvariable=self.adse.var_filt, validate='key', validatecommand=vcmd)
 
-        ent_cand = ttk.Entry(adse, textvariable=adse.var_cand, validate='key', validatecommand=vcmd)
+        ent_cand = ttk.Entry(self.adse, textvariable=self.adse.var_cand, validate='key', validatecommand=vcmd)
 
         # positioning Entrys (adse)
         ent_sith.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5)
@@ -129,21 +145,21 @@ class AdvancedSettings():
         ent_cand.grid(column=3, row=8, sticky=tk.EW, padx=5, pady=5)
 
         # CHECKBOX (adse)
-        adse.var_accu = tk.StringVar(value=0)
-        chk_accu = tk.Checkbutton(adse, text='Very accurate', variable=adse.var_accu)
+        self.adse.var_accu = tk.StringVar(value=0)
+        chk_accu = ttk.Checkbutton(self.adse, text='Very accurate', variable=self.adse.var_accu)
         chk_accu.grid(column=1, row=6, sticky=tk.W)
 
         # RADIOBUTTONS (adse)
-        adse.var_draw = tk.IntVar(value=1)
+        self.adse.var_draw = tk.IntVar(value=1)
         
-        rdb_curv = tk.Radiobutton(adse, text='curve', variable=adse.var_draw, value=1)
-        rdb_spec = tk.Radiobutton(adse, text='speckles', variable=adse.var_draw, value=2)
+        rdb_curv = tk.Radiobutton(self.adse, text='curve', variable=self.adse.var_draw, value=1)
+        rdb_spec = tk.Radiobutton(self.adse, text='speckles', variable=self.adse.var_draw, value=2)
         
         rdb_curv.grid(column=3, row=9, sticky=tk.W)
         rdb_spec.grid(column=3, row=9, sticky=tk.E)
 
         # BUTTONS (adse)
-        but_apply = ttk.Button(adse, text='Apply', command=lambda: self.apply(adse))
+        but_apply = ttk.Button(self.adse, text='Apply', command=lambda: self.apply(self.adse))
         but_apply.configure()
         but_apply.grid(column=3, row=11, sticky=tk.EW, padx=5, pady=5)
 
@@ -168,6 +184,7 @@ class AdvancedSettings():
         self.maxcand = adse.var_cand.get()
         self.drawing = adse.var_draw.get()
 
+        self.adse = None
         adse.destroy()
 
     def getVariables(self):

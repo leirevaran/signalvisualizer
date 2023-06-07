@@ -140,7 +140,7 @@ class PureTone(tk.Frame):
 
         but_gene = ttk.Button(tm, command=lambda: checkValues(1), text='Generate')
         but_save = ttk.Button(tm, command=lambda: checkValues(2), text='Save values as default')
-        but_help = ttk.Button(tm, command=lambda: self.controller.help.createHelpMenu(self, 1), text='🛈', width=2)
+        but_help = ttk.Button(tm, command=lambda: self.controller.help.createHelpMenu(1), text='🛈', width=2)
 
         but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)
         but_save.grid(column=4, row=6, sticky=tk.EW, padx=5, pady=5)

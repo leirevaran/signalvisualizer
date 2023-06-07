@@ -12,6 +12,7 @@ from generateFreeAdd import FreeAdditionPureTones
 from generateSquareWave import SquareWave
 from generateSawtoothWave import SawtoothWave
 from optionsSpectrogram import Spectrogram
+from pitchAdvancedSettings import AdvancedSettings
 from auxiliar import Auxiliar
 
 # To avoid blurry fonts
@@ -41,6 +42,7 @@ class Start(tk.Tk):
         self.frames = {}
         self.initialize_frame('SignalVisualizer')
         self.help = Help(master=self.container, controller=self)
+        self.adse = AdvancedSettings(master=self.container, controller=self)
 
     def initialize_frame(self, page_name):
         if page_name == 'SignalVisualizer':

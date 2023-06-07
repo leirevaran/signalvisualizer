@@ -50,7 +50,7 @@ class Record(tk.Frame):
         # BUTTONS
         but_play = tk.Button(rm, command=lambda: self.startrecording(but_play, but_stop), text='⏺', font=('Arial', 40, 'bold'))
         but_stop = tk.Button(rm, command=lambda: self.stoprecording(rm, but_play, but_stop), text='⏹', font=('Arial', 40, 'bold'), state='disabled')
-        but_help = ttk.Button(rm, command=lambda: self.controller.help.createHelpMenu(self, 7), text='🛈', width=2)
+        but_help = ttk.Button(rm, command=lambda: self.controller.help.createHelpMenu(7), text='🛈', width=2)
 
         but_play.grid(column=0, row=0, sticky=tk.EW)
         but_stop.grid(column=1, row=0, sticky=tk.EW)
