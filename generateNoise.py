@@ -55,19 +55,21 @@ class Noise(tk.Frame):
         # SCALERS
         nm.var_ampl = tk.DoubleVar(value=amplitude)
         nm.var_dura = tk.DoubleVar(value=duration)
+
         sca_ampl = tk.Scale(nm, from_=0, to=1, variable=nm.var_ampl, length=500, orient='horizontal', tickinterval=0.1, resolution=0.01)
         sca_dura = tk.Scale(nm, from_=0.01, to=30, variable=nm.var_dura, length=500, orient='horizontal', resolution=0.01)
+        
         sca_ampl.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5, columnspan=3)
-        sca_dura.grid(column=1, row=2, sticky=tk.EW, padx=5, pady=5, columnspan=3)
+        sca_dura.grid(column=1, row=2, sticky=tk.N, padx=5, pady=5, columnspan=3)
 
         # ENTRYS
         nm.var_fs = tk.IntVar(value=self.fs)
         vcmd = (nm.register(self.aux.onValidate), '%S', '%s', '%d')
         vcfs = (nm.register(self.aux.onValidateInt), '%S')
         
-        ent_ampl = ttk.Entry(nm, textvariable=nm.var_ampl, validate='key', validatecommand=vcmd)
-        ent_dura = ttk.Entry(nm, textvariable=nm.var_dura, validate='key', validatecommand=vcmd)
-        ent_fs = ttk.Entry(nm, textvariable=nm.var_fs, validate='key', validatecommand=vcfs)
+        ent_ampl = ttk.Entry(nm, textvariable=nm.var_ampl, validate='key', validatecommand=vcmd, width=10)
+        ent_dura = ttk.Entry(nm, textvariable=nm.var_dura, validate='key', validatecommand=vcmd, width=10)
+        ent_fs = ttk.Entry(nm, textvariable=nm.var_fs, validate='key', validatecommand=vcfs, width=10)
         
         def fsEntry(event):
             fs = int(ent_fs.get())
@@ -79,19 +81,20 @@ class Noise(tk.Frame):
 
         ent_fs.bind('<Return>', fsEntry)
         
-        ent_ampl.grid(column=4, row=1, sticky=tk.EW, padx=5, pady=5)
-        ent_dura.grid(column=4, row=2, sticky=tk.EW, padx=5, pady=5)
-        ent_fs.grid(column=1, row=4, sticky=tk.EW, padx=5, pady=5)
+        ent_ampl.grid(column=4, row=1, padx=5, pady=5)
+        ent_dura.grid(column=4, row=2, padx=5, pady=5, sticky=tk.S)
+        ent_fs.grid(column=1, row=3, padx=5, pady=5, sticky=tk.W)
         
         # LABELS
         lab_type = ttk.Label(nm, text='Noise type')
         lab_ampl = ttk.Label(nm, text='Max. amplitude')
         lab_dura = ttk.Label(nm, text='Total duration (s)')
         lab_fs = ttk.Label(nm, text='Fs (Hz)')
+        
         lab_type.grid(column=0, row=0, sticky=tk.E)
         lab_ampl.grid(column=0, row=1, sticky=tk.E)
-        lab_dura.grid(column=0, row=2, sticky=tk.E)
-        lab_fs.grid(column=0, row=4, sticky=tk.E)
+        lab_dura.grid(column=0, row=2, sticky=tk.SE, pady=5)
+        lab_fs.grid(column=0, row=3, sticky=tk.E)
         
         # BUTTONS
         def checkValues(but):
@@ -101,19 +104,19 @@ class Noise(tk.Frame):
             if but == 1: self.plotNoise(nm)
             elif but == 2: self.saveDefaultValues(nm, list)
 
-        but_gene = ttk.Button(nm, command=lambda: checkValues(1), text='Generate')
-        but_save = ttk.Button(nm, command=lambda: checkValues(2), text='Save values as default')
+        but_gene = ttk.Button(nm, command=lambda: checkValues(1), text='Plot')
+        but_save = ttk.Button(nm, command=lambda: checkValues(2), text='Save')
         but_help = ttk.Button(nm, command=lambda: self.controller.help.createHelpMenu(5), text='🛈', width=2)
 
-        but_gene.grid(column=4, row=5, sticky=tk.EW, padx=5, pady=5)
-        but_save.grid(column=3, row=5, sticky=tk.EW, padx=5, pady=5)
-        but_help.grid(column=0, row=5, sticky=tk.W, padx=5, pady=5)
+        but_gene.grid(column=4, row=4, sticky=tk.EW, padx=5, pady=5)
+        but_save.grid(column=4, row=3, sticky=tk.EW, padx=5, pady=5)
+        but_help.grid(column=3, row=4, sticky=tk.E, padx=5, pady=5)
 
-        # OPTION MENUS
+        # OPTION MENU
         nm.options = ('White noise','Pink noise', 'Brown noise')
         nm.var_opts = tk.StringVar()
         dd_opts = ttk.OptionMenu(nm, nm.var_opts, choice, *nm.options)
-        dd_opts.config(width=11)
+        dd_opts.config(width=11, state='active')
         dd_opts.grid(column=1, row=0, sticky=tk.W, padx=5)
 
         checkValues(1)

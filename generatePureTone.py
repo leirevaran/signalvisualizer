@@ -82,12 +82,12 @@ class PureTone(tk.Frame):
         vcmd = (tm.register(self.aux.onValidate), '%S', '%s', '%d')
         vcfs = (tm.register(self.aux.onValidateInt), '%S')
 
-        ent_dura = ttk.Entry(tm, textvariable=tm.var_dura, validate='key', validatecommand=vcmd)
-        ent_offs = ttk.Entry(tm, textvariable=tm.var_offs, validate='key', validatecommand=vcmd)
-        ent_ampl = ttk.Entry(tm, textvariable=tm.var_ampl, validate='key', validatecommand=vcmd)
-        ent_freq = ttk.Entry(tm, textvariable=tm.var_freq, validate='key', validatecommand=vcmd)
-        ent_phas = ttk.Entry(tm, textvariable=tm.var_phas, validate='key', validatecommand=vcmd)
-        ent_fs = ttk.Entry(tm, textvariable=tm.var_fs, validate='key', validatecommand=vcfs)
+        ent_dura = ttk.Entry(tm, textvariable=tm.var_dura, validate='key', validatecommand=vcmd, width=10)
+        ent_offs = ttk.Entry(tm, textvariable=tm.var_offs, validate='key', validatecommand=vcmd, width=10)
+        ent_ampl = ttk.Entry(tm, textvariable=tm.var_ampl, validate='key', validatecommand=vcmd, width=10)
+        ent_freq = ttk.Entry(tm, textvariable=tm.var_freq, validate='key', validatecommand=vcmd, width=10)
+        ent_phas = ttk.Entry(tm, textvariable=tm.var_phas, validate='key', validatecommand=vcmd, width=10)
+        ent_fs = ttk.Entry(tm, textvariable=tm.var_fs, validate='key', validatecommand=vcfs, width=10)
 
         def fsEntry(event):
             fs = int(ent_fs.get())
@@ -103,12 +103,12 @@ class PureTone(tk.Frame):
         ent_phas.bind('<Return>', updateExpression)
         ent_fs.bind('<Return>', fsEntry)
 
-        ent_dura.grid(column=4, row=0, sticky=tk.EW, padx=5, pady=5)
-        ent_offs.grid(column=4, row=1, sticky=tk.EW, padx=5, pady=5)
-        ent_ampl.grid(column=4, row=2, sticky=tk.EW, padx=5, pady=5)
-        ent_freq.grid(column=4, row=3, sticky=tk.EW, padx=5, pady=5)
-        ent_phas.grid(column=4, row=4, sticky=tk.EW, padx=5, pady=5)
-        ent_fs.grid(column=4, row=5, sticky=tk.EW, padx=5, pady=5)
+        ent_dura.grid(column=4, row=0, padx=5, pady=5, sticky=tk.S)
+        ent_offs.grid(column=4, row=1, padx=5, pady=5)
+        ent_ampl.grid(column=4, row=2, padx=5, pady=5)
+        ent_freq.grid(column=4, row=3, padx=5, pady=5)
+        ent_phas.grid(column=4, row=4, padx=5, pady=5)
+        ent_fs.grid(column=4, row=5, padx=5, pady=5)
 
         # LABELS
         sign = str(ent_offs.get()+' + '+str(ent_ampl.get())+' COS(2'+unicodedata.lookup("GREEK SMALL LETTER PI")+' '+str(ent_freq.get())+'t + '+str(ent_phas.get())+unicodedata.lookup("GREEK SMALL LETTER PI")+')')
@@ -121,7 +121,7 @@ class PureTone(tk.Frame):
         lab_sign = ttk.Label(tm, text=sign, font=('TkDefaultFont', 12))
         lab_fs = ttk.Label(tm, text='Fs (Hz)')
 
-        lab_dura.grid(column=0, row=0, sticky=tk.E)
+        lab_dura.grid(column=0, row=0, sticky=tk.SE, pady=5)
         lab_offs.grid(column=0, row=1, sticky=tk.E)
         lab_ampl.grid(column=0, row=2, sticky=tk.E)
         lab_freq.grid(column=0, row=3, sticky=tk.E)
@@ -138,8 +138,8 @@ class PureTone(tk.Frame):
             if but == 1: self.plotPureTone(tm, lab_sign, ent_ampl, ent_freq, ent_phas, ent_offs)
             elif but == 2: self.saveDefaultValues(tm, list)
 
-        but_gene = ttk.Button(tm, command=lambda: checkValues(1), text='Generate')
-        but_save = ttk.Button(tm, command=lambda: checkValues(2), text='Save values as default')
+        but_gene = ttk.Button(tm, command=lambda: checkValues(1), text='Plot')
+        but_save = ttk.Button(tm, command=lambda: checkValues(2), text='Save')
         but_help = ttk.Button(tm, command=lambda: self.controller.help.createHelpMenu(1), text='🛈', width=2)
 
         but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)

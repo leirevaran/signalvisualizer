@@ -22,6 +22,7 @@ class FreeAdditionPureTones(tk.Frame):
         self.cm = ControlMenu()
         self.fig, self.ax = plt.subplots()
         self.selectedAudio = np.empty(1)
+        self.pianoOpen = False
         self.freeAddMenu()
 
     def freeAddMenu(self):
@@ -42,6 +43,9 @@ class FreeAdditionPureTones(tk.Frame):
         # If the 'generate' menu is closed, close also the generated figure
         def on_closing():
             fam.destroy()
+            # if the piano window is opened, close it
+            if self.pianoOpen:
+                self.piano.destroy()
             plt.close(self.fig)
         fam.protocol("WM_DELETE_WINDOW", on_closing)
 
@@ -104,7 +108,7 @@ class FreeAdditionPureTones(tk.Frame):
         ent_frq4.grid(column=4, row=1, sticky=tk.EW, padx=5, pady=5)
         ent_frq5.grid(column=5, row=1, sticky=tk.EW, padx=5, pady=5)
         ent_frq6.grid(column=6, row=1, sticky=tk.EW, padx=5, pady=5)
-        ent_dura.grid(column=6, row=3, sticky=tk.EW, padx=5, pady=5)
+        ent_dura.grid(column=6, row=3, sticky=tk.S, padx=5, pady=5)
         ent_octv.grid(column=1, row=4, sticky=tk.EW, padx=5, pady=5)
 
         # LABELS
@@ -127,19 +131,19 @@ class FreeAdditionPureTones(tk.Frame):
         lab_ton6.grid(column=6, row=0, sticky=tk.EW)
         lab_freq.grid(column=0, row=1, sticky=tk.E)
         lab_ampl.grid(column=0, row=2, sticky=tk.E)
-        lab_dura.grid(column=0, row=3, sticky=tk.E)
+        lab_dura.grid(column=0, row=3, sticky=tk.S, pady=5)
         lab_octv.grid(column=0, row=4, sticky=tk.E)
         
         # BUTTONS
-        but_gene = ttk.Button(fam, command=lambda: self.plotFAPT(fam), text='Generate')
+        but_gene = ttk.Button(fam, command=lambda: self.plotFAPT(fam), text='Plot')
         but_pian = ttk.Button(fam, command=lambda: self.pianoKeyboard(fam, but_pian, ent_octv), text='Show piano')
-        but_save = ttk.Button(fam, command=lambda: self.saveDefaultValues(fam, list), text='Save values as default')
+        but_save = ttk.Button(fam, command=lambda: self.saveDefaultValues(fam, list), text='Save')
         but_help = ttk.Button(fam, command=lambda: self.controller.help.createHelpMenu(2), text='🛈', width=2)
 
-        but_gene.grid(column=6, row=8, sticky=tk.EW, padx=5, pady=5)
+        but_gene.grid(column=6, row=5, sticky=tk.EW, padx=5, pady=5)
         but_pian.grid(column=2, row=4, sticky=tk.EW, padx=5, pady=5)
-        but_save.grid(column=6, row=7, sticky=tk.EW, padx=5, pady=5)
-        but_help.grid(column=5, row=8, sticky=tk.E, padx=5, pady=5)
+        but_save.grid(column=6, row=4, sticky=tk.EW, padx=5, pady=5)
+        but_help.grid(column=5, row=5, sticky=tk.E, padx=5, pady=5)
 
         self.plotFAPT(fam)
 
@@ -210,14 +214,17 @@ class FreeAdditionPureTones(tk.Frame):
         fam.var_amp6.set(value=0.17)
 
     def pianoKeyboard(self, fam, but_pian, ent_octv):
+        self.pianoOpen = True
         self.piano = tk.Toplevel()
         self.piano.title("Piano")
+        self.piano.iconbitmap('icons/icon.ico')
         # self.piano.geometry('{}x200'.format(300))
         but_pian.configure(state='disabled')
         ent_octv.config(state='active')
 
         # If the piano window is closed, reactivate the "show piano" button
         def on_closing():
+            self.pianoOpen = False
             self.piano.destroy()
             but_pian.configure(state='active')
             ent_octv.config(state='disabled')

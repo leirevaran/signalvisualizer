@@ -83,13 +83,13 @@ class SawtoothWave(tk.Frame):
         vcmd = (stm.register(self.aux.onValidate), '%S', '%s', '%d')
         vcfs = (stm.register(self.aux.onValidateInt), '%S')
 
-        ent_dura = ttk.Entry(stm, textvariable=stm.var_dura, validate='key', validatecommand=vcmd)
-        ent_offs = ttk.Entry(stm, textvariable=stm.var_offs, validate='key', validatecommand=vcmd)
-        ent_ampl = ttk.Entry(stm, textvariable=stm.var_ampl, validate='key', validatecommand=vcmd)
-        ent_freq = ttk.Entry(stm, textvariable=stm.var_freq, validate='key', validatecommand=vcmd)
-        ent_phas = ttk.Entry(stm, textvariable=stm.var_phas, validate='key', validatecommand=vcmd)
-        ent_maxp = ttk.Entry(stm, textvariable=stm.var_maxp, validate='key', validatecommand=vcmd)
-        ent_fs = ttk.Entry(stm, textvariable=stm.var_fs, validate='key', validatecommand=vcfs)
+        ent_dura = ttk.Entry(stm, textvariable=stm.var_dura, validate='key', validatecommand=vcmd, width=10)
+        ent_offs = ttk.Entry(stm, textvariable=stm.var_offs, validate='key', validatecommand=vcmd, width=10)
+        ent_ampl = ttk.Entry(stm, textvariable=stm.var_ampl, validate='key', validatecommand=vcmd, width=10)
+        ent_freq = ttk.Entry(stm, textvariable=stm.var_freq, validate='key', validatecommand=vcmd, width=10)
+        ent_phas = ttk.Entry(stm, textvariable=stm.var_phas, validate='key', validatecommand=vcmd, width=10)
+        ent_maxp = ttk.Entry(stm, textvariable=stm.var_maxp, validate='key', validatecommand=vcmd, width=10)
+        ent_fs = ttk.Entry(stm, textvariable=stm.var_fs, validate='key', validatecommand=vcfs, width=10)
 
         def fsEntry(event):
             fs = int(ent_fs.get())
@@ -101,13 +101,13 @@ class SawtoothWave(tk.Frame):
 
         ent_fs.bind('<Return>', fsEntry)
 
-        ent_dura.grid(column=4, row=0, sticky=tk.EW, padx=5, pady=5)
-        ent_offs.grid(column=4, row=1, sticky=tk.EW, padx=5, pady=5)
-        ent_ampl.grid(column=4, row=2, sticky=tk.EW, padx=5, pady=5)
-        ent_freq.grid(column=4, row=3, sticky=tk.EW, padx=5, pady=5)
-        ent_phas.grid(column=4, row=4, sticky=tk.EW, padx=5, pady=5)
-        ent_maxp.grid(column=4, row=5, sticky=tk.EW, padx=5, pady=5)
-        ent_fs.grid(column=4, row=6, sticky=tk.EW, padx=5, pady=5)
+        ent_dura.grid(column=4, row=0, sticky=tk.S, padx=5, pady=5)
+        ent_offs.grid(column=4, row=1, sticky=tk.S, padx=5, pady=5)
+        ent_ampl.grid(column=4, row=2, sticky=tk.S, padx=5, pady=5)
+        ent_freq.grid(column=4, row=3, sticky=tk.S, padx=5, pady=5)
+        ent_phas.grid(column=4, row=4, sticky=tk.S, padx=5, pady=5)
+        ent_maxp.grid(column=4, row=5, sticky=tk.S, padx=5, pady=5)
+        ent_fs.grid(column=1, row=6, sticky=tk.W, padx=5, pady=5)
 
         # LABELS
         lab_dura = ttk.Label(stm, text='Total duration (s)')
@@ -115,16 +115,16 @@ class SawtoothWave(tk.Frame):
         lab_ampl = ttk.Label(stm, text='Amplitude')
         lab_freq = ttk.Label(stm, text='Frequency (Hz)')
         lab_phas = ttk.Label(stm, text='Phase ('+ unicodedata.lookup("GREEK SMALL LETTER PI") +' rad)')
-        lab_maxp = ttk.Label(stm, text='Maximum position')
+        lab_maxp = ttk.Label(stm, text='Max. position')
         lab_fs = ttk.Label(stm, text='Fs (Hz)')
 
-        lab_dura.grid(column=0, row=0, sticky=tk.E)
-        lab_offs.grid(column=0, row=1, sticky=tk.E)
-        lab_ampl.grid(column=0, row=2, sticky=tk.E)
-        lab_freq.grid(column=0, row=3, sticky=tk.E)
-        lab_phas.grid(column=0, row=4, sticky=tk.E)
-        lab_maxp.grid(column=0, row=5, sticky=tk.E)
-        lab_fs.grid(column=3, row=6, sticky=tk.E)
+        lab_dura.grid(column=0, row=0, sticky=tk.SE, pady=5)
+        lab_offs.grid(column=0, row=1, sticky=tk.SE, pady=5)
+        lab_ampl.grid(column=0, row=2, sticky=tk.SE, pady=5)
+        lab_freq.grid(column=0, row=3, sticky=tk.SE, pady=5)
+        lab_phas.grid(column=0, row=4, sticky=tk.SE, pady=5)
+        lab_maxp.grid(column=0, row=5, sticky=tk.SE, pady=5)
+        lab_fs.grid(column=0, row=6, sticky=tk.E)
         
         # BUTTONS
         def checkValues(but):
@@ -134,13 +134,13 @@ class SawtoothWave(tk.Frame):
             if but == 1: self.plotSawtoothWave(stm)
             elif but == 2: self.saveDefaultValues(stm, list)
 
-        but_gene = ttk.Button(stm, command=lambda: checkValues(1), text='Generate')
-        but_save = ttk.Button(stm, command=lambda: checkValues(2), text='Save values as default')
+        but_gene = ttk.Button(stm, command=lambda: checkValues(1), text='Plot')
+        but_save = ttk.Button(stm, command=lambda: checkValues(2), text='Save')
         but_help = ttk.Button(stm, command=lambda: self.controller.help.createHelpMenu(4), text='🛈', width=2)
 
         but_gene.grid(column=4, row=7, sticky=tk.EW, padx=5, pady=5)
-        but_save.grid(column=3, row=7, sticky=tk.EW, padx=5, pady=5)
-        but_help.grid(column=0, row=7, sticky=tk.W, padx=5, pady=5)
+        but_save.grid(column=4, row=6, sticky=tk.EW, padx=5, pady=5)
+        but_help.grid(column=3, row=7, sticky=tk.E, padx=5, pady=5)
 
         checkValues(1)
 
