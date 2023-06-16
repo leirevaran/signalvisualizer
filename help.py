@@ -56,7 +56,7 @@ class Help(tk.Frame):
         rdb_nois = ttk.Radiobutton(self.hm, variable=self.hm.var_html, value=5, command=lambda: self.showHelp(self.noise_html), text='Noise')
         rdb_load = ttk.Radiobutton(self.hm, variable=self.hm.var_html, value=6, command=lambda: self.showHelp(self.loadf_html), text='Load file')
         rdb_reco = ttk.Radiobutton(self.hm, variable=self.hm.var_html, value=7, command=lambda: self.showHelp(self.recor_html), text='Record sound')
-        rdb_visu = ttk.Radiobutton(self.hm, variable=self.hm.var_html, value=8, command=lambda: self.showHelp(self.visua_html), text='Visualization')
+        rdb_visu = ttk.Radiobutton(self.hm, variable=self.hm.var_html, value=8, command=lambda: self.showHelp(self.visua_html), text='Control menu')
 
         # positioning Radiobuttons
         rdb_pton.grid(column=0, row=0, sticky=tk.EW, padx=5, pady=5)

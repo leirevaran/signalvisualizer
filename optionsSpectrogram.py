@@ -222,7 +222,7 @@ class Spectrogram(tk.Frame):
         but_cycl = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[4], cmaps[4][1], gradient))
         but_qual = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[5], cmaps[5][1], gradient))
         but_misc = ttk.Button(cmm, text='Show colormap', command=lambda: self.plot_color_gradients(cmaps[6], cmaps[6][1], gradient))
-        but_save = ttk.Button(cmm, text='Save changes', command=lambda: self.setColormap(cmm, list))
+        but_save = ttk.Button(cmm, text='Save', command=lambda: self.setColormap(cmm, list))
 
         # positioning Buttons
         but_pusq.grid(column=1, row=1, sticky=tk.EW, padx=5, pady=5)
