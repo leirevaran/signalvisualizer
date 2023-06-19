@@ -63,7 +63,7 @@
     </style>
 </head>
 <body>
-    <h1>Control menu window</h1>
+    <h1>Control menu</h1>
     <p>
         This window allows to analyze the spectrum of the chosen signal by different methods: <a href="#fourier_transform">Fourier Transform</a>, <a href="#stft">Short Time Fourier Transform</a>, <a href="#spectrogram">spectrogram</a>, Short-Time-Energy, Pitch, Spectral centroid, and Filtering.
     </p>
@@ -95,184 +95,176 @@
             <b>"Plot" button:</b> Allows to visualize the selected option (FT, STFT, Spectrogram...) of the signal with the values of the parameters applied.
         </li>
     </ol>
+
+    <img alt="Matplotlib figure options" src="html/en/Visualization window/images/options.PNG" style="width: 202.00px; margin-left: 0.00px; margin-top: 0.00px;">
+    <p><b>Figure options:</b> In every figure, there is a menu on the bottom left corner. There you can zoom and save the figure.</p>
+    
+
     <p><b>Fourier Transform</b></p><br />
     <p>
         It allows to observe the <a href="#fourier_transform">Fourier Transform</a> of the audio signal.
     </p>
+    <img alt="Fourier transform" src="html/en/Visualization window/images/ft2.PNG" style="width: 602.00px; margin-left: 0.00px; margin-top: 0.00px;">
     <ol>
         <li>
             <b>Waveform view:</b> Displays the loaded audio signal in the display window.
         </li>
         <li>
-            <ol type="a">
-                <li>
-                    The right button starts playback from the beginning of the signal.
-                </li>
-                <li>
-                    The center button starts playback from the cursor placed by clicking on the signal.
-                </li>
-                <li>
-                    The left button stops playback.
-                </li>
-            </ol>
-        </li>
-        <li>
-            <b>Export button:</b> It allows to export the signal or the spectrum as a <i>.csv</i> or <i>.xls</i> file. The signal can be saved as a <i>.wav</i> sound file.<br /><br />
-        </li>
-        <li>
-            <b>View switching buttons:</b> They allow to enlarge one of the plots.
+            <b>Waveform "save" button:</b> It allows to export the signal as a <i>.wav</i> sound file or as a <i>.csv</i> file.
         </li>
         <li>
             <b>Spectral information view:</b> Here you can see the spectral information of the signal, obtained by the selected method.
         </li>
         <li>
-            <b>Spectral Information Navigation Panel:</b> Use this panel to navigate through the spectral information view. It works in the same way as the signal navigation panel.
-        </li>
-        <li>
-            <b>Mode selection:</b> Allows to select the method by which the spectral information of the signal is obtained.
-        </li>
-        <li>
-            <b>Sampling rate:</b> It shows the sampling rate of the loaded signal.
+            <b>Spectral information "save" button:</b> It allows to export the spectral information as a <i>.csv</i> file.
         </li>
     </ol>
 
-    <p><b>Right button:</b> When you click with the right button over a plot, a menu is shown. There you can:</p>
-    <ol type="a">
-        <li>
-            Export plot as image.
-        </li>
-        <li>
-            Change the scale of the amplitude axis between lineal or logarithmic.
-        </li>
-    </ol>
 
     <p><b>STFT</b></p>
-
     <p>
         It allows to observe the <a href="#stft">Short Time Fourier Transform (STFT)</a> of the audio signal.<br /><br />
     </p>
-
-    <img alt="STFT interface" src="html/en/Visualization window/images/visualization2_en.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
-
+    <img alt="STFT interface" src="html/en/Visualization window/images/stft2.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
     <ol start="10">
+        <li>
+            <b>Waveform view:</b> Displays the loaded audio signal in the display window.
+        </li>
+        <li>
+            <b>Waveform "save" button:</b> It allows to export the signal as a <i>.wav</i> sound file or as a <i>.csv</i> file.
+        </li>
         <li>
             <b>Window:</b> Window used to calculate the STFT. You can change its position by clicking on the signal.
         </li>
         <li>
-            <b>Window shape selector</b>
+            <b>Spectral information view:</b> Here you can see the spectral information of the signal, obtained by the selected method.
         </li>
         <li>
-            <b>Window size selector:</b> Allows you to enter the size of the window in seconds (between 0.001 and 1).
-        </li>
-        <li>
-            <b>nfft selector:</b> Allows to select the number of points of the transform among the available options.
+            <b>Spectral information "save" button:</b> It allows to export the spectral information as a <i>.csv</i> file.
         </li>
     </ol>
+
 
     <p><b>Spectrogram</b></p>
     <p>
         It allows to see the <a href="#spectrogram">spectrogram</a> of the signal.<br /><br />
     </p>
-    <img alt="Spectrogram interface" src="html/en/Visualization window/images/visualization3_en.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
-
-    <p><b>STFT + Spectrogram</b></p>
-
-    <p>
-        It allows to observe the <a href="#stft">STFT</a> of the signal and to see its position in the <a href="#spectrogram">spectrogram</a>. <br /><br />
-    </p>
-    <img alt="Spectrogram interface" src="html/en/Visualization window/images/visualization4_en.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
-
-    <p><b>Short-Time-Energy</b></p>
-
-    <p>
-        It allows to observe the <a href="#stft">Short Time Fourier Transform (STFT)</a> of the audio signal.<br /><br />
-    </p>
-
-    <img alt="STFT interface" src="html/en/Visualization window/images/visualization2_en.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
-
-    <ol start="10">
+    <img alt="Spectrogram interface" src="html/en/Visualization window/images/spectrogram2.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
+    <ol>
         <li>
-            <b>Window:</b> Window used to calculate the STFT. You can change its position by clicking on the signal.
+            <b>Waveform view:</b> Displays the loaded audio signal in the display window.
         </li>
         <li>
-            <b>Window shape selector</b>
+            <b>Waveform "save" button:</b> It allows to export the signal as a <i>.wav</i> sound file or as a <i>.csv</i> file.
         </li>
         <li>
-            <b>Window size selector:</b> Allows you to enter the size of the window in seconds (between 0.001 and 1).
-        </li>
-        <li>
-            <b>nfft selector:</b> Allows to select the number of points of the transform among the available options.
+            <b>Spectrogram view:</b> Here you can see the spectrogram of the signal.
         </li>
     </ol>
 
-    <p><b>Pitch</b></p>
 
+    <p><b>STFT + Spectrogram</b></p>
     <p>
-        It allows to observe the <a href="#stft">Short Time Fourier Transform (STFT)</a> of the audio signal.<br /><br />
+        It allows to observe the <a href="#stft">STFT</a> of the signal and to see its position in the <a href="#spectrogram">spectrogram</a>. <br /><br />
     </p>
-
-    <img alt="STFT interface" src="html/en/Visualization window/images/visualization2_en.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
-
-    <ol start="10">
+    <img alt="Spectrogram interface" src="html/en/Visualization window/images/stft-mel2.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
+    <ol>
+        <li>
+            <b>Waveform view:</b> Displays the loaded audio signal in the display window.
+        </li>
+        <li>
+            <b>Waveform "save" button:</b> It allows to export the signal as a <i>.wav</i> sound file or as a <i>.csv</i> file.
+        </li>
         <li>
             <b>Window:</b> Window used to calculate the STFT. You can change its position by clicking on the signal.
         </li>
         <li>
-            <b>Window shape selector</b>
+            <b>STFT view:</b> Here you can see the STFT of the signal.
         </li>
         <li>
-            <b>Window size selector:</b> Allows you to enter the size of the window in seconds (between 0.001 and 1).
+            <b>Spectral information "save" button:</b> It allows to export the spectral information as a <i>.csv</i> file.
         </li>
         <li>
-            <b>nfft selector:</b> Allows to select the number of points of the transform among the available options.
+            <b>Spectrogram view:</b> Here you can see the spectrogram of the signal.
+        </li>
+    </ol>
+
+
+    <p><b>Short-Time-Energy</b></p>
+    <p>
+        It allows to observe the Short-Time-Energy of the audio signal.<br /><br />
+    </p>
+    <img alt="STE interface" src="html/en/Visualization window/images/ste2.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
+    <ol start="10">
+        <li>
+            <b>Waveform view:</b> Displays the loaded audio signal in the display window.
+        </li>
+        <li>
+            <b>Waveform "save" button:</b> It allows to export the signal as a <i>.wav</i> sound file or as a <i>.csv</i> file.
+        </li>
+        <li>
+            <b>Spectral information view:</b> Here you can see the spectral information of the signal, obtained by the selected method.
+        </li>
+        <li>
+            <b>Spectral information "save" button:</b> It allows to export the spectral information as a <i>.csv</i> file.
+        </li>
+    </ol>
+
+
+    <p><b>Pitch</b></p>
+    <p>
+        It allows to observe the Pitch of the audio signal.<br /><br />
+    </p>
+    <img alt="Pitch interface" src="html/en/Visualization window/images/pitch2.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
+    <ol start="10">
+        <li>
+            <b>Waveform view:</b> Displays the loaded audio signal in the display window.
+        </li>
+        <li>
+            <b>Waveform "save" button:</b> It allows to export the signal as a <i>.wav</i> sound file or as a <i>.csv</i> file.
+        </li>
+        <li>
+            <b>Spectral information view:</b> Here you can see the spectral information of the signal, obtained by the selected method.
+        </li>
+        <li>
+            <b>Spectral information "save" button:</b> It allows to export the spectral information as a <i>.csv</i> file.
         </li>
     </ol>
 
     <p><b>Spectral Centroid</b></p>
-
     <p>
-        It allows to observe the <a href="#stft">Short Time Fourier Transform (STFT)</a> of the audio signal.<br /><br />
+        It allows to observe the Spectral Centroid of the audio signal.<br /><br />
     </p>
-
-    <img alt="STFT interface" src="html/en/Visualization window/images/visualization2_en.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
-
+    <img alt="Spectral centroid interface" src="html/en/Visualization window/images/sc2.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
     <ol start="10">
+        <li>
+            <b>Waveform view:</b> Displays the loaded audio signal in the display window.
+        </li>
+        <li>
+            <b>Waveform "save" button:</b> It allows to export the signal as a <i>.wav</i> sound file or as a <i>.csv</i> file.
+        </li>
         <li>
             <b>Window:</b> Window used to calculate the STFT. You can change its position by clicking on the signal.
         </li>
         <li>
-            <b>Window shape selector</b>
+            <b>Spectral centroid value:</b> Shows the value of the spectral centroid of the signal where the window is positioned.
         </li>
         <li>
-            <b>Window size selector:</b> Allows you to enter the size of the window in seconds (between 0.001 and 1).
+            <b>Spectral information view:</b> Here you can see the spectral information of the signal, obtained by the selected method.
         </li>
         <li>
-            <b>nfft selector:</b> Allows to select the number of points of the transform among the available options.
+            <b>Spectral information "save" button:</b> It allows to export the spectral information as a <i>.csv</i> file.
+        </li>
+        <li>
+            <b>Log power spectrogram:</b> Here you can see the log power spectrogram of the signal and the spectral centroid in white.
         </li>
     </ol>
 
     <p><b>Filtering</b></p>
 
     <p>
-        It allows to observe the <a href="#stft">Short Time Fourier Transform (STFT)</a> of the audio signal.<br /><br />
+        It allows to observe and analyze the filtered signal by opening another control menu window with its value.<br /><br />
     </p>
-
-    <img alt="STFT interface" src="html/en/Visualization window/images/visualization2_en.png" style="width: 602.00px; height: 352.00px; margin-left: 0.00px; margin-top: 0.00px;">
-
-    <ol start="10">
-        <li>
-            <b>Window:</b> Window used to calculate the STFT. You can change its position by clicking on the signal.
-        </li>
-        <li>
-            <b>Window shape selector</b>
-        </li>
-        <li>
-            <b>Window size selector:</b> Allows you to enter the size of the window in seconds (between 0.001 and 1).
-        </li>
-        <li>
-            <b>nfft selector:</b> Allows to select the number of points of the transform among the available options.
-        </li>
-    </ol>
     
     
     

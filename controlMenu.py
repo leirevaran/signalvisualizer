@@ -975,7 +975,7 @@ class ControlMenu():
         ax3.set(xlim=[0, self.duration], title='log Power spectrogram')
 
         self.aux.saveasWavCsv(cm, fig, self.time, self.audio, 0.65, self.fs) # save waveform as csv
-        self.aux.saveasCsv(fig, times, sc.T, 0.05, 'SC') # save the white line as csv
+        self.aux.saveasCsv(fig, times, sc.T, 0.35, 'SC') # save the white line as csv
         
         self.multicursor = MultiCursor(fig.canvas, (ax1, ax3), color='black', lw=1)
         self.span = self.createSpanSelector(ax1) # Select a fragment with the cursor and play the audio of that fragment
