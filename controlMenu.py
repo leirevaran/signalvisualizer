@@ -620,38 +620,14 @@ class ControlMenu():
         fig.colorbar(img, cax=sub_ax, format='%+2.0f dB') # %4.2e, {x:.2e}
 
     def createSpanSelector(self, ax):
-        # Plays the audio of the selected fragment of the fragment
-        def listenFragFrag(xmin, xmax):
+        # Plays the audio of the selected fragment
+        def listenFrag(xmin, xmax):
             ini, end = np.searchsorted(self.time, (xmin, xmax))
             selectedAudio = self.audio[ini:end+1]
             sd.play(selectedAudio, self.fs)
             
-        span = SpanSelector(ax, listenFragFrag, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)
-        return span
+        self.span = SpanSelector(ax, listenFrag, 'horizontal', useblit=False, interactive=True, drag_from_anywhere=True)
     
-    # def addLoadButton(self, fig, ax, fs, time, audio, name):
-    #     # Takes the selected fragment and opens the control menu when clicked
-    #     def load(event):
-    #         if self.selectedAudio.shape == (1,): 
-    #             self.createControlMenu(self, name, fs, audio)
-    #         else:
-    #             self.createControlMenu(self, name, fs, self.selectedAudio)
-    #         plt.close(fig)
-
-    #     # Adds a 'Load' button to the figure
-    #     axload = fig.add_axes([0.8, 0.01, 0.09, 0.05]) # [left, bottom, width, height]
-    #     but_load = Button(axload, 'Load')
-    #     but_load.on_clicked(load)
-    #     axload._but_load = but_load # reference to the Button (otherwise the button does nothing)
-
-    #     def listenFrag(xmin, xmax):
-    #         ini, end = np.searchsorted(time, (xmin, xmax))
-    #         self.selectedAudio = audio[ini:end+1]
-    #         sd.play(self.selectedAudio, fs)
-            
-    #     self.span = SpanSelector(ax, listenFrag, 'horizontal', useblit=True, interactive=True, drag_from_anywhere=True)
-    
-
     #####################
     # CALCULATE METHODS #
     #####################
@@ -771,14 +747,13 @@ class ControlMenu():
         return pitch, pitch_values
     
     
-    def designFilter(self, cm, fig, gpass, gstop):
+    def designFilter(self, cm, gpass, gstop):
         type = cm.var_pass.get() # harmonic, lowpass, highpass, bandpass or bandstop
         p = cm.var_perc.get()
 
         # Design filter
         if type == 'Lowpass' or type == 'Highpass':
             fcut = cm.var_fcut.get()
-            # fig.canvas.manager.set_window_title('Filtering-'+type+'-'+str(p)+'%-Fcut_'+str(fcut)) # set title to the figure window
             delta = fcut * (p/100) # transition band
 
             if type == 'Lowpass':
@@ -795,7 +770,6 @@ class ControlMenu():
             if type == 'Harmonic':
                 fundfreqmult = cm.var_fund.get()
                 fundfreq = cm.var_cent.get()
-                # fig.canvas.manager.set_window_title('Filtering-'+type+'-'+str(p)+'%-FundFreqMult_'+str(fundfreqmult)+'-CenterFreq_'+str(fundfreq)+'Hz') # set title to the figure window
                 fc = fundfreq * fundfreqmult # central frequency, value of the 1st harmonic
                 fcut1 = fc - fundfreq/2
                 fcut2 = fc + fundfreq/2
@@ -808,7 +782,6 @@ class ControlMenu():
             else:
                 fcut1 = cm.var_cut1.get()
                 fcut2 = cm.var_cut2.get()
-                # fig.canvas.manager.set_window_title('Filtering-'+type+'-'+str(p)+'%-Fcut1_'+str(fcut1)+'-Fcut2_'+str(fcut2)) # set title to the figure window
                 delta1 = fcut1 * (p/100) # 1st transition band
                 delta2 = fcut2 * (p/100) # 2nd transition band
 
@@ -856,7 +829,7 @@ class ControlMenu():
 
         # TO-DO: connect figFrag with w1Button in signalVisualizer
 
-        self.span = self.createSpanSelector(ax[0]) # Select a fragment with the cursor and play the audio of that fragment
+        self.createSpanSelector(ax[0]) # Select a fragment with the cursor and play the audio of that fragment
         self.figFT.show() # show the figure
 
     
@@ -875,7 +848,7 @@ class ControlMenu():
         self.aux.saveasCsv(fig, frequencies, 20*np.log10(abs(stft)), 0.05, 'STFT') # save FT as csv
         
         self.cursor = Cursor(ax[0], horizOn=False, useblit=True, color='black', linewidth=1)
-        self.span = self.createSpanSelector(ax[0]) # Select a fragment with the cursor and play the audio of that fragment
+        self.createSpanSelector(ax[0]) # Select a fragment with the cursor and play the audio of that fragment
 
         return ax, line1
     
@@ -912,7 +885,7 @@ class ControlMenu():
         self.aux.saveasWavCsv(cm, fig, self.time, self.audio, 0.69, self.fs) # save waveform as csv
 
         self.multicursor = MultiCursor(fig.canvas, (ax[0], ax[1]), color='black', lw=1)
-        self.span = self.createSpanSelector(ax[0]) # Select a fragment with the cursor and play the audio of that fragment
+        self.createSpanSelector(ax[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
 
 
@@ -939,7 +912,7 @@ class ControlMenu():
         self.aux.saveasCsv(fig, frequencies, 20*np.log10(abs(stft)), 0.35, 'STFT') # save STFT as csv
         
         self.multicursor = MultiCursor(fig.canvas, (ax1, ax3), color='black', lw=1)
-        self.span = self.createSpanSelector(ax1) # Select a fragment with the cursor and play the audio of that fragment
+        self.createSpanSelector(ax1) # Select a fragment with the cursor and play the audio of that fragment
 
         return ax1, ax2, ax3, line1
 
@@ -978,7 +951,7 @@ class ControlMenu():
         self.aux.saveasCsv(fig, times, sc.T, 0.35, 'SC') # save the white line as csv
         
         self.multicursor = MultiCursor(fig.canvas, (ax1, ax3), color='black', lw=1)
-        self.span = self.createSpanSelector(ax1) # Select a fragment with the cursor and play the audio of that fragment
+        self.createSpanSelector(ax1) # Select a fragment with the cursor and play the audio of that fragment
 
         return ax1, ax2, ax3, line1
     
@@ -1008,7 +981,7 @@ class ControlMenu():
         self.aux.saveasCsv(fig, time, ste, 0.05, 'STE') # save STE as csv
 
         self.multicursor = MultiCursor(fig.canvas, (ax[0], ax[1]), color='black', lw=1)
-        self.span = self.createSpanSelector(ax[0]) # Select a fragment with the cursor and play the audio of that fragment
+        self.createSpanSelector(ax[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
 
 
@@ -1042,12 +1015,12 @@ class ControlMenu():
         self.aux.saveasCsv(fig, pitch.xs(), pitch_values, 0.05, 'Pitch') # save Pitch as csv        
 
         self.multicursor = MultiCursor(fig.canvas, (ax[0], ax[1]), color='black', lw=1)
-        self.span = self.createSpanSelector(ax[0]) # Select a fragment with the cursor and play the audio of that fragment
+        self.createSpanSelector(ax[0]) # Select a fragment with the cursor and play the audio of that fragment
         plt.show() # show the figure
 
 
     def plotFiltering(self, cm):
-        filteredSignal, _, _ = self.designFilter(cm, 0, 3, 40)
+        filteredSignal, _, _ = self.designFilter(cm, 3, 40)
         ControlMenu().createControlMenu(self.fileName+str(' (filtered)'), self.fs, filteredSignal, self.duration, self.controller)
         plt.show() # show the figure
 
@@ -1057,7 +1030,7 @@ class ControlMenu():
     #     fig, ax = plt.subplots(2, figsize=(9,7))
     #     plt.subplots_adjust(hspace=.3) # to avoid overlapping between xlabel and title
 
-    #     _, b, a = self.designFilter(cm, fig, 3, 40)
+    #     _, b, a = self.designFilter(cm, 3, 40)
 
     #     # Calculate the filter frequency response
     #     # w, h = signal.freqz(b, a, fs=self.fs) # w: frequencies in Hz, h: frequency response
